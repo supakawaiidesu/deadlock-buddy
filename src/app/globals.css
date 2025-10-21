@@ -1,0 +1,66 @@
+@import "tailwindcss";
+
+:root {
+  color-scheme: dark;
+  --background: #040405;
+  --foreground: #f2f4f2;
+  --surface: #08080a;
+  --surface-muted: #0b0c0f;
+  --surface-raised: #101015;
+  --surface-border: rgba(63, 201, 109, 0.24);
+  --surface-border-muted: rgba(255, 255, 255, 0.08);
+  --accent: #3fc96d;
+  --accent-muted: rgba(63, 201, 109, 0.16);
+  --accent-subtle: rgba(63, 201, 109, 0.05);
+  --danger: #f87171;
+  --info: #38bdf8;
+  --success: #4ade80;
+}
+
+@theme inline {
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+  --color-surface: var(--surface);
+  --color-surface-muted: var(--surface-muted);
+  --color-surface-raised: var(--surface-raised);
+  --color-surface-border: var(--surface-border);
+  --color-surface-border-muted: var(--surface-border-muted);
+  --color-accent: var(--accent);
+  --color-accent-muted: var(--accent-muted);
+  --color-accent-subtle: var(--accent-subtle);
+  --color-danger: var(--danger);
+  --color-info: var(--info);
+  --color-success: var(--success);
+  --font-sans: var(--font-inter);
+  --font-display: var(--font-space-grotesk);
+}
+
+.panel {
+  background-color: var(--surface);
+  border: 1px solid var(--surface-border-muted);
+  border-radius: 0;
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.02);
+}
+
+body {
+  background: var(--background);
+  color: var(--foreground);
+  font-family: var(--font-sans), system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI",
+    sans-serif;
+}
+
+a {
+  color: inherit;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+button,
+input,
+select,
+textarea {
+  border-radius: 0;
+  background-color: inherit;
+}
