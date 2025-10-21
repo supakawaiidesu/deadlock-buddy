@@ -35,49 +35,49 @@ export function TopNav() {
   }
 
   return (
-    <header className="flex h-14 items-center justify-between border-b border-[var(--surface-border-muted)] bg-[var(--surface)] px-6">
-      <div className="flex items-center gap-6">
-        <Link href="/" className="text-sm font-semibold uppercase tracking-[0.3em] text-[rgba(245,247,245,0.7)]">
-          Deadlock Buddy
-        </Link>
-        <nav className="flex items-center gap-4 text-xs uppercase tracking-[0.24em] text-[rgba(245,247,245,0.5)]">
-          {navLinks.map((link) => (
-            <Link
-              key={link.href}
-              href={link.href}
-              className={clsx(
-                "border-b border-transparent pb-1 transition-colors",
-                active === link.href && "border-[var(--accent)] text-[var(--accent)]",
-              )}
-            >
-              {link.label}
-            </Link>
-          ))}
-        </nav>
-      </div>
-      <form onSubmit={handleSubmit} className="flex w-full max-w-md items-center gap-2 px-6">
-        <label className="flex w-full items-center gap-2 border border-[var(--surface-border-muted)] bg-[var(--surface-muted)] px-3 py-2 text-sm text-[rgba(245,247,245,0.72)]">
-          <span className="text-[rgba(245,247,245,0.45)]">ID:</span>
+    <header className="flex h-14 items-center gap-4 border-b border-[var(--surface-border-muted)] bg-[var(--surface)] px-4">
+      <Link
+        href="/"
+        className="text-xs font-semibold uppercase tracking-[0.32em] text-[rgba(245,247,245,0.65)]"
+      >
+        Deadlock Buddy
+      </Link>
+      <nav className="hidden items-center gap-3 text-[11px] uppercase tracking-[0.22em] text-[rgba(245,247,245,0.5)] md:flex">
+        {navLinks.map((link) => (
+          <Link
+            key={link.href}
+            href={link.href}
+            className={clsx(
+              'border-b border-transparent pb-1 transition-colors',
+              active === link.href && 'border-[var(--accent)] text-[var(--accent)]',
+            )}
+          >
+            {link.label}
+          </Link>
+        ))}
+      </nav>
+      <form onSubmit={handleSubmit} className="ml-auto flex w-full max-w-sm items-center gap-2">
+        <label className="flex w-full items-center gap-2 rounded-sm border border-[rgba(255,255,255,0.08)] bg-[rgba(255,255,255,0.02)] px-3 py-2 text-[11px] uppercase tracking-[0.22em] text-[rgba(245,247,245,0.6)]">
+          <span className="text-[rgba(245,247,245,0.45)]">ID</span>
           <input
             value={value}
             onChange={(event) => setValue(event.target.value)}
-            placeholder="Enter player account ID"
-            className="h-6 flex-1 border-none bg-transparent text-[var(--foreground)] outline-none"
+            placeholder="Account..."
+            className="h-5 flex-1 border-none bg-transparent text-sm text-[var(--foreground)] caret-[var(--accent)] outline-none placeholder:text-[rgba(245,247,245,0.35)]"
             inputMode="numeric"
             autoComplete="off"
           />
         </label>
         <button
           type="submit"
-          className="border border-[var(--surface-border)] bg-[var(--surface-muted)] px-3 py-2 text-xs font-semibold uppercase tracking-[0.25em] text-white transition hover:border-[var(--accent)] hover:text-[var(--accent)]"
+          className="flex h-9 w-9 items-center justify-center rounded-sm border border-[rgba(255,255,255,0.12)] bg-[var(--surface-muted)] text-xs font-semibold uppercase tracking-[0.18em] text-[rgba(245,247,245,0.65)] transition hover:border-[var(--accent)] hover:text-[var(--accent)]"
         >
-          Go
+          ↵
         </button>
       </form>
-      <div className="flex items-center gap-4 text-xs uppercase tracking-[0.2em] text-[rgba(245,247,245,0.45)]">
+      <div className="hidden items-center gap-2 text-[10px] uppercase tracking-[0.3em] text-[rgba(245,247,245,0.4)] sm:flex">
         <span>Beta</span>
       </div>
     </header>
   );
 }
-

@@ -55,3 +55,28 @@ export const PlayerMMRResponseSchema = z.array(PlayerMMREntrySchema);
 export const PlayerMMRHistoryResponseSchema = z.array(PlayerMMREntrySchema);
 
 export type PlayerMMRHistory = z.infer<typeof PlayerMMRHistoryResponseSchema>;
+
+export const LeaderboardEntrySchema = z.object({
+  account_name: z.string(),
+  possible_account_ids: z.array(z.number()).default([]),
+  rank: z.number(),
+  top_hero_ids: z.array(z.number()).default([]),
+  badge_level: z.number().optional().nullable(),
+  ranked_rank: z.number().optional().nullable(),
+  ranked_subrank: z.number().optional().nullable(),
+});
+
+export type LeaderboardEntry = z.infer<typeof LeaderboardEntrySchema>;
+
+export const LeaderboardEntryResponseSchema = z.array(LeaderboardEntrySchema);
+
+export const HeroScoreboardEntrySchema = z.object({
+  rank: z.number(),
+  hero_id: z.number(),
+  value: z.number(),
+  matches: z.number(),
+});
+
+export type HeroScoreboardEntry = z.infer<typeof HeroScoreboardEntrySchema>;
+
+export const HeroScoreboardResponseSchema = z.array(HeroScoreboardEntrySchema);

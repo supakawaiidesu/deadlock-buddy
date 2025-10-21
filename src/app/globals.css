@@ -70,3 +70,21 @@ textarea {
   border-radius: 0;
   background-color: inherit;
 }
+
+.scroll-quiet {
+  scrollbar-width: thin;
+  scrollbar-color: rgba(245, 247, 245, 0.12) transparent;
+}
+
+.scroll-quiet::-webkit-scrollbar {
+  width: 6px;
+}
+
+.scroll-quiet::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.scroll-quiet::-webkit-scrollbar-thumb {
+  background-color: rgba(245, 247, 245, 0.12);
+  border-radius: 9999px;
+}
