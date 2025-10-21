@@ -1,5 +1,5 @@
 import type { Metadata } from 'next';
-import { Inter, Space_Grotesk } from 'next/font/google';
+import { Inter, JetBrains_Mono, Space_Grotesk } from 'next/font/google';
 import './globals.css';
 import { AppProviders } from './providers';
 import { AppShell } from '@/ui/app-shell';
@@ -16,6 +16,12 @@ const spaceGrotesk = Space_Grotesk({
   display: 'swap',
 });
 
+const jetBrainsMono = JetBrains_Mono({
+  subsets: ['latin'],
+  variable: '--font-jetbrains-mono',
+  display: 'swap',
+});
+
 export const metadata: Metadata = {
   title: 'Deadlock Buddy',
   description: 'Player insights and hero analytics for Valve’s Deadlock.',
@@ -28,7 +34,7 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="en" className="bg-background text-foreground">
-      <body className={`${inter.variable} ${spaceGrotesk.variable} min-h-screen antialiased`}>
+      <body className={`${inter.variable} ${spaceGrotesk.variable} ${jetBrainsMono.variable} min-h-screen antialiased`}>
         <AppProviders>
           <AppShell>{children}</AppShell>
         </AppProviders>

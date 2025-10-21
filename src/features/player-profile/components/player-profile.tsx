@@ -30,6 +30,10 @@ type ChartDatum = {
   delta: number;
 };
 
+function formatHeroCode(heroId: number): string {
+  return heroId.toString().padStart(2, '0');
+}
+
 function buildHistoryChartData(
   history: Array<{ start_time: number; player_score: number; delta: number }>,
 ): ChartDatum[] {
@@ -123,9 +127,11 @@ export function PlayerProfile({ accountId }: PlayerProfileProps) {
   const bestWinHero = heroRows.reduce((acc, row) => (row.winRate > acc.winRate ? row : acc), heroRows[0]);
   const highestVolumeHeroName = getHeroDisplayName(highestVolumeHero.heroId);
   const bestWinHeroName = getHeroDisplayName(bestWinHero.heroId);
+  const highestVolumeHeroCode = formatHeroCode(highestVolumeHero.heroId);
+  const bestWinHeroCode = formatHeroCode(bestWinHero.heroId);
 
   return (
-    <div className="flex min-h-[calc(100vh-56px)] flex-col gap-[2px] pb-[2px]">
+    <div className="flex min-h-[calc(100vh-56px)] flex-col gap-[2px] pb-[2px] font-mono text-[13px]">
       <div className="grid gap-[2px] lg:grid-cols-[minmax(0,1.7fr)_minmax(0,1fr)]">
         <div className="grid gap-[2px]">
           <Panel className="grid gap-[2px] lg:grid-cols-[1.4fr_1fr]">
@@ -168,8 +174,8 @@ export function PlayerProfile({ accountId }: PlayerProfileProps) {
           </Panel>
 
           <Panel className="flex flex-col gap-[2px]">
-            <div className="flex items-baseline justify-between">
-              <h2 className="text-xl font-semibold text-white">Score Momentum</h2>
+            <div className="flex items-center justify-between">
+              <h2 className="text-sm font-semibold uppercase tracking-[0.2em] text-white">Score Momentum</h2>
               <span className="text-xs uppercase tracking-[0.2em] text-[rgba(245,247,245,0.5)]">Recent matches</span>
             </div>
             <div className="h-56 w-full lg:h-64">
@@ -203,21 +209,21 @@ export function PlayerProfile({ accountId }: PlayerProfileProps) {
           </Panel>
 
           <Panel className="flex flex-col gap-0 !p-0">
-            <div className="flex items-baseline justify-between border-b border-[var(--surface-border-muted)] py-3">
-              <h2 className="text-xl font-semibold text-white">Hero Performance</h2>
+            <div className="flex items-center justify-between border-b border-[var(--surface-border-muted)] px-3 py-3">
+              <h2 className="text-sm font-semibold uppercase tracking-[0.2em] text-white">Hero Performance</h2>
               <span className="text-xs uppercase tracking-[0.18em] text-[rgba(245,247,245,0.5)]">Role agnostic</span>
             </div>
             <table className="w-full border-collapse text-xs">
               <thead className="uppercase tracking-[0.18em] text-[rgba(245,247,245,0.5)]">
                 <tr>
-                  <th className="border-b border-[rgba(245,247,245,0.14)] py-2 pr-2 text-left font-medium">Hero</th>
-                  <th className="border-b border-[rgba(245,247,245,0.14)] py-2 pr-2 text-right font-medium">Matches</th>
-                  <th className="border-b border-[rgba(245,247,245,0.14)] py-2 pr-2 text-right font-medium">Win%</th>
-                  <th className="border-b border-[rgba(245,247,245,0.14)] py-2 pr-2 text-right font-medium">KDA</th>
-                  <th className="border-b border-[rgba(245,247,245,0.14)] py-2 pr-2 text-right font-medium">NW/Min</th>
-                  <th className="border-b border-[rgba(245,247,245,0.14)] py-2 pr-2 text-right font-medium">LH/Min</th>
-                  <th className="border-b border-[rgba(245,247,245,0.14)] py-2 pr-2 text-right font-medium">DMG/Min</th>
-                  <th className="border-b border-[rgba(245,247,245,0.14)] py-2 text-right font-medium">
+                  <th className="border-b border-[rgba(245,247,245,0.14)] py-2 pl-3 pr-2 text-left font-medium">Hero</th>
+                  <th className="border-b border-[rgba(245,247,245,0.14)] py-2 px-3 text-right font-medium">Matches</th>
+                  <th className="border-b border-[rgba(245,247,245,0.14)] py-2 px-3 text-right font-medium">Win%</th>
+                  <th className="border-b border-[rgba(245,247,245,0.14)] py-2 px-3 text-right font-medium">KDA</th>
+                  <th className="border-b border-[rgba(245,247,245,0.14)] py-2 px-3 text-right font-medium">NW/Min</th>
+                  <th className="border-b border-[rgba(245,247,245,0.14)] py-2 px-3 text-right font-medium">LH/Min</th>
+                  <th className="border-b border-[rgba(245,247,245,0.14)] py-2 px-3 text-right font-medium">DMG/Min</th>
+                  <th className="border-b border-[rgba(245,247,245,0.14)] py-2 pr-3 text-right font-medium">
                     Last Played
                   </th>
                 </tr>
@@ -229,8 +235,8 @@ export function PlayerProfile({ accountId }: PlayerProfileProps) {
 
                   return (
                     <tr key={`${row.heroId}`} className="border-b border-[rgba(245,247,245,0.12)]">
-                      <td className="py-3 pr-2">
-                        <div className="flex items-center gap-2">
+                      <td className="py-3 pl-3 pr-2">
+                        <div className="flex items-center gap-3">
                           {iconUrl ? (
                             <Image
                               src={iconUrl}
@@ -241,22 +247,22 @@ export function PlayerProfile({ accountId }: PlayerProfileProps) {
                               className="h-[18px] w-[18px] object-cover"
                             />
                           ) : null}
-                          <span className="font-medium text-white">{name}</span>
+                          <span className="font-semibold text-white">{name}</span>
                         </div>
                       </td>
-                      <td className="py-3 pr-2 text-right text-[rgba(245,247,245,0.82)]">{formatNumber(row.matches)}</td>
-                      <td className="py-3 pr-2 text-right text-[var(--accent)]">{formatPercent(row.winRate)}</td>
-                      <td className="py-3 pr-2 text-right text-[rgba(245,247,245,0.82)]">{row.kda.toFixed(2)}</td>
-                      <td className="py-3 pr-2 text-right text-[rgba(245,247,245,0.82)]">
+                      <td className="py-3 px-3 text-right text-[rgba(245,247,245,0.82)]">{formatNumber(row.matches)}</td>
+                      <td className="py-3 px-3 text-right text-[var(--accent)]">{formatPercent(row.winRate)}</td>
+                      <td className="py-3 px-3 text-right text-[rgba(245,247,245,0.82)]">{row.kda.toFixed(2)}</td>
+                      <td className="py-3 px-3 text-right text-[rgba(245,247,245,0.82)]">
                         {formatNumber(row.networthPerMin)}
                       </td>
-                      <td className="py-3 pr-2 text-right text-[rgba(245,247,245,0.82)]">
+                      <td className="py-3 px-3 text-right text-[rgba(245,247,245,0.82)]">
                         {formatNumber(row.lastHitsPerMin)}
                       </td>
-                      <td className="py-3 pr-2 text-right text-[rgba(245,247,245,0.82)]">
+                      <td className="py-3 px-3 text-right text-[rgba(245,247,245,0.82)]">
                         {formatNumber(row.damagePerMin)}
                       </td>
-                      <td className="py-3 text-right text-[rgba(245,247,245,0.6)]">
+                      <td className="py-3 pr-3 text-right text-[rgba(245,247,245,0.6)]">
                         {formatRelativeTimestamp(row.lastPlayed)}
                       </td>
                     </tr>
@@ -264,7 +270,7 @@ export function PlayerProfile({ accountId }: PlayerProfileProps) {
                 })}
                 {heroRows.length === 0 ? (
                   <tr>
-                    <td className="py-4 text-left text-[rgba(245,247,245,0.6)]" colSpan={8}>
+                    <td className="px-3 py-4 text-left text-[rgba(245,247,245,0.6)]" colSpan={8}>
                       No hero data yet.
                     </td>
                   </tr>
@@ -275,36 +281,38 @@ export function PlayerProfile({ accountId }: PlayerProfileProps) {
         </div>
 
         <div className="grid gap-[2px]">
-          <Panel className="flex flex-col gap-[2px]">
+          <Panel className="flex flex-col gap-3">
             <h2 className="text-sm font-semibold uppercase tracking-[0.22em] text-white">Profile Signals</h2>
-            <div className="grid gap-2 text-xs text-[rgba(245,247,245,0.72)]">
-              <div className="flex items-center justify-between border-b border-[var(--surface-border-muted)] pb-1">
-                <span>Matches tracked</span>
+            <ul className="grid gap-1 text-xs text-[rgba(245,247,245,0.72)]">
+              <li className="flex items-center justify-between border-b border-[var(--surface-border-muted)] pb-1">
+                <span className="uppercase tracking-[0.18em] text-[rgba(245,247,245,0.55)]">Matches tracked</span>
                 <span className="font-semibold text-white">{formatNumber(matchesPlayed)}</span>
-              </div>
-              <div className="flex items-center justify-between border-b border-[var(--surface-border-muted)] pb-1">
-                <span>Unique heroes</span>
+              </li>
+              <li className="flex items-center justify-between border-b border-[var(--surface-border-muted)] pb-1">
+                <span className="uppercase tracking-[0.18em] text-[rgba(245,247,245,0.55)]">Unique heroes</span>
                 <span className="font-semibold text-white">{formatNumber(uniqueHeroes)}</span>
-              </div>
-              <div className="flex items-center justify-between border-b border-[var(--surface-border-muted)] pb-1">
-                <span>Avg matches / hero</span>
+              </li>
+              <li className="flex items-center justify-between border-b border-[var(--surface-border-muted)] pb-1">
+                <span className="uppercase tracking-[0.18em] text-[rgba(245,247,245,0.55)]">Avg matches / hero</span>
                 <span className="font-semibold text-white">{avgMatchesPerHero.toFixed(1)}</span>
-              </div>
-              <div className="flex items-center justify-between border-b border-[var(--surface-border-muted)] pb-1">
-                <span>Volume anchor</span>
-                <span className="font-semibold text-white">{highestVolumeHeroName}</span>
-              </div>
-              <div className="flex items-center justify-between">
-                <span>Best winrate</span>
-                <span className="font-semibold text-[var(--accent)]">
-                  {bestWinHeroName} · {formatPercent(bestWinHero.winRate)}
+              </li>
+              <li className="flex items-center justify-between border-b border-[var(--surface-border-muted)] pb-1">
+                <span className="uppercase tracking-[0.18em] text-[rgba(245,247,245,0.55)]">Volume anchor</span>
+                <span className="font-semibold text-white">
+                  [{highestVolumeHeroCode}] {highestVolumeHeroName.toUpperCase()}
                 </span>
-              </div>
-            </div>
+              </li>
+              <li className="flex items-center justify-between">
+                <span className="uppercase tracking-[0.18em] text-[rgba(245,247,245,0.55)]">Best winrate</span>
+                <span className="font-semibold text-[var(--accent)]">
+                  [{bestWinHeroCode}] {bestWinHeroName.toUpperCase()} · {formatPercent(bestWinHero.winRate)}
+                </span>
+              </li>
+            </ul>
           </Panel>
 
           <Panel className="flex flex-col gap-0 !p-0">
-            <div className="flex items-center justify-between border-b border-[var(--surface-border-muted)] py-3">
+            <div className="flex items-center justify-between border-b border-[var(--surface-border-muted)] px-3 py-3">
               <h2 className="text-sm font-semibold uppercase tracking-[0.2em] text-white">Top Heroes</h2>
               <span className="text-xs uppercase tracking-[0.2em] text-[rgba(245,247,245,0.45)]">Volume · Win%</span>
             </div>
@@ -312,9 +320,9 @@ export function PlayerProfile({ accountId }: PlayerProfileProps) {
               {topHeroesWithMeta.map((hero) => (
                 <li
                   key={hero.heroId}
-                  className="flex items-center justify-between border-b border-[rgba(245,247,245,0.12)] py-2 text-xs"
+                  className="flex items-center justify-between border-b border-[rgba(245,247,245,0.12)] px-3 py-2 text-xs"
                 >
-                  <div className="flex items-center gap-2">
+                  <div className="flex items-center gap-3">
                     {hero.iconUrl ? (
                       <Image
                         src={hero.iconUrl}
@@ -325,14 +333,18 @@ export function PlayerProfile({ accountId }: PlayerProfileProps) {
                         className="h-6 w-6 object-cover"
                       />
                     ) : null}
-                    <div className="flex flex-col gap-1 text-left">
+                    <div className="flex flex-col text-left">
                       <span className="font-semibold text-white">{hero.name}</span>
-                      <span className="text-[rgba(245,247,245,0.55)]">{formatNumber(hero.matches)} matches</span>
+                      <span className="text-[10px] uppercase tracking-[0.12em] text-[rgba(245,247,245,0.55)]">
+                        Matches {formatNumber(hero.matches)}
+                      </span>
                     </div>
                   </div>
                   <div className="text-right">
-                    <p className="font-semibold text-[var(--accent)]">{formatPercent(hero.winRate)}</p>
-                    <p className="text-[rgba(245,247,245,0.55)]">{formatRelativeTimestamp(hero.lastPlayed)}</p>
+                    <p className="font-semibold text-white">{formatPercent(hero.winRate)}</p>
+                    <p className="text-[10px] uppercase tracking-[0.12em] text-[rgba(245,247,245,0.55)]">
+                      Last played {formatRelativeTimestamp(hero.lastPlayed)}
+                    </p>
                   </div>
                 </li>
               ))}
