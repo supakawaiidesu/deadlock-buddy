@@ -11,7 +11,7 @@ type AppShellProps = {
 export function AppShell({ children }: AppShellProps) {
   return (
     <div className="min-h-screen bg-[var(--background)] text-[var(--foreground)]">
-      <div className="grid min-h-screen grid-cols-[220px_calc(100vw-220px)] grid-rows-[56px_1fr]">
+      <div className="grid min-h-screen grid-cols-[72px_minmax(0,1fr)] grid-rows-[56px_1fr]">
         <div className="col-span-2 row-start-1">
           <TopNav />
         </div>

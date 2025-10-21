@@ -16,9 +16,9 @@ export function SideNav() {
   const pathname = usePathname();
 
   return (
-    <nav className="flex h-full flex-col gap-1 px-4 py-6 text-sm uppercase tracking-[0.24em] text-[rgba(245,247,245,0.5)]">
+    <nav className="flex h-full flex-col gap-0 bg-[var(--surface)]">
       {links.map((link) => {
-        const isActive = link.href === "/"
+        const isActive = link.href === '/'
           ? pathname === link.href
           : pathname.startsWith(link.href);
 
@@ -26,17 +26,17 @@ export function SideNav() {
           <Link
             key={link.href}
             href={link.href}
+            title={link.label}
             className={clsx(
-              "block border-l-2 border-transparent px-3 py-2 transition-colors",
-              isActive && "border-[var(--accent)] text-[var(--accent)]",
-              !isActive && "hover:text-[var(--foreground)]",
+              'flex aspect-square w-full items-center justify-center border border-[rgba(255,255,255,0.05)] bg-[var(--surface-muted)] transition-colors',
+              isActive && 'bg-[rgba(63,201,109,0.08)]',
+              !isActive && 'hover:border-[var(--accent)]',
             )}
           >
-            {link.label}
+            <span className="sr-only">{link.label}</span>
           </Link>
         );
       })}
     </nav>
   );
 }
-
