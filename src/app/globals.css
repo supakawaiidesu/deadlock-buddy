@@ -15,6 +15,7 @@
   --danger: #f87171;
   --info: #38bdf8;
   --success: #4ade80;
+  --grid-line: rgba(255, 255, 255, 0.04);
 }
 
 @theme inline {
@@ -33,20 +34,25 @@
   --color-success: var(--success);
   --font-sans: var(--font-inter);
   --font-display: var(--font-space-grotesk);
+  --font-mono: var(--font-jetbrains-mono);
 }
 
 .panel {
-  background-color: var(--surface);
-  border: 1px solid var(--surface-border-muted);
-  border-radius: 0;
+  background-color: rgba(10, 10, 12, 0.94);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 2px;
   box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.02);
 }
 
 body {
-  background: var(--background);
+  background:
+    repeating-linear-gradient(0deg, transparent 0, transparent 32px, var(--grid-line) 32px, var(--grid-line) 33px),
+    repeating-linear-gradient(90deg, transparent 0, transparent 32px, var(--grid-line) 32px, var(--grid-line) 33px),
+    var(--background);
   color: var(--foreground);
-  font-family: var(--font-sans), system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI",
-    sans-serif;
+  font-family: var(--font-mono), 'JetBrains Mono', 'Fira Code', 'SFMono-Regular', Menlo, monospace;
+  font-variant-ligatures: none;
+  text-rendering: optimizeLegibility;
 }
 
 a {
