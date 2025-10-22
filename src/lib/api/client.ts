@@ -2,10 +2,17 @@ import { throttle } from './rate-limit';
 
 const DEFAULT_BASE_URL = 'https://api.deadlock-api.com';
 
+type DeadlockRequestInit = RequestInit & {
+  next?: {
+    revalidate?: number;
+    tags?: string[];
+  };
+};
+
 export type ApiRequestOptions = {
   readonly path: string;
   readonly searchParams?: Record<string, string | number | boolean | undefined | null>;
-  readonly init?: RequestInit;
+  readonly init?: DeadlockRequestInit;
 };
 
 export class ApiError extends Error {
@@ -35,15 +42,16 @@ function buildUrl(path: string, searchParams?: ApiRequestOptions['searchParams']
 }
 
 async function executeRequest(options: ApiRequestOptions) {
+  const { init } = options;
   const response = await fetch(buildUrl(options.path, options.searchParams), {
     headers: {
       Accept: 'application/json',
-      ...options.init?.headers,
+      ...init?.headers,
     },
-    ...options.init,
+    ...init,
     next: {
       revalidate: 60,
-      ...(options.init as any)?.next,
+      ...init?.next,
     },
   });
 

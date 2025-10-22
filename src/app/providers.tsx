@@ -13,7 +13,7 @@ const QUERY_CONFIG: QueryClientConfig = {
     queries: {
       refetchOnWindowFocus: false,
       retry: (failureCount, error) => {
-        if (error instanceof Error && 'status' in error && (error as any).status === 404) {
+        if (error instanceof Error && hasStatusCode(error) && error.status === 404) {
           return false;
         }
         return failureCount < 3;
@@ -25,6 +25,15 @@ const QUERY_CONFIG: QueryClientConfig = {
 };
 
 const PERSIST_MAX_AGE = 1000 * 60 * 30; // 30 minutes
+
+function hasStatusCode(error: unknown): error is { status: number } {
+  return (
+    typeof error === 'object' &&
+    error !== null &&
+    'status' in error &&
+    typeof (error as { status?: unknown }).status === 'number'
+  );
+}
 
 function createPersister(): PersistQueryClientProviderProps['persistOptions']['persister'] | null {
   if (typeof window === 'undefined') return null;
