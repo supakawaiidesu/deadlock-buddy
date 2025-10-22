@@ -56,19 +56,110 @@ export const PlayerMMRHistoryResponseSchema = z.array(PlayerMMREntrySchema);
 
 export type PlayerMMRHistory = z.infer<typeof PlayerMMRHistoryResponseSchema>;
 
-export const LeaderboardEntrySchema = z.object({
-  account_name: z.string(),
-  possible_account_ids: z.array(z.number()).default([]),
-  rank: z.number(),
-  top_hero_ids: z.array(z.number()).default([]),
-  badge_level: z.number().optional().nullable(),
-  ranked_rank: z.number().optional().nullable(),
-  ranked_subrank: z.number().optional().nullable(),
-});
+const NumberArraySchema = z
+  .union([
+    z.array(z.union([z.number(), z.string()])),
+    z.null(),
+    z.undefined(),
+  ])
+  .transform((value) => {
+    if (!value) return [];
+    return value
+      .map((item) => {
+        if (typeof item === 'number' && Number.isFinite(item)) return item;
+        if (typeof item === 'string') {
+          const parsed = Number(item);
+          return Number.isFinite(parsed) ? parsed : null;
+        }
+        return null;
+      })
+      .filter((item): item is number => item !== null);
+  });
+
+const NullableNumberSchema = z
+  .union([z.number(), z.string(), z.null(), z.undefined()])
+  .transform((value) => {
+    if (value === null || value === undefined) return null;
+    const parsed = Number(value);
+    return Number.isFinite(parsed) ? parsed : null;
+  });
+
+const LeaderboardEntryBaseSchema = z
+  .object({
+    account_name: z.union([z.string(), z.null(), z.undefined()]).transform((value) => {
+      if (typeof value === 'string' && value.trim().length > 0) {
+        return value;
+      }
+      return 'Unknown Player';
+    }),
+    possible_account_ids: NumberArraySchema,
+    rank: z.coerce.number(),
+    top_hero_ids: NumberArraySchema,
+    badge_level: NullableNumberSchema,
+    ranked_rank: NullableNumberSchema,
+    ranked_subrank: NullableNumberSchema,
+  })
+  .passthrough();
+
+export const LeaderboardEntrySchema = LeaderboardEntryBaseSchema.transform((entry) => ({
+  ...entry,
+  possible_account_ids: entry.possible_account_ids ?? [],
+  top_hero_ids: entry.top_hero_ids ?? [],
+  badge_level: entry.badge_level,
+  ranked_rank: entry.ranked_rank,
+  ranked_subrank: entry.ranked_subrank,
+}));
 
 export type LeaderboardEntry = z.infer<typeof LeaderboardEntrySchema>;
 
-export const LeaderboardEntryResponseSchema = z.array(LeaderboardEntrySchema);
+const LeaderboardEntryArraySchema = z.array(LeaderboardEntrySchema);
+
+const LeaderboardEntryWrappedSchemas = [
+  z.object({
+    data: LeaderboardEntryArraySchema,
+  }),
+  z.object({
+    leaderboard: LeaderboardEntryArraySchema,
+  }),
+  z.object({
+    entries: LeaderboardEntryArraySchema,
+  }),
+  z.object({
+    result: z.object({
+      data: LeaderboardEntryArraySchema.optional(),
+      leaderboard: LeaderboardEntryArraySchema.optional(),
+      entries: LeaderboardEntryArraySchema.optional(),
+    }),
+  }),
+] as const;
+
+const LeaderboardResponseSchemaUnion = z.union([
+  LeaderboardEntryArraySchema,
+  ...LeaderboardEntryWrappedSchemas.map((schema) =>
+    schema.transform((value) => {
+      if ('data' in value && Array.isArray(value.data)) {
+        return value.data;
+      }
+      if ('leaderboard' in value && Array.isArray(value.leaderboard)) {
+        return value.leaderboard;
+      }
+      if ('entries' in value && Array.isArray(value.entries)) {
+        return value.entries;
+      }
+      if ('result' in value) {
+        const { result } = value;
+        if (result?.data && Array.isArray(result.data)) return result.data;
+        if (result?.leaderboard && Array.isArray(result.leaderboard)) return result.leaderboard;
+        if (result?.entries && Array.isArray(result.entries)) return result.entries;
+      }
+      return [];
+    }),
+  ),
+]);
+
+export const LeaderboardEntryResponseSchema = LeaderboardResponseSchemaUnion.transform((value) =>
+  Array.isArray(value) ? value : [],
+);
 
 export const HeroScoreboardEntrySchema = z.object({
   rank: z.number(),
@@ -80,3 +171,18 @@ export const HeroScoreboardEntrySchema = z.object({
 export type HeroScoreboardEntry = z.infer<typeof HeroScoreboardEntrySchema>;
 
 export const HeroScoreboardResponseSchema = z.array(HeroScoreboardEntrySchema);
+
+export const ItemStatsEntrySchema = z
+  .object({
+    item_id: z.number(),
+    bucket: z.number().optional().nullable(),
+    wins: z.number(),
+    losses: z.number().optional().nullable(),
+    matches: z.number().optional().nullable(),
+    players: z.number().optional().nullable(),
+  })
+  .passthrough();
+
+export type ItemStatsEntry = z.infer<typeof ItemStatsEntrySchema>;
+
+export const ItemStatsResponseSchema = z.array(ItemStatsEntrySchema);

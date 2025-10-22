@@ -2,16 +2,22 @@ import Image from 'next/image';
 import Link from 'next/link';
 import { Panel } from '@/ui/panel';
 import { fetchLeaderboard } from '@/lib/api/leaderboard';
-import { fetchHeroWinrateLeaderboard } from '@/lib/api/analytics';
+import {
+  fetchHeroWinrateLeaderboard,
+  fetchHeroPopularityLeaderboard,
+  fetchItemWinrateLeaderboard,
+  type ItemWinrateEntry,
+} from '@/lib/api/analytics';
 import type { HeroScoreboardEntry, LeaderboardEntry } from '@/lib/api/schema';
 import { heroSummaries, getHeroDisplayName, getHeroIconUrl } from '@/lib/data/heroes';
+import { getItemDisplayName, getItemIconUrl } from '@/lib/data/items';
 
 const LEADERBOARD_REGION = 'NAmerica';
 
 async function getLeaderboardSample(): Promise<LeaderboardEntry[]> {
   try {
     const leaderboard = await fetchLeaderboard(LEADERBOARD_REGION);
-    return leaderboard.slice(0, 6);
+    return leaderboard.slice(0, 50);
   } catch (error) {
     console.error('Failed to load leaderboard', error);
     return [];
@@ -27,9 +33,30 @@ async function getHeroWinrateSample(): Promise<HeroScoreboardEntry[]> {
   }
 }
 
+async function getHeroPopularitySample(): Promise<HeroScoreboardEntry[]> {
+  try {
+    return await fetchHeroPopularityLeaderboard(50);
+  } catch (error) {
+    console.error('Failed to load hero popularity leaderboard', error);
+    return [];
+  }
+}
+
+async function getItemWinrateSample(): Promise<ItemWinrateEntry[]> {
+  try {
+    return await fetchItemWinrateLeaderboard(10);
+  } catch (error) {
+    console.error('Failed to load item winrate leaderboard', error);
+    return [];
+  }
+}
+
 export default async function Home() {
   const leaderboardEntries = await getLeaderboardSample();
   const heroWinrateEntries = await getHeroWinrateSample();
+  const heroPopularityEntries = await getHeroPopularitySample();
+  const itemWinrateEntries = await getItemWinrateSample();
+  const heroWinrateById = new Map(heroWinrateEntries.map((entry) => [entry.hero_id, entry] as const));
   const heroCount = heroSummaries.length;
   const highestBadge = leaderboardEntries.reduce((acc, entry) => {
     if (typeof entry.badge_level === 'number') {
@@ -141,7 +168,7 @@ export default async function Home() {
               Top {leaderboardEntries.length || 0}
             </span>
           </div>
-          <ul className="flex flex-col">
+          <ul className="flex max-h-80 flex-col overflow-y-auto pr-2 scroll-quiet">
             {leaderboardEntries.map((entry) => (
               <li
                 key={`${entry.rank}-${entry.account_name}`}
@@ -193,6 +220,69 @@ export default async function Home() {
         <Panel className="flex flex-col gap-[2px] !p-0">
           <div className="flex items-center justify-between border-b border-[var(--surface-border-muted)] px-4 py-3">
             <h2 className="text-sm font-semibold uppercase tracking-[0.2em] text-white">
+              Hero popularity ranking
+            </h2>
+            <span className="text-[10px] uppercase tracking-[0.28em] text-[rgba(245,247,245,0.45)]">
+              Top {heroPopularityEntries.length || 0}
+            </span>
+          </div>
+          <ul className="flex max-h-80 flex-col overflow-y-auto pr-2 scroll-quiet">
+            {heroPopularityEntries.map((entry) => {
+              const heroName = getHeroDisplayName(entry.hero_id);
+              const iconUrl = getHeroIconUrl(entry.hero_id);
+              const matchesLabel = entry.matches.toLocaleString();
+              const winrate = heroWinrateById.get(entry.hero_id);
+              const winratePercent = winrate ? `${(winrate.value * 100).toFixed(1)}%` : null;
+              const winrateRankLabel = winrate ? ` (Rank #${winrate.rank})` : '';
+
+              return (
+                <li
+                  key={`popularity-${entry.hero_id}`}
+                  className="flex items-center justify-between border-b border-[rgba(245,247,245,0.12)] px-4 py-3 text-xs text-[rgba(245,247,245,0.72)]"
+                >
+                  <div className="flex items-center gap-3">
+                    <span className="text-[rgba(245,247,245,0.45)]">#{entry.rank}</span>
+                    {iconUrl ? (
+                      <Image
+                        src={iconUrl}
+                        alt={`${heroName} icon`}
+                        width={28}
+                        height={28}
+                        sizes="28px"
+                        className="h-7 w-7 object-cover"
+                      />
+                    ) : (
+                      <span className="flex h-7 w-7 items-center justify-center border border-[rgba(255,255,255,0.12)] text-[10px] uppercase text-[rgba(245,247,245,0.55)]">
+                        {heroName.slice(0, 1)}
+                      </span>
+                    )}
+                    <div className="flex flex-col text-left">
+                      <span className="font-semibold text-white">{heroName}</span>
+                      {winratePercent ? (
+                        <span className="text-[10px] uppercase tracking-[0.12em] text-[rgba(245,247,245,0.5)]">
+                          Winrate {winratePercent}
+                          {winrateRankLabel}
+                        </span>
+                      ) : (
+                        <span className="text-[10px] uppercase tracking-[0.12em] text-[rgba(245,247,245,0.5)]">
+                          Winrate unavailable
+                        </span>
+                      )}
+                    </div>
+                  </div>
+                  <span className="font-semibold text-[var(--accent)]">Matches {matchesLabel}</span>
+                </li>
+              );
+            })}
+            {heroPopularityEntries.length === 0 ? (
+              <li className="px-4 py-4 text-xs text-[rgba(245,247,245,0.6)]">Hero popularity data unavailable.</li>
+            ) : null}
+          </ul>
+        </Panel>
+
+        <Panel className="flex flex-col gap-[2px] !p-0">
+          <div className="flex items-center justify-between border-b border-[var(--surface-border-muted)] px-4 py-3">
+            <h2 className="text-sm font-semibold uppercase tracking-[0.2em] text-white">
               Hero winrate ranking
             </h2>
             <span className="text-[10px] uppercase tracking-[0.28em] text-[rgba(245,247,245,0.45)]">
@@ -235,6 +325,59 @@ export default async function Home() {
             })}
             {heroWinrateEntries.length === 0 ? (
               <li className="px-4 py-4 text-xs text-[rgba(245,247,245,0.6)]">Hero winrate data unavailable.</li>
+            ) : null}
+          </ul>
+        </Panel>
+
+        <Panel className="flex flex-col gap-[2px] !p-0">
+          <div className="flex items-center justify-between border-b border-[var(--surface-border-muted)] px-4 py-3">
+            <h2 className="text-sm font-semibold uppercase tracking-[0.2em] text-white">
+              Item winrate ranking
+            </h2>
+            <span className="text-[10px] uppercase tracking-[0.28em] text-[rgba(245,247,245,0.45)]">
+              Top {itemWinrateEntries.length || 0}
+            </span>
+          </div>
+          <ul className="flex max-h-80 flex-col overflow-y-auto pr-2 scroll-quiet">
+            {itemWinrateEntries.map((entry) => {
+              const itemName = getItemDisplayName(entry.itemId);
+              const iconUrl = getItemIconUrl(entry.itemId);
+              const winRatePercent = `${(entry.winrate * 100).toFixed(1)}%`;
+
+              return (
+                <li
+                  key={entry.itemId}
+                  className="flex items-center justify-between border-b border-[rgba(245,247,245,0.12)] px-4 py-3 text-xs text-[rgba(245,247,245,0.72)]"
+                >
+                  <div className="flex items-center gap-3">
+                    <span className="text-[rgba(245,247,245,0.45)]">#{entry.rank}</span>
+                    {iconUrl ? (
+                      <Image
+                        src={iconUrl}
+                        alt={`${itemName} icon`}
+                        width={28}
+                        height={28}
+                        sizes="28px"
+                        className="h-7 w-7 object-cover"
+                      />
+                    ) : (
+                      <span className="flex h-7 w-7 items-center justify-center border border-[rgba(255,255,255,0.12)] text-[10px] uppercase text-[rgba(245,247,245,0.55)]">
+                        {itemName.slice(0, 1)}
+                      </span>
+                    )}
+                    <div className="flex flex-col text-left">
+                      <span className="font-semibold text-white">{itemName}</span>
+                      <span className="text-[10px] uppercase tracking-[0.12em] text-[rgba(245,247,245,0.5)]">
+                        Matches {entry.matches.toLocaleString()}
+                      </span>
+                    </div>
+                  </div>
+                  <span className="font-semibold text-[var(--accent)]">{winRatePercent}</span>
+                </li>
+              );
+            })}
+            {itemWinrateEntries.length === 0 ? (
+              <li className="px-4 py-4 text-xs text-[rgba(245,247,245,0.6)]">Item winrate data unavailable.</li>
             ) : null}
           </ul>
         </Panel>
