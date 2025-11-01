@@ -68,7 +68,7 @@ export function ItemLeaderboardPanel({ title, panelKey, mode, limit, initialEntr
     queryKey,
     queryFn: () => fetchLeaderboardData(mode, limit, filters),
     initialData: initialEntries,
-    keepPreviousData: true,
+    placeholderData: (previousData) => previousData ?? initialEntries,
   });
 
   const filtersSignature = useMemo(

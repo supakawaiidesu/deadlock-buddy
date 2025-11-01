@@ -1,29 +1,12 @@
 import type { Metadata } from 'next';
-import { Inter, JetBrains_Mono, Space_Grotesk } from 'next/font/google';
 import './globals.css';
 import { AppProviders } from './providers';
 import { AppShell } from '@/ui/app-shell';
 
-const inter = Inter({
-  subsets: ['latin'],
-  variable: '--font-inter',
-  display: 'swap',
-});
-
-const spaceGrotesk = Space_Grotesk({
-  subsets: ['latin'],
-  variable: '--font-space-grotesk',
-  display: 'swap',
-});
-
-const jetBrainsMono = JetBrains_Mono({
-  subsets: ['latin'],
-  variable: '--font-jetbrains-mono',
-  display: 'swap',
-});
+const FONT_CLASSES = 'fallback-font-inter fallback-font-space-grotesk fallback-font-jetbrains-mono';
 
 export const metadata: Metadata = {
-  title: '618Lock',
+  title: 'Deadlock Buddy',
   description: 'Player insights and hero analytics for Valve’s Deadlock.',
 };
 
@@ -34,7 +17,7 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="en" className="bg-background text-foreground">
-      <body className={`${inter.variable} ${spaceGrotesk.variable} ${jetBrainsMono.variable} min-h-screen antialiased`}>
+      <body className={`${FONT_CLASSES} min-h-screen antialiased`}>
         <AppProviders>
           <AppShell>{children}</AppShell>
         </AppProviders>
