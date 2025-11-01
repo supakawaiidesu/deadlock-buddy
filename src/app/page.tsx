@@ -70,16 +70,15 @@ export default async function Home() {
       <div className="grid gap-[2px] lg:grid-cols-[minmax(0,1.4fr)_minmax(0,1fr)]">
         <Panel className="flex flex-col gap-4">
           <div className="flex items-center justify-between text-[11px] uppercase tracking-[0.28em] text-[rgba(245,247,245,0.55)]">
-            <span>Deadlock Tactical Terminal HUD</span>
+            <span>Deadlock API Patch:10-09-24</span>
             <span>Region · {LEADERBOARD_REGION}</span>
           </div>
           <div>
             <h1 className="text-3xl font-semibold uppercase tracking-[0.14em] text-white">
-              Mission control console
+            Deadlock Buddy
             </h1>
             <p className="mt-3 max-w-xl text-sm leading-relaxed text-[rgba(245,247,245,0.7)]">
-              Survey live leaderboard samples and access high-signal tools for players and heroes. Data pulls
-              refresh continuously from the Deadlock API to keep scouting sharp.
+              something something deadlock opensource blah blah
             </p>
           </div>
           <div className="grid gap-[2px] sm:grid-cols-2">
