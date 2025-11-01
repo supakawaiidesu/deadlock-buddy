@@ -40,7 +40,7 @@ export function TopNav() {
         href="/"
         className="text-xs font-semibold uppercase tracking-[0.32em] text-[rgba(245,247,245,0.65)]"
       >
-        Deadlock Buddy
+        618Lock
       </Link>
       <nav className="hidden items-center gap-3 text-[11px] uppercase tracking-[0.22em] text-[rgba(245,247,245,0.5)] md:flex">
         {navLinks.map((link) => (

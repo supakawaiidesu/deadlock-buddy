@@ -1,4 +1,4 @@
-# Deadlock Buddy – Engineering Overview
+# 618Lock – Engineering Overview
 
 This document captures the current state of the codebase so future work can resume without re‑establishing context.
 

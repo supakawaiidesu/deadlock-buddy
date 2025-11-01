@@ -86,7 +86,7 @@ export default async function Home() {
           </div>
           <div>
             <h1 className="text-3xl font-semibold uppercase tracking-[0.14em] text-white">
-            Deadlock Buddy
+            618Lock
             </h1>
             <p className="mt-3 max-w-xl text-sm leading-relaxed text-[rgba(245,247,245,0.7)]">
               something something deadlock opensource blah blah

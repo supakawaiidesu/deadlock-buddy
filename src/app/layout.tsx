@@ -23,7 +23,7 @@ const jetBrainsMono = JetBrains_Mono({
 });
 
 export const metadata: Metadata = {
-  title: 'Deadlock Buddy',
+  title: '618Lock',
   description: 'Player insights and hero analytics for Valve’s Deadlock.',
 };
 

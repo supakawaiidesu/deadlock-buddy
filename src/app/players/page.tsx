@@ -8,7 +8,7 @@ export default function PlayerSearchPage() {
           Player Lookup
         </span>
         <h1 className="font-[var(--font-display)] text-4xl font-semibold text-white md:text-5xl">
-          Track your climb with Deadlock Buddy
+          Track your climb with 618Lock
         </h1>
         <p className="text-lg text-[rgba(245,247,245,0.72)]">
           Enter a Valve account ID to explore match performance, MMR trends, and hero mastery.

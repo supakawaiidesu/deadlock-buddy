@@ -1,21 +1,21 @@
-# Deadlock Buddy – Data Model Overview
+# 618Lock – Data Model Overview
 
 ## Player Endpoints
 
 ### `/v1/players/mmr`
 - **Purpose:** Retrieves the latest match-derived score snapshot for one or more account IDs.
 - **Response shape:** Array of objects `{ account_id, match_id, start_time, player_score, rank, division, division_tier }`.
-- **Deadlock Buddy usage:** Player overview header showing player score, rank, and the latest update timestamp.
+- **618Lock usage:** Player overview header showing player score, rank, and the latest update timestamp.
 
 ### `/v1/players/{accountId}/mmr-history`
 - **Purpose:** Returns a chronological list of match score entries for an account.
 - **Response shape:** Array matching the `/players/mmr` entry schema, sorted client-side by `start_time` with derived deltas between entries.
-- **Deadlock Buddy usage:** Feeds the score momentum line chart, exposing per-match gains and losses.
+- **618Lock usage:** Feeds the score momentum line chart, exposing per-match gains and losses.
 
 ### `/v1/players/hero-stats`
 - **Purpose:** Aggregates per-hero performance metrics for a player (matches, win rate, efficiency).
 - **Parameters:** `account_ids`.
-- **Deadlock Buddy usage:** Populates the hero performance table and top-hero highlight cards.
+- **618Lock usage:** Populates the hero performance table and top-hero highlight cards.
 
 ## Query Key Taxonomy
 
