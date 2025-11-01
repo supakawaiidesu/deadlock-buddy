@@ -5,11 +5,18 @@ import {
   type ItemStatsEntry,
 } from './schema';
 
+export type DateRangeFilters = {
+  readonly minUnixTimestamp?: number;
+  readonly maxUnixTimestamp?: number;
+};
+
 export type HeroScoreboardParams = {
   readonly sortBy?: 'winrate' | 'matches' | string;
   readonly sortDirection?: 'asc' | 'desc';
   readonly limit?: number;
-};
+} & DateRangeFilters;
+
+export type HeroScoreboardFilters = DateRangeFilters;
 
 export async function fetchHeroScoreboard(params: HeroScoreboardParams = {}) {
   const result = await apiRequest<unknown>({
@@ -18,36 +25,45 @@ export async function fetchHeroScoreboard(params: HeroScoreboardParams = {}) {
       sort_by: params.sortBy,
       sort_direction: params.sortDirection,
       limit: params.limit,
+      min_unix_timestamp: params.minUnixTimestamp,
+      max_unix_timestamp: params.maxUnixTimestamp,
     },
   });
 
   return HeroScoreboardResponseSchema.parse(result);
 }
 
-export async function fetchHeroWinrateLeaderboard(limit?: number) {
+export async function fetchHeroWinrateLeaderboard(
+  limit?: number,
+  filters?: HeroScoreboardFilters,
+) {
   const entries = await fetchHeroScoreboard({
     sortBy: 'winrate',
     sortDirection: 'desc',
     limit,
+    minUnixTimestamp: filters?.minUnixTimestamp,
+    maxUnixTimestamp: filters?.maxUnixTimestamp,
   });
 
   return typeof limit === 'number' ? entries.slice(0, limit) : entries;
 }
 
-export async function fetchHeroPopularityLeaderboard(limit?: number) {
+export async function fetchHeroPopularityLeaderboard(
+  limit?: number,
+  filters?: HeroScoreboardFilters,
+) {
   const entries = await fetchHeroScoreboard({
     sortBy: 'matches',
     sortDirection: 'desc',
     limit,
+    minUnixTimestamp: filters?.minUnixTimestamp,
+    maxUnixTimestamp: filters?.maxUnixTimestamp,
   });
 
   return typeof limit === 'number' ? entries.slice(0, limit) : entries;
 }
 
-export type ItemStatsFilters = {
-  readonly minUnixTimestamp?: number;
-  readonly maxUnixTimestamp?: number;
-};
+export type ItemStatsFilters = DateRangeFilters;
 
 export async function fetchItemStats(filters: ItemStatsFilters = {}) {
   const result = await apiRequest<unknown>({
