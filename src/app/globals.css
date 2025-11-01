@@ -37,6 +37,18 @@
   --font-mono: var(--font-jetbrains-mono);
 }
 
+.fallback-font-inter {
+  --font-inter: 'Inter', 'Helvetica Neue', Arial, sans-serif;
+}
+
+.fallback-font-space-grotesk {
+  --font-space-grotesk: 'Space Grotesk', 'Segoe UI', 'Helvetica Neue', Arial, sans-serif;
+}
+
+.fallback-font-jetbrains-mono {
+  --font-jetbrains-mono: 'JetBrains Mono', 'Fira Code', 'Courier New', monospace;
+}
+
 .panel {
   background-color: rgba(10, 10, 12, 0.94);
   border: 1px solid rgba(255, 255, 255, 0.08);
