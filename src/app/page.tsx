@@ -6,11 +6,12 @@ import {
   fetchHeroWinrateLeaderboard,
   fetchHeroPopularityLeaderboard,
   fetchItemWinrateLeaderboard,
+  fetchItemPopularityLeaderboard,
   type ItemWinrateEntry,
 } from '@/lib/api/analytics';
 import type { HeroScoreboardEntry, LeaderboardEntry } from '@/lib/api/schema';
 import { heroSummaries, getHeroDisplayName, getHeroIconUrl } from '@/lib/data/heroes';
-import { getItemDisplayName, getItemIconUrl } from '@/lib/data/items';
+import { ItemLeaderboardPanel } from '@/features/items/components/item-leaderboard-panel';
 
 const LEADERBOARD_REGION = 'NAmerica';
 
@@ -51,11 +52,21 @@ async function getItemWinrateSample(): Promise<ItemWinrateEntry[]> {
   }
 }
 
+async function getItemPopularitySample(): Promise<ItemWinrateEntry[]> {
+  try {
+    return await fetchItemPopularityLeaderboard(50);
+  } catch (error) {
+    console.error('Failed to load item popularity leaderboard', error);
+    return [];
+  }
+}
+
 export default async function Home() {
   const leaderboardEntries = await getLeaderboardSample();
   const heroWinrateEntries = await getHeroWinrateSample();
   const heroPopularityEntries = await getHeroPopularitySample();
   const itemWinrateEntries = await getItemWinrateSample();
+  const itemPopularityEntries = await getItemPopularitySample();
   const heroWinrateById = new Map(heroWinrateEntries.map((entry) => [entry.hero_id, entry] as const));
   const heroCount = heroSummaries.length;
   const highestBadge = leaderboardEntries.reduce((acc, entry) => {
@@ -221,9 +232,6 @@ export default async function Home() {
             <h2 className="text-sm font-semibold uppercase tracking-[0.2em] text-white">
               Hero popularity ranking
             </h2>
-            <span className="text-[10px] uppercase tracking-[0.28em] text-[rgba(245,247,245,0.45)]">
-              Top {heroPopularityEntries.length || 0}
-            </span>
           </div>
           <ul className="flex max-h-80 flex-col overflow-y-auto pr-2 scroll-quiet">
             {heroPopularityEntries.map((entry) => {
@@ -284,9 +292,6 @@ export default async function Home() {
             <h2 className="text-sm font-semibold uppercase tracking-[0.2em] text-white">
               Hero winrate ranking
             </h2>
-            <span className="text-[10px] uppercase tracking-[0.28em] text-[rgba(245,247,245,0.45)]">
-              Top {heroWinrateEntries.length || 0}
-            </span>
           </div>
           <ul className="flex max-h-80 flex-col overflow-y-auto pr-2 scroll-quiet">
             {heroWinrateEntries.map((entry) => {
@@ -328,58 +333,21 @@ export default async function Home() {
           </ul>
         </Panel>
 
-        <Panel className="flex flex-col gap-[2px] !p-0">
-          <div className="flex items-center justify-between border-b border-[var(--surface-border-muted)] px-4 py-3">
-            <h2 className="text-sm font-semibold uppercase tracking-[0.2em] text-white">
-              Item winrate ranking
-            </h2>
-            <span className="text-[10px] uppercase tracking-[0.28em] text-[rgba(245,247,245,0.45)]">
-              Top {itemWinrateEntries.length || 0}
-            </span>
-          </div>
-          <ul className="flex max-h-80 flex-col overflow-y-auto pr-2 scroll-quiet">
-            {itemWinrateEntries.map((entry) => {
-              const itemName = getItemDisplayName(entry.itemId);
-              const iconUrl = getItemIconUrl(entry.itemId);
-              const winRatePercent = `${(entry.winrate * 100).toFixed(1)}%`;
+        <ItemLeaderboardPanel
+          title="Item popularity ranking"
+          panelKey="item-popularity"
+          mode="popularity"
+          limit={50}
+          initialEntries={itemPopularityEntries}
+        />
 
-              return (
-                <li
-                  key={entry.itemId}
-                  className="flex items-center justify-between border-b border-[rgba(245,247,245,0.12)] px-4 py-3 text-xs text-[rgba(245,247,245,0.72)]"
-                >
-                  <div className="flex items-center gap-3">
-                    <span className="text-[rgba(245,247,245,0.45)]">#{entry.rank}</span>
-                    {iconUrl ? (
-                      <Image
-                        src={iconUrl}
-                        alt={`${itemName} icon`}
-                        width={28}
-                        height={28}
-                        sizes="28px"
-                        className="h-7 w-7 object-cover"
-                      />
-                    ) : (
-                      <span className="flex h-7 w-7 items-center justify-center border border-[rgba(255,255,255,0.12)] text-[10px] uppercase text-[rgba(245,247,245,0.55)]">
-                        {itemName.slice(0, 1)}
-                      </span>
-                    )}
-                    <div className="flex flex-col text-left">
-                      <span className="font-semibold text-white">{itemName}</span>
-                      <span className="text-[10px] uppercase tracking-[0.12em] text-[rgba(245,247,245,0.5)]">
-                        Matches {entry.matches.toLocaleString()}
-                      </span>
-                    </div>
-                  </div>
-                  <span className="font-semibold text-[var(--accent)]">{winRatePercent}</span>
-                </li>
-              );
-            })}
-            {itemWinrateEntries.length === 0 ? (
-              <li className="px-4 py-4 text-xs text-[rgba(245,247,245,0.6)]">Item winrate data unavailable.</li>
-            ) : null}
-          </ul>
-        </Panel>
+        <ItemLeaderboardPanel
+          title="Item winrate ranking"
+          panelKey="item-winrate"
+          mode="winrate"
+          limit={10}
+          initialEntries={itemWinrateEntries}
+        />
       </div>
     </div>
   );
