@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useMemo, useState, type CSSProperties } from 'react';
+import { useEffect, useMemo, useRef, useState, type CSSProperties } from 'react';
 import {
   DndContext,
   type DragEndEvent,
@@ -12,7 +12,6 @@ import {
 } from '@dnd-kit/core';
 import { SortableContext, arrayMove, useSortable, rectSortingStrategy } from '@dnd-kit/sortable';
 import { CSS } from '@dnd-kit/utilities';
-import { Plus } from 'lucide-react';
 import { clsx } from 'clsx';
 import type {
   DashboardDataBundle,
@@ -30,6 +29,9 @@ type DashboardLayoutProps = {
 };
 
 const STORAGE_KEY = 'deadlock-buddy-dashboard-layout.v1';
+const ADD_MENU_TOGGLE_EVENT = 'dashboard:add-panel-menu-toggle';
+const ADD_MENU_CLOSE_EVENT = 'dashboard:add-panel-menu-close';
+const ADD_MENU_STATE_EVENT = 'dashboard:add-panel-menu-state';
 
 function createInstanceId(type: DashboardPanelType): string {
   if (typeof crypto !== 'undefined' && 'randomUUID' in crypto) {
@@ -59,6 +61,7 @@ export function DashboardLayout({ data }: DashboardLayoutProps) {
   const [panels, setPanels] = useState<DashboardPanelInstance[]>(defaultDashboardLayout);
   const [hasHydrated, setHasHydrated] = useState(false);
   const [isAddMenuOpen, setIsAddMenuOpen] = useState(false);
+  const menuRef = useRef<HTMLDivElement | null>(null);
 
   useEffect(() => {
     try {
@@ -83,6 +86,55 @@ export function DashboardLayout({ data }: DashboardLayoutProps) {
     if (!hasHydrated) return;
     window.localStorage.setItem(STORAGE_KEY, JSON.stringify(panels));
   }, [panels, hasHydrated]);
+
+  useEffect(() => {
+    if (typeof window === 'undefined') return undefined;
+
+    const handleToggle = () => {
+      setIsAddMenuOpen((open) => !open);
+    };
+    const handleClose = () => setIsAddMenuOpen(false);
+
+    window.addEventListener(ADD_MENU_TOGGLE_EVENT, handleToggle);
+    window.addEventListener(ADD_MENU_CLOSE_EVENT, handleClose);
+
+    return () => {
+      window.removeEventListener(ADD_MENU_TOGGLE_EVENT, handleToggle);
+      window.removeEventListener(ADD_MENU_CLOSE_EVENT, handleClose);
+    };
+  }, []);
+
+  useEffect(() => {
+    if (!isAddMenuOpen) return undefined;
+
+    const handleKeyDown = (event: KeyboardEvent) => {
+      if (event.key === 'Escape') {
+        setIsAddMenuOpen(false);
+      }
+    };
+    const handlePointerDown = (event: PointerEvent) => {
+      const target = event.target as Node | null;
+      const menuNode = menuRef.current;
+      if (menuNode && target && !menuNode.contains(target)) {
+        setIsAddMenuOpen(false);
+      }
+    };
+
+    window.addEventListener('keydown', handleKeyDown);
+    window.addEventListener('pointerdown', handlePointerDown);
+
+    return () => {
+      window.removeEventListener('keydown', handleKeyDown);
+      window.removeEventListener('pointerdown', handlePointerDown);
+    };
+  }, [isAddMenuOpen]);
+
+  useEffect(() => {
+    if (typeof window === 'undefined') return;
+    window.dispatchEvent(
+      new CustomEvent(ADD_MENU_STATE_EVENT, { detail: { open: isAddMenuOpen } }),
+    );
+  }, [isAddMenuOpen]);
 
   const sensors = useSensors(
     useSensor(PointerSensor, { activationConstraint: { distance: 10 } }),
@@ -114,40 +166,7 @@ export function DashboardLayout({ data }: DashboardLayoutProps) {
   const showEmptyState = panels.length === 0;
 
   return (
-    <div className="flex flex-col gap-3">
-      <div className="flex items-center justify-end">
-        <div className="relative">
-          <button
-            type="button"
-            onClick={() => setIsAddMenuOpen((open) => !open)}
-            className="flex items-center gap-2 rounded-sm border border-[rgba(245,247,245,0.12)] bg-[rgba(245,247,245,0.05)] px-3 py-1 text-[10px] uppercase tracking-[0.22em] text-[rgba(245,247,245,0.65)] transition hover:border-[var(--accent)] hover:text-white"
-          >
-            <Plus className="h-3.5 w-3.5" aria-hidden="true" />
-            <span>Add panel</span>
-          </button>
-          {isAddMenuOpen ? (
-            <div className="absolute right-0 top-full z-20 mt-2 w-56 rounded-sm border border-[rgba(245,247,245,0.16)] bg-[rgba(8,12,11,0.95)] p-2 shadow-lg shadow-[rgba(0,0,0,0.35)]">
-              <span className="mb-2 block text-[10px] uppercase tracking-[0.22em] text-[rgba(245,247,245,0.45)]">
-                Panel types
-              </span>
-              <ul className="flex flex-col gap-1 text-left">
-                {availablePanels.map((panel) => (
-                  <li key={panel.type}>
-                    <button
-                      type="button"
-                      onClick={() => handleAddPanel(panel.type)}
-                      className="w-full rounded-sm border border-transparent px-2 py-2 text-left text-[11px] uppercase tracking-[0.16em] text-[rgba(245,247,245,0.7)] transition hover:border-[var(--accent)] hover:text-white"
-                    >
-                      {panel.title}
-                    </button>
-                  </li>
-                ))}
-              </ul>
-            </div>
-          ) : null}
-        </div>
-      </div>
-
+    <>
       {showEmptyState ? (
         <div className="flex flex-col items-center justify-center rounded-sm border border-[rgba(245,247,245,0.12)] bg-[rgba(245,247,245,0.03)] px-6 py-16 text-center text-[13px] text-[rgba(245,247,245,0.6)]">
           <p>Nothing on the dashboard yet.</p>
@@ -175,7 +194,30 @@ export function DashboardLayout({ data }: DashboardLayoutProps) {
           </SortableContext>
         </DndContext>
       )}
-    </div>
+      {isAddMenuOpen ? (
+        <div
+          ref={menuRef}
+          className="fixed right-8 top-[76px] z-[60] w-56 rounded-sm border border-[rgba(245,247,245,0.16)] bg-[rgba(8,12,11,0.97)] p-2 shadow-lg shadow-[rgba(0,0,0,0.35)] backdrop-blur-sm"
+        >
+          <span className="mb-2 block text-[10px] uppercase tracking-[0.22em] text-[rgba(245,247,245,0.5)]">
+            Panel types
+          </span>
+          <ul className="flex flex-col gap-1 text-left">
+            {availablePanels.map((panel) => (
+              <li key={panel.type}>
+                <button
+                  type="button"
+                  onClick={() => handleAddPanel(panel.type)}
+                  className="w-full rounded-sm border border-transparent px-2 py-2 text-left text-[11px] uppercase tracking-[0.16em] text-[rgba(245,247,245,0.75)] transition hover:border-[var(--accent)] hover:text-white"
+                >
+                  {panel.title}
+                </button>
+              </li>
+            ))}
+          </ul>
+        </div>
+      ) : null}
+    </>
   );
 }
 
@@ -201,7 +243,7 @@ function SortablePanel({ instance, data, onRemove }: SortablePanelProps) {
     <button
       type="button"
       onClick={() => onRemove(instance.id)}
-      className="flex h-6 w-6 items-center justify-center rounded-sm border border-transparent text-[rgba(245,247,245,0.45)] opacity-0 transition hover:text-white focus-visible:opacity-100 group-hover:opacity-80"
+      className="flex h-6 w-6 items-center justify-center rounded-sm border border-transparent text-[rgba(245,247,245,0.55)] transition hover:text-white focus-visible:text-white"
       aria-label="Hide panel"
     >
       <span aria-hidden="true">&times;</span>
