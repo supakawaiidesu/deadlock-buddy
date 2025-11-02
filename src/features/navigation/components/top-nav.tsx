@@ -18,7 +18,7 @@ const ADD_MENU_CLOSE_EVENT = "dashboard:add-panel-menu-close";
 const ADD_MENU_STATE_EVENT = "dashboard:add-panel-menu-state";
 
 export function TopNav() {
-  const pathname = usePathname();
+  const pathname = usePathname() ?? "/";
   const router = useRouter();
   const [value, setValue] = useState("");
   const [isAddMenuOpen, setIsAddMenuOpen] = useState(false);
