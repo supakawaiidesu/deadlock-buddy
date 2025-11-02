@@ -271,12 +271,16 @@ function SortablePanel({ instance, data, onRemove }: SortablePanelProps) {
         {...attributes}
         {...listeners}
         className={clsx(
-          'absolute right-0 top-0 h-6 w-6 cursor-grab rounded-bl-sm text-transparent opacity-0 transition group-hover:opacity-70 focus-visible:opacity-100',
+          'absolute right-0 top-0 h-6 w-6 cursor-grab text-transparent opacity-0 transition group-hover:opacity-100 focus-visible:opacity-100',
           isDragging ? 'cursor-grabbing opacity-100' : '',
         )}
         aria-label="Move panel"
       >
-        <span aria-hidden="true">⠿</span>
+        <span
+          aria-hidden="true"
+          className="absolute right-0 top-0 h-3 w-3 bg-[rgba(245,247,245,0.22)] transition-colors duration-150 group-hover:bg-[var(--accent)]"
+          style={{ clipPath: 'polygon(100% 0, 100% 100%, 0 0)' }}
+        />
       </button>
     </div>
   );
