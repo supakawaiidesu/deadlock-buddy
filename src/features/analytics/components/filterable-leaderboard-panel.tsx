@@ -60,6 +60,8 @@ export type FilterableLeaderboardPanelProps<TEntry> = {
   headerSubtitle?: ReactNode;
   fetchingLabel?: string;
   refreshingLabel?: string;
+  headerActions?: ReactNode;
+  outerRef?: (node: HTMLDivElement | null) => void;
 };
 
 export function FilterableLeaderboardPanel<TEntry>({
@@ -78,6 +80,8 @@ export function FilterableLeaderboardPanel<TEntry>({
   headerSubtitle,
   fetchingLabel = 'Fetching stats…',
   refreshingLabel = 'Refreshing…',
+  headerActions,
+  outerRef,
 }: FilterableLeaderboardPanelProps<TEntry>) {
   const [filters, setFilters] = useState<DateRangeFilters>({});
   const [isSettingsOpen, setIsSettingsOpen] = useState(false);
@@ -250,7 +254,7 @@ export function FilterableLeaderboardPanel<TEntry>({
   };
 
   return (
-    <Panel className={clsx('flex flex-col gap-[2px] !p-0', panelClassName)}>
+    <Panel ref={outerRef} className={clsx('flex flex-col gap-[2px] !p-0', panelClassName)}>
       <div className="flex items-center justify-between border-b border-[var(--surface-border-muted)] px-4 py-3">
         <div className="flex flex-col">
           <h2 className="text-sm font-semibold uppercase tracking-[0.2em] text-white">{title}</h2>
@@ -260,20 +264,23 @@ export function FilterableLeaderboardPanel<TEntry>({
             </span>
           ) : null}
         </div>
-        <button
-          type="button"
-          onClick={handleToggleSettings}
-          className="flex items-center gap-2 rounded-sm border border-[rgba(245,247,245,0.16)] bg-[rgba(245,247,245,0.05)] px-3 py-1 text-[10px] uppercase tracking-[0.2em] text-[rgba(245,247,245,0.65)] transition hover:border-[var(--accent)] hover:text-white"
-        >
-          {isSettingsOpen ? (
-            'Apply'
-          ) : (
-            <>
-              <Settings className="h-3.5 w-3.5" aria-hidden="true" />
-              <span>Filters</span>
-            </>
-          )}
-        </button>
+        <div className="flex items-center gap-2">
+          <button
+            type="button"
+            onClick={handleToggleSettings}
+            className="flex items-center gap-2 rounded-sm border border-[rgba(245,247,245,0.16)] bg-[rgba(245,247,245,0.05)] px-3 py-1 text-[10px] uppercase tracking-[0.2em] text-[rgba(245,247,245,0.65)] transition hover:border-[var(--accent)] hover:text-white"
+          >
+            {isSettingsOpen ? (
+              'Apply'
+            ) : (
+              <>
+                <Settings className="h-3.5 w-3.5" aria-hidden="true" />
+                <span>Filters</span>
+              </>
+            )}
+          </button>
+          {headerActions}
+        </div>
       </div>
 
       <div className="relative flex-1">

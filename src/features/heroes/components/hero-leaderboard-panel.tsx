@@ -1,7 +1,7 @@
 'use client';
 
 import Image from 'next/image';
-import { useCallback } from 'react';
+import { useCallback, type ReactNode } from 'react';
 import {
   FilterableLeaderboardPanel,
   type DateRangeFilters,
@@ -23,6 +23,8 @@ type HeroLeaderboardPanelProps = {
   mode: HeroLeaderboardPanelMode;
   limit?: number;
   initialEntries: HeroLeaderboardEntry[];
+  headerActions?: ReactNode;
+  outerRef?: (node: HTMLDivElement | null) => void;
 };
 
 function formatPercent(value?: number): string | null {
@@ -72,6 +74,8 @@ export function HeroLeaderboardPanel({
   mode,
   limit,
   initialEntries,
+  headerActions,
+  outerRef,
 }: HeroLeaderboardPanelProps) {
   const fetcher = useCallback(
     (params: { limit?: number; filters: DateRangeFilters }) =>
@@ -87,6 +91,8 @@ export function HeroLeaderboardPanel({
       initialEntries={initialEntries}
       fetcher={fetcher}
       getEntryKey={(entry) => `${panelKey}-${entry.hero_id}`}
+      headerActions={headerActions}
+      outerRef={outerRef}
       renderEntry={(entry) => {
         const heroName = getHeroDisplayName(entry.hero_id);
         const iconUrl = getHeroIconUrl(entry.hero_id);
