@@ -100,3 +100,10 @@ textarea {
   background-color: rgba(245, 247, 245, 0.12);
   border-radius: 9999px;
 }
+
+.recharts-responsive-container:focus,
+.recharts-responsive-container:focus-visible,
+.recharts-wrapper:focus,
+.recharts-wrapper:focus-visible {
+  outline: none;
+}

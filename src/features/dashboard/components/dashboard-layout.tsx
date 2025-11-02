@@ -227,6 +227,17 @@ type SortablePanelProps = {
   onRemove: (id: string) => void;
 };
 
+const COLUMN_SPAN_CLASSES: Record<number, string> = {
+  1: 'lg:col-span-1',
+  2: 'lg:col-span-2',
+  3: 'lg:col-span-3',
+};
+
+function getColumnSpanClass(span?: number) {
+  if (!span) return COLUMN_SPAN_CLASSES[1];
+  return COLUMN_SPAN_CLASSES[span] ?? COLUMN_SPAN_CLASSES[1];
+}
+
 function SortablePanel({ instance, data, onRemove }: SortablePanelProps) {
   const definition = dashboardPanelRegistry[instance.type];
   const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({
@@ -262,6 +273,7 @@ function SortablePanel({ instance, data, onRemove }: SortablePanelProps) {
       style={style}
       className={clsx(
         'group relative',
+        getColumnSpanClass(definition.columnSpan),
         isDragging ? 'scale-[1.01] shadow-lg shadow-[rgba(0,0,0,0.35)]' : 'shadow-none',
       )}
     >

@@ -9,12 +9,14 @@ import {
   fetchItemPopularityLeaderboard,
   type ItemWinrateEntry,
 } from '@/lib/api/analytics';
+import { fetchRankDistribution } from '@/lib/api/players';
 import type { HeroScoreboardEntry, LeaderboardEntry } from '@/lib/api/schema';
 import { heroSummaries } from '@/lib/data/heroes';
 import type { DashboardDataBundle } from '@/features/dashboard/dashboard-types';
 import type { HeroLeaderboardEntry } from '@/features/heroes/components/hero-leaderboard-panel';
 
 const LEADERBOARD_REGION = 'NAmerica';
+const DEFAULT_DISTRIBUTION_WINDOW_DAYS = 7;
 
 async function getLeaderboardSample(): Promise<LeaderboardEntry[]> {
   try {
@@ -62,12 +64,24 @@ async function getItemPopularitySample(): Promise<ItemWinrateEntry[]> {
   }
 }
 
+async function getRankDistributionSample(minUnixTimestamp: number) {
+  try {
+    return await fetchRankDistribution({ minUnixTimestamp });
+  } catch (error) {
+    console.error('Failed to load rank distribution', error);
+    return [];
+  }
+}
+
 export default async function Home() {
   const leaderboardEntries = await getLeaderboardSample();
   const heroWinrateEntries = await getHeroWinrateSample();
   const heroPopularityEntries = await getHeroPopularitySample();
   const itemWinrateEntries = await getItemWinrateSample();
   const itemPopularityEntries = await getItemPopularitySample();
+  const nowUnix = Math.floor(Date.now() / 1000);
+  const rankDistributionMinUnixTimestamp = nowUnix - DEFAULT_DISTRIBUTION_WINDOW_DAYS * 24 * 60 * 60;
+  const rankDistributionEntries = await getRankDistributionSample(rankDistributionMinUnixTimestamp);
   const heroWinratePanelEntries: HeroLeaderboardEntry[] = heroWinrateEntries.map((entry) => ({
     ...entry,
     winrateRank: entry.rank,
@@ -95,6 +109,8 @@ export default async function Home() {
     heroPopularityEntries: heroPopularityPanelEntries,
     itemWinrateEntries,
     itemPopularityEntries,
+    rankDistributionEntries,
+    rankDistributionMinUnixTimestamp,
     heroCount,
     highestBadge,
   };
