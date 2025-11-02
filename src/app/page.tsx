@@ -1,6 +1,6 @@
-import Image from 'next/image';
 import Link from 'next/link';
 import { Panel } from '@/ui/panel';
+import { DashboardLayout } from '@/features/dashboard/components/dashboard-layout';
 import { fetchLeaderboard } from '@/lib/api/leaderboard';
 import {
   fetchHeroWinrateLeaderboard,
@@ -10,9 +10,9 @@ import {
   type ItemWinrateEntry,
 } from '@/lib/api/analytics';
 import type { HeroScoreboardEntry, LeaderboardEntry } from '@/lib/api/schema';
-import { heroSummaries, getHeroDisplayName, getHeroIconUrl } from '@/lib/data/heroes';
-import { ItemLeaderboardPanel } from '@/features/items/components/item-leaderboard-panel';
-import { HeroLeaderboardPanel, type HeroLeaderboardEntry } from '@/features/heroes/components/hero-leaderboard-panel';
+import { heroSummaries } from '@/lib/data/heroes';
+import type { DashboardDataBundle } from '@/features/dashboard/dashboard-types';
+import type { HeroLeaderboardEntry } from '@/features/heroes/components/hero-leaderboard-panel';
 
 const LEADERBOARD_REGION = 'NAmerica';
 
@@ -89,6 +89,15 @@ export default async function Home() {
     }
     return acc;
   }, 0);
+  const dashboardData: DashboardDataBundle = {
+    leaderboardEntries,
+    heroWinrateEntries: heroWinratePanelEntries,
+    heroPopularityEntries: heroPopularityPanelEntries,
+    itemWinrateEntries,
+    itemPopularityEntries,
+    heroCount,
+    highestBadge,
+  };
 
   return (
     <div className="flex min-h-[calc(100vh-56px)] flex-col gap-[2px] pb-[2px] font-mono text-[13px]">
@@ -152,127 +161,7 @@ export default async function Home() {
         </Panel>
       </div>
 
-      <div className="grid gap-[2px] lg:grid-cols-3">
-        <Panel className="flex flex-col gap-3">
-          <h2 className="text-sm font-semibold uppercase tracking-[0.2em] text-white">Telemetry snapshot</h2>
-          <ul className="space-y-2 text-xs text-[rgba(245,247,245,0.65)]">
-            <li className="flex items-center justify-between border-b border-[var(--surface-border-muted)] pb-2">
-              <span>Leaderboard sample</span>
-              <span className="font-semibold text-white">{leaderboardEntries.length || '—'}</span>
-            </li>
-            <li className="flex items-center justify-between border-b border-[var(--surface-border-muted)] pb-2">
-              <span>Hero roster tracked</span>
-              <span className="font-semibold text-white">{heroCount}</span>
-            </li>
-            <li className="flex items-center justify-between">
-              <span>Highest badge · sample</span>
-              <span className="font-semibold text-[var(--accent)]">{highestBadge || '—'}</span>
-            </li>
-            <li className="flex items-center justify-between">
-              <span>Top winrate · sample</span>
-              <span className="font-semibold text-[var(--accent)]">
-                {heroWinrateEntries[0]
-                  ? `${Math.round(heroWinrateEntries[0].value * 1000) / 10}%`
-                  : '—'}
-              </span>
-            </li>
-            <li className="flex items-center justify-between">
-              <span>Data refresh</span>
-              <span className="font-semibold text-[rgba(245,247,245,0.55)]">~60 seconds</span>
-            </li>
-          </ul>
-        </Panel>
-
-        <Panel className="flex flex-col gap-[2px] !p-0">
-          <div className="flex items-center justify-between border-b border-[var(--surface-border-muted)] px-4 py-3">
-            <h2 className="text-sm font-semibold uppercase tracking-[0.2em] text-white">
-              NA leaderboard highlight
-            </h2>
-            <span className="text-[10px] uppercase tracking-[0.28em] text-[rgba(245,247,245,0.45)]">
-              Top {leaderboardEntries.length || 0}
-            </span>
-          </div>
-          <ul className="flex max-h-80 flex-col overflow-y-auto pr-2 scroll-quiet">
-            {leaderboardEntries.map((entry) => (
-              <li
-                key={`${entry.rank}-${entry.account_name}`}
-                className="flex items-center justify-between border-b border-[rgba(245,247,245,0.12)] px-4 py-3 text-xs text-[rgba(245,247,245,0.7)]"
-              >
-                <div className="flex items-center gap-3">
-                  <span className="text-[rgba(245,247,245,0.45)]">#{entry.rank}</span>
-                  <span className="font-semibold text-white">{entry.account_name}</span>
-                </div>
-                <div className="flex items-center gap-2">
-                  {entry.top_hero_ids.slice(0, 3).map((heroId) => {
-                    const iconUrl = getHeroIconUrl(heroId);
-                    const heroName = getHeroDisplayName(heroId);
-
-                    if (!iconUrl) {
-                      return (
-                        <span
-                          key={heroId}
-                          className="flex h-6 w-6 items-center justify-center border border-[rgba(255,255,255,0.12)] text-[10px] uppercase text-[rgba(245,247,245,0.55)]"
-                        >
-                          {heroName.slice(0, 1)}
-                        </span>
-                      );
-                    }
-
-                    return (
-                      <Image
-                        key={heroId}
-                        src={iconUrl}
-                        alt={`${heroName} icon`}
-                        width={24}
-                        height={24}
-                        sizes="24px"
-                        className="h-6 w-6 object-cover"
-                      />
-                    );
-                  })}
-                </div>
-              </li>
-            ))}
-            {leaderboardEntries.length === 0 ? (
-              <li className="px-4 py-3 text-xs text-[rgba(245,247,245,0.6)]">
-                Leaderboard data unavailable right now.
-              </li>
-            ) : null}
-          </ul>
-        </Panel>
-
-        <HeroLeaderboardPanel
-          title="Hero popularity ranking"
-          panelKey="hero-popularity"
-          mode="popularity"
-          limit={50}
-          initialEntries={heroPopularityPanelEntries}
-        />
-
-        <HeroLeaderboardPanel
-          title="Hero winrate ranking"
-          panelKey="hero-winrate"
-          mode="winrate"
-          limit={50}
-          initialEntries={heroWinratePanelEntries}
-        />
-
-        <ItemLeaderboardPanel
-          title="Item popularity ranking"
-          panelKey="item-popularity"
-          mode="popularity"
-          limit={50}
-          initialEntries={itemPopularityEntries}
-        />
-
-        <ItemLeaderboardPanel
-          title="Item winrate ranking"
-          panelKey="item-winrate"
-          mode="winrate"
-          limit={10}
-          initialEntries={itemWinrateEntries}
-        />
-      </div>
+      <DashboardLayout data={dashboardData} />
     </div>
   );
 }
