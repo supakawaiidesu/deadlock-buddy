@@ -186,3 +186,12 @@ export const ItemStatsEntrySchema = z
 export type ItemStatsEntry = z.infer<typeof ItemStatsEntrySchema>;
 
 export const ItemStatsResponseSchema = z.array(ItemStatsEntrySchema);
+
+export const RankDistributionEntrySchema = z.object({
+  rank: z.coerce.number(),
+  players: z.coerce.number(),
+});
+
+export type RankDistributionEntry = z.infer<typeof RankDistributionEntrySchema>;
+
+export const RankDistributionResponseSchema = z.array(RankDistributionEntrySchema);

@@ -3,6 +3,7 @@ import type {
   DashboardPanelInstance,
   DashboardPanelRegistry,
 } from '@/features/dashboard/dashboard-types';
+import { RankDistributionPanel } from '@/features/analytics/components/rank-distribution-panel';
 import { HeroLeaderboardPanel } from '@/features/heroes/components/hero-leaderboard-panel';
 import { ItemLeaderboardPanel } from '@/features/items/components/item-leaderboard-panel';
 import { NaLeaderboardPanel } from '@/features/dashboard/components/na-leaderboard-panel';
@@ -20,6 +21,21 @@ export const dashboardPanelRegistry: DashboardPanelRegistry = {
         heroCount={data.heroCount}
         highestBadge={data.highestBadge}
         heroWinrateEntries={data.heroWinrateEntries}
+        headerActions={headerActions}
+        outerRef={outerRef}
+      />
+    ),
+  },
+  'rank-distribution': {
+    type: 'rank-distribution',
+    title: 'Rank distribution histogram',
+    description: 'MMR rank distribution across the sampled timeframe.',
+    panelKeyBase: 'rank-distribution',
+    columnSpan: 2,
+    render: ({ data, headerActions, outerRef }) => (
+      <RankDistributionPanel
+        entries={data.rankDistributionEntries}
+        minUnixTimestamp={data.rankDistributionMinUnixTimestamp}
         headerActions={headerActions}
         outerRef={outerRef}
       />
@@ -113,6 +129,7 @@ export const dashboardPanelsList: DashboardPanelDefinition[] =
 
 export const defaultDashboardLayout: DashboardPanelInstance[] = [
   { id: 'panel-telemetry', type: 'telemetry-snapshot' },
+  { id: 'panel-rank-distribution', type: 'rank-distribution' },
   { id: 'panel-na-leaderboard', type: 'na-leaderboard' },
   { id: 'panel-hero-popularity', type: 'hero-popularity' },
   { id: 'panel-hero-winrate', type: 'hero-winrate' },

@@ -94,36 +94,33 @@ export function TopNav() {
           ))}
         </nav>
       </div>
-      <form
-        onSubmit={handleSubmit}
-        className="mx-auto flex w-full max-w-sm items-center gap-2 justify-self-center"
-      >
-        <label className="flex w-full items-center gap-2 rounded-sm border border-[rgba(255,255,255,0.08)] bg-[rgba(255,255,255,0.02)] px-3 py-2 text-[11px] uppercase tracking-[0.22em] text-[rgba(245,247,245,0.6)]">
-          <span className="text-[rgba(245,247,245,0.45)]">ID</span>
-          <input
-            value={value}
-            onChange={(event) => setValue(event.target.value)}
-            placeholder="Account..."
-            className="h-5 flex-1 border-none bg-transparent text-sm text-[var(--foreground)] caret-[var(--accent)] outline-none placeholder:text-[rgba(245,247,245,0.35)]"
-            inputMode="numeric"
-            autoComplete="off"
-          />
-        </label>
-        <button
-          type="submit"
-          className="flex h-9 w-9 items-center justify-center rounded-sm border border-[rgba(255,255,255,0.12)] bg-[var(--surface-muted)] text-xs font-semibold uppercase tracking-[0.18em] text-[rgba(245,247,245,0.65)] transition hover:border-[var(--accent)] hover:text-[var(--accent)]"
-        >
-          ↵
-        </button>
-      </form>
-      <div className="flex items-center justify-end gap-2">
+      <div className="mx-auto flex w-full max-w-lg items-center gap-3 justify-self-center">
+        <form onSubmit={handleSubmit} className="flex w-full items-center gap-2">
+          <label className="flex w-full items-center gap-2 rounded-sm border border-[rgba(255,255,255,0.08)] bg-[rgba(255,255,255,0.02)] px-3 py-2 text-[11px] uppercase tracking-[0.22em] text-[rgba(245,247,245,0.6)]">
+            <span className="text-[rgba(245,247,245,0.45)]">ID</span>
+            <input
+              value={value}
+              onChange={(event) => setValue(event.target.value)}
+              placeholder="Account..."
+              className="h-5 flex-1 border-none bg-transparent text-sm text-[var(--foreground)] caret-[var(--accent)] outline-none placeholder:text-[rgba(245,247,245,0.35)]"
+              inputMode="numeric"
+              autoComplete="off"
+            />
+          </label>
+          <button
+            type="submit"
+            className="flex h-9 w-9 items-center justify-center rounded-sm border border-[rgba(255,255,255,0.12)] bg-[var(--surface-muted)] text-xs font-semibold uppercase tracking-[0.18em] text-[rgba(245,247,245,0.65)] transition hover:border-[var(--accent)] hover:text-[var(--accent)]"
+          >
+            ↵
+          </button>
+        </form>
         {isHome ? (
           <button
             type="button"
             onClick={handleToggleAddMenu}
             aria-pressed={isAddMenuOpen}
             className={clsx(
-              "hidden items-center gap-2 rounded-sm border px-3 py-1 text-[10px] uppercase tracking-[0.22em] transition focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--accent)] sm:flex",
+              "hidden flex-shrink-0 items-center gap-2 rounded-sm border px-3 py-1 text-[10px] uppercase tracking-[0.22em] transition focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--accent)] sm:flex",
               isAddMenuOpen
                 ? "border-[var(--accent)] bg-[rgba(245,247,245,0.12)] text-white"
                 : "border-[rgba(245,247,245,0.12)] bg-[rgba(245,247,245,0.05)] text-[rgba(245,247,245,0.65)] hover:border-[var(--accent)] hover:text-white",
@@ -133,6 +130,8 @@ export function TopNav() {
             <span>Add panel</span>
           </button>
         ) : null}
+      </div>
+      <div className="flex items-center justify-end gap-2">
         <div className="hidden items-center gap-2 text-[10px] uppercase tracking-[0.3em] text-[rgba(245,247,245,0.4)] sm:flex">
           <span>Beta</span>
         </div>

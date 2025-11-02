@@ -3,6 +3,7 @@ import {
   PlayerHeroStatsResponseSchema,
   PlayerMMRHistoryResponseSchema,
   PlayerMMRResponseSchema,
+  RankDistributionResponseSchema,
 } from './schema';
 
 export async function fetchPlayerHeroStats(accountId: number) {
@@ -36,4 +37,21 @@ export async function fetchPlayerMMRHistory(accountId: number, heroId?: number) 
   });
 
   return PlayerMMRHistoryResponseSchema.parse(result);
+}
+
+export type RankDistributionFilters = {
+  readonly minUnixTimestamp?: number;
+  readonly maxUnixTimestamp?: number;
+};
+
+export async function fetchRankDistribution(filters: RankDistributionFilters = {}) {
+  const result = await apiRequest<unknown>({
+    path: '/v1/players/mmr/distribution',
+    searchParams: {
+      min_unix_timestamp: filters.minUnixTimestamp,
+      max_unix_timestamp: filters.maxUnixTimestamp,
+    },
+  });
+
+  return RankDistributionResponseSchema.parse(result);
 }

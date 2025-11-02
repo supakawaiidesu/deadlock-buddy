@@ -1,11 +1,12 @@
 import type { ReactNode } from 'react';
 import type { HeroLeaderboardEntry } from '@/features/heroes/components/hero-leaderboard-panel';
 import type { ItemWinrateEntry } from '@/lib/api/analytics';
-import type { LeaderboardEntry } from '@/lib/api/schema';
+import type { LeaderboardEntry, RankDistributionEntry } from '@/lib/api/schema';
 
 export type DashboardPanelType =
   | 'telemetry-snapshot'
   | 'na-leaderboard'
+  | 'rank-distribution'
   | 'hero-popularity'
   | 'hero-winrate'
   | 'item-popularity'
@@ -22,6 +23,8 @@ export type DashboardDataBundle = {
   heroPopularityEntries: HeroLeaderboardEntry[];
   itemWinrateEntries: ItemWinrateEntry[];
   itemPopularityEntries: ItemWinrateEntry[];
+  rankDistributionEntries: RankDistributionEntry[];
+  rankDistributionMinUnixTimestamp?: number;
   heroCount: number;
   highestBadge: number;
 };
@@ -31,6 +34,7 @@ export type DashboardPanelDefinition = {
   title: string;
   description?: string;
   panelKeyBase: string;
+  columnSpan?: 1 | 2 | 3;
   render: (props: {
     instance: DashboardPanelInstance;
     data: DashboardDataBundle;
