@@ -13,7 +13,7 @@ const links = [
 ];
 
 export function SideNav() {
-  const pathname = usePathname();
+  const pathname = usePathname() ?? "/";
 
   return (
     <nav className="flex h-full flex-col gap-0 bg-[var(--surface)]">
