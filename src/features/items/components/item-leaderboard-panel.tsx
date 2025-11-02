@@ -1,7 +1,7 @@
 'use client';
 
 import Image from 'next/image';
-import { useCallback } from 'react';
+import { useCallback, type ReactNode } from 'react';
 import {
   FilterableLeaderboardPanel,
   type DateRangeFilters,
@@ -22,6 +22,8 @@ type ItemLeaderboardPanelProps = {
   mode: ItemLeaderboardPanelMode;
   limit?: number;
   initialEntries: ItemWinrateEntry[];
+  headerActions?: ReactNode;
+  outerRef?: (node: HTMLDivElement | null) => void;
 };
 
 async function fetchLeaderboardData(
@@ -40,7 +42,15 @@ async function fetchLeaderboardData(
   return fetchItemWinrateLeaderboard(limit, apiFilters);
 }
 
-export function ItemLeaderboardPanel({ title, panelKey, mode, limit, initialEntries }: ItemLeaderboardPanelProps) {
+export function ItemLeaderboardPanel({
+  title,
+  panelKey,
+  mode,
+  limit,
+  initialEntries,
+  headerActions,
+  outerRef,
+}: ItemLeaderboardPanelProps) {
   const fetcher = useCallback(
     (params: { limit?: number; filters: DateRangeFilters }) =>
       fetchLeaderboardData(mode, params.limit, params.filters),
@@ -55,6 +65,8 @@ export function ItemLeaderboardPanel({ title, panelKey, mode, limit, initialEntr
       initialEntries={initialEntries}
       fetcher={fetcher}
       getEntryKey={(entry) => `${panelKey}-${entry.itemId}`}
+      headerActions={headerActions}
+      outerRef={outerRef}
       renderEntry={(entry) => {
         const itemName = getItemDisplayName(entry.itemId);
         const iconUrl = getItemIconUrl(entry.itemId);
