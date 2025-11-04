@@ -185,7 +185,7 @@ export function RankDistributionPanel({
 
   return (
     <Panel ref={outerRef} className="flex h-full flex-col gap-[2px] !p-0">
-      <div className="flex items-center justify-between border-b border-[var(--surface-border-muted)] px-3 py-[10px]">
+      <div className="flex items-center justify-between border-b border-[var(--surface-border-muted)] px-4 py-3">
         <h2 className="text-sm font-semibold uppercase tracking-[0.2em] text-white">
           Rank distribution histogram
         </h2>
@@ -209,7 +209,7 @@ export function RankDistributionPanel({
         </div>
       </div>
 
-      <div className="flex flex-1 flex-col gap-2 px-1 pb-2 pt-1.5">
+      <div className="flex flex-1 flex-col px-4 pb-0">
         {chartData.length === 0 ? (
           <div className="flex h-48 flex-col items-center justify-center rounded-sm border border-[rgba(245,247,245,0.12)] bg-[rgba(245,247,245,0.02)] px-4 text-center text-xs text-[rgba(245,247,245,0.6)]">
             Distribution data unavailable. Try again later.
@@ -223,7 +223,7 @@ export function RankDistributionPanel({
             >
               <BarChart
                 data={chartData}
-                margin={{ top: 2, right: 0, bottom: 6, left: 0 }}
+                margin={{ top: 0, right: 0, bottom: 6, left: 0 }}
               >
                 <CartesianGrid
                   vertical={false}
