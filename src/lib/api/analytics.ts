@@ -1,7 +1,9 @@
 import { apiRequest } from './client';
 import {
   HeroScoreboardResponseSchema,
+  HeroStatsResponseSchema,
   ItemStatsResponseSchema,
+  type HeroStatsEntry,
   type ItemStatsEntry,
 } from './schema';
 
@@ -61,6 +63,20 @@ export async function fetchHeroPopularityLeaderboard(
   });
 
   return typeof limit === 'number' ? entries.slice(0, limit) : entries;
+}
+
+export type HeroStatsFilters = DateRangeFilters;
+
+export async function fetchHeroStats(filters: HeroStatsFilters = {}): Promise<HeroStatsEntry[]> {
+  const result = await apiRequest<unknown>({
+    path: '/v1/analytics/hero-stats',
+    searchParams: {
+      min_unix_timestamp: filters.minUnixTimestamp,
+      max_unix_timestamp: filters.maxUnixTimestamp,
+    },
+  });
+
+  return HeroStatsResponseSchema.parse(result);
 }
 
 export type ItemStatsFilters = DateRangeFilters;

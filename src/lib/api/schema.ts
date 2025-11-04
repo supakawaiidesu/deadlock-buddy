@@ -172,6 +172,36 @@ export type HeroScoreboardEntry = z.infer<typeof HeroScoreboardEntrySchema>;
 
 export const HeroScoreboardResponseSchema = z.array(HeroScoreboardEntrySchema);
 
+export const HeroStatsEntrySchema = z
+  .object({
+    hero_id: z.number(),
+    bucket: z.number().optional().nullable(),
+    wins: z.number().optional().nullable(),
+    losses: z.number().optional().nullable(),
+    matches: z.number().optional().nullable(),
+    matches_per_bucket: z.number().optional().nullable(),
+    players: z.number().optional().nullable(),
+    total_kills: z.number().optional().nullable(),
+    total_deaths: z.number().optional().nullable(),
+    total_assists: z.number().optional().nullable(),
+    total_net_worth: z.number().optional().nullable(),
+    total_last_hits: z.number().optional().nullable(),
+    total_denies: z.number().optional().nullable(),
+    total_player_damage: z.number().optional().nullable(),
+    total_player_damage_taken: z.number().optional().nullable(),
+    total_boss_damage: z.number().optional().nullable(),
+    total_creep_damage: z.number().optional().nullable(),
+    total_neutral_damage: z.number().optional().nullable(),
+    total_max_health: z.number().optional().nullable(),
+    total_shots_hit: z.number().optional().nullable(),
+    total_shots_missed: z.number().optional().nullable(),
+  })
+  .passthrough();
+
+export type HeroStatsEntry = z.infer<typeof HeroStatsEntrySchema>;
+
+export const HeroStatsResponseSchema = z.array(HeroStatsEntrySchema);
+
 export const ItemStatsEntrySchema = z
   .object({
     item_id: z.number(),
