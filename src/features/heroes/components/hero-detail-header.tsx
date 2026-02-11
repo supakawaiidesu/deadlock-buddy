@@ -1,4 +1,3 @@
-import Image from 'next/image';
 import { Panel } from '@/ui/panel';
 
 export type HeroDetailMetric = {
@@ -19,12 +18,11 @@ export function HeroDetailHeader({ heroName, heroSlug, iconUrl, metrics }: HeroD
     <Panel className="flex flex-col gap-6 md:flex-row md:items-start md:justify-between md:gap-8">
       <div className="flex flex-wrap items-center gap-4 sm:gap-6 md:max-w-[420px] md:flex-1">
         {iconUrl ? (
-          <Image
+          <img
             src={iconUrl}
             alt={`${heroName} icon`}
             width={72}
             height={72}
-            sizes="72px"
             className="h-[72px] w-[72px] rounded-sm border border-[rgba(245,247,245,0.12)] object-cover"
           />
         ) : (

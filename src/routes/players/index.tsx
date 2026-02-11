@@ -1,6 +1,11 @@
+import { createFileRoute } from '@tanstack/react-router';
 import { AccountSearchForm } from '@/features/player-search/components/account-search-form';
 
-export default function PlayerSearchPage() {
+export const Route = createFileRoute('/players/')({
+  component: PlayerSearchPage,
+});
+
+function PlayerSearchPage() {
   return (
     <div className="flex min-h-[calc(100vh-56px)] w-full flex-col gap-[2px] pb-[2px]">
       <div className="flex flex-col gap-[2px] text-left">

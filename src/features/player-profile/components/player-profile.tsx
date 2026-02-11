@@ -1,6 +1,3 @@
-'use client';
-
-import Image from 'next/image';
 import { useMemo } from 'react';
 import {
   usePlayerHeroStats,
@@ -61,13 +58,13 @@ function HistoryTooltip({
   const point = payload[0]?.payload;
   const deltaValue = point?.delta ?? 0;
   const signedDelta =
-    deltaValue > 0 ? `+${formatNumber(deltaValue)}` : deltaValue < 0 ? `−${formatNumber(Math.abs(deltaValue))}` : '0';
+    deltaValue > 0 ? `+${formatNumber(deltaValue)}` : deltaValue < 0 ? `\u2212${formatNumber(Math.abs(deltaValue))}` : '0';
 
   return (
     <div className="space-y-1 border border-[var(--surface-border)] bg-[var(--surface-raised)] px-4 py-3 text-sm">
       <p className="font-medium text-white">{label}</p>
       <p className="text-xs text-[rgba(245,247,245,0.65)]">Score {formatNumber(payload[0].value ?? 0)}</p>
-      <p className="text-xs text-[var(--accent)]">Δ {signedDelta}</p>
+      <p className="text-xs text-[var(--accent)]">{'\u0394'} {signedDelta}</p>
     </div>
   );
 }
@@ -112,9 +109,9 @@ export function PlayerProfile({ accountId }: PlayerProfileProps) {
         <span className="border border-[var(--danger)] px-3 py-1 text-xs font-semibold uppercase tracking-[0.25em] text-[var(--danger)]">
           No Data
         </span>
-        <h2 className="text-3xl font-semibold text-white">We couldn’t find stats for this player.</h2>
+        <h2 className="text-3xl font-semibold text-white">We couldn&apos;t find stats for this player.</h2>
         <p className="text-sm text-[rgba(245,247,245,0.65)]">
-          Double-check the account ID or try again later—some accounts may be private or have limited ranked history.
+          Double-check the account ID or try again later&mdash;some accounts may be private or have limited ranked history.
         </p>
       </div>
     );
@@ -141,7 +138,7 @@ export function PlayerProfile({ accountId }: PlayerProfileProps) {
               </span>
               <h1 className="text-4xl font-semibold text-white md:text-5xl">{accountId}</h1>
               <p className="text-sm leading-relaxed text-[rgba(245,247,245,0.68)]">
-                Snapshot of your competitive footprint—score, win record, and hero depth condensed for quick reads.
+                Snapshot of your competitive footprint&mdash;score, win record, and hero depth condensed for quick reads.
               </p>
               {mmr?.start_time ? (
                 <p className="text-xs uppercase tracking-[0.24em] text-[rgba(245,247,245,0.45)]">
@@ -161,13 +158,13 @@ export function PlayerProfile({ accountId }: PlayerProfileProps) {
                 value={mmr?.rank ? `Rank ${formatNumber(mmr.rank)}` : 'Unranked'}
                 description={
                   mmr?.division
-                    ? `Division ${mmr.division ?? '—'} · Tier ${mmr.division_tier ?? '—'}`
+                    ? `Division ${mmr.division ?? '\u2014'} \u00B7 Tier ${mmr.division_tier ?? '\u2014'}`
                     : 'Global ladder slot.'
                 }
               />
               <Stat
                 label="Lifetime Record"
-                value={`${formatNumber(record.wins)}W · ${formatNumber(record.losses)}L`}
+                value={`${formatNumber(record.wins)}W \u00B7 ${formatNumber(record.losses)}L`}
                 description={`${formatPercent(record.winRate)} win rate overall.`}
               />
             </div>
@@ -238,12 +235,11 @@ export function PlayerProfile({ accountId }: PlayerProfileProps) {
                       <td className="py-3 pl-3 pr-2">
                         <div className="flex items-center gap-3">
                           {iconUrl ? (
-                            <Image
+                            <img
                               src={iconUrl}
                               alt={`${name} icon`}
                               width={18}
                               height={18}
-                              sizes="18px"
                               className="h-[18px] w-[18px] object-cover"
                             />
                           ) : null}
@@ -305,7 +301,7 @@ export function PlayerProfile({ accountId }: PlayerProfileProps) {
               <li className="flex items-center justify-between">
                 <span className="uppercase tracking-[0.18em] text-[rgba(245,247,245,0.55)]">Best winrate</span>
                 <span className="font-semibold text-[var(--accent)]">
-                  [{bestWinHeroCode}] {bestWinHeroName.toUpperCase()} · {formatPercent(bestWinHero.winRate)}
+                  [{bestWinHeroCode}] {bestWinHeroName.toUpperCase()} {'\u00B7'} {formatPercent(bestWinHero.winRate)}
                 </span>
               </li>
             </ul>
@@ -314,7 +310,7 @@ export function PlayerProfile({ accountId }: PlayerProfileProps) {
           <Panel className="flex flex-col gap-0 !p-0">
             <div className="flex items-center justify-between border-b border-[var(--surface-border-muted)] px-3 py-3">
               <h2 className="text-sm font-semibold uppercase tracking-[0.2em] text-white">Top Heroes</h2>
-              <span className="text-xs uppercase tracking-[0.2em] text-[rgba(245,247,245,0.45)]">Volume · Win%</span>
+              <span className="text-xs uppercase tracking-[0.2em] text-[rgba(245,247,245,0.45)]">Volume {'\u00B7'} Win%</span>
             </div>
             <ul className="flex flex-col">
               {topHeroesWithMeta.map((hero) => (
@@ -324,12 +320,11 @@ export function PlayerProfile({ accountId }: PlayerProfileProps) {
                 >
                   <div className="flex items-center gap-3">
                     {hero.iconUrl ? (
-                      <Image
+                      <img
                         src={hero.iconUrl}
                         alt={`${hero.name} icon`}
                         width={24}
                         height={24}
-                        sizes="24px"
                         className="h-6 w-6 object-cover"
                       />
                     ) : null}

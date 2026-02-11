@@ -1,5 +1,3 @@
-'use client';
-
 import { useEffect, useMemo, useRef, useState, type CSSProperties } from 'react';
 import {
   DndContext,
@@ -88,8 +86,6 @@ export function DashboardLayout({ data }: DashboardLayoutProps) {
   }, [panels, hasHydrated]);
 
   useEffect(() => {
-    if (typeof window === 'undefined') return undefined;
-
     const handleToggle = () => {
       setIsAddMenuOpen((open) => !open);
     };
@@ -130,7 +126,6 @@ export function DashboardLayout({ data }: DashboardLayoutProps) {
   }, [isAddMenuOpen]);
 
   useEffect(() => {
-    if (typeof window === 'undefined') return;
     window.dispatchEvent(
       new CustomEvent(ADD_MENU_STATE_EVENT, { detail: { open: isAddMenuOpen } }),
     );

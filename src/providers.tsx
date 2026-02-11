@@ -1,11 +1,9 @@
-'use client';
-
 import {
   PersistQueryClientProvider,
   PersistQueryClientProviderProps,
 } from '@tanstack/react-query-persist-client';
-import { QueryClient, QueryClientProvider, QueryClientConfig } from '@tanstack/react-query';
-import { useMemo, useState, useEffect, type ReactNode } from 'react';
+import { QueryClient, QueryClientConfig } from '@tanstack/react-query';
+import { useMemo, useState, type ReactNode } from 'react';
 import { createSyncStoragePersister } from '@tanstack/query-sync-storage-persister';
 
 const QUERY_CONFIG: QueryClientConfig = {
@@ -35,40 +33,22 @@ function hasStatusCode(error: unknown): error is { status: number } {
   );
 }
 
-function createPersister(): PersistQueryClientProviderProps['persistOptions']['persister'] | null {
-  if (typeof window === 'undefined') return null;
-
-  return createSyncStoragePersister({
-    storage: window.localStorage,
-    key: 'deadlock-buddy-query-cache',
-  });
-}
+const persister = createSyncStoragePersister({
+  storage: window.localStorage,
+  key: 'deadlock-buddy-query-cache',
+});
 
 export function AppProviders({ children }: { children: ReactNode }) {
   const [queryClient] = useState(() => new QueryClient(QUERY_CONFIG));
-  const [persister, setPersister] = useState<
-    PersistQueryClientProviderProps['persistOptions']['persister'] | null
-  >(null);
 
-  useEffect(() => {
-    setPersister(createPersister());
-  }, []);
-
-  const persistOptions = useMemo<PersistQueryClientProviderProps['persistOptions'] | null>(
-    () =>
-      persister
-        ? {
-            persister,
-            maxAge: PERSIST_MAX_AGE,
-            structuralSharing: true,
-          }
-        : null,
-    [persister],
+  const persistOptions = useMemo<PersistQueryClientProviderProps['persistOptions']>(
+    () => ({
+      persister,
+      maxAge: PERSIST_MAX_AGE,
+      structuralSharing: true,
+    }),
+    [],
   );
-
-  if (!persistOptions) {
-    return <QueryClientProvider client={queryClient}>{children}</QueryClientProvider>;
-  }
 
   return (
     <PersistQueryClientProvider client={queryClient} persistOptions={persistOptions}>

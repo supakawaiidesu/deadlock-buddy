@@ -1,8 +1,5 @@
-'use client';
-
 import { useMemo, useState } from 'react';
-import Image from 'next/image';
-import Link from 'next/link';
+import { Link } from '@tanstack/react-router';
 import type { HeroTier } from '@/features/heroes/hero-tier';
 
 export type HeroOverviewRow = {
@@ -26,12 +23,12 @@ type HeroOverviewTableProps = {
 };
 
 function formatPercent(value?: number): string {
-  if (typeof value !== 'number') return '—';
+  if (typeof value !== 'number') return '\u2014';
   return `${(value * 100).toFixed(1)}%`;
 }
 
 function formatNumber(value?: number): string {
-  if (typeof value !== 'number') return '—';
+  if (typeof value !== 'number') return '\u2014';
   return value.toLocaleString();
 }
 
@@ -93,8 +90,8 @@ export function HeroOverviewTable({ rows }: HeroOverviewTableProps) {
 
     return (
       <span className="flex flex-col items-center justify-center leading-none text-[8px]">
-        <span className={`${baseTriClass} ${upColor} -mb-[1px]`}>▲</span>
-        <span className={`${baseTriClass} ${downColor}`}>▼</span>
+        <span className={`${baseTriClass} ${upColor} -mb-[1px]`}>{'\u25B2'}</span>
+        <span className={`${baseTriClass} ${downColor}`}>{'\u25BC'}</span>
       </span>
     );
   };
@@ -152,7 +149,7 @@ export function HeroOverviewTable({ rows }: HeroOverviewTableProps) {
         <tbody>
           {sortedRows.map((row, index) => {
             const rankLabel = index + 1;
-            const tierLabel = row.tier ?? '—';
+            const tierLabel = row.tier ?? '\u2014';
 
             return (
               <tr
@@ -163,12 +160,11 @@ export function HeroOverviewTable({ rows }: HeroOverviewTableProps) {
                 <td className="px-4 py-3">
                   <div className="flex items-center gap-3">
                     {row.iconUrl ? (
-                      <Image
+                      <img
                         src={row.iconUrl}
                         alt={`${row.name} icon`}
                         width={32}
                         height={32}
-                        sizes="32px"
                         className="h-8 w-8 rounded-sm border border-[rgba(245,247,245,0.12)] object-cover"
                       />
                     ) : (
@@ -177,7 +173,8 @@ export function HeroOverviewTable({ rows }: HeroOverviewTableProps) {
                       </span>
                     )}
                     <Link
-                      href={`/heroes/${row.slug}`}
+                      to="/heroes/$slug"
+                      params={{ slug: row.slug }}
                       className="font-semibold text-white transition hover:text-[var(--accent)]"
                     >
                       {row.name}

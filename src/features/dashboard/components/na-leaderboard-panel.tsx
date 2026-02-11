@@ -1,5 +1,4 @@
 import type { ReactNode } from 'react';
-import Image from 'next/image';
 import { Panel } from '@/ui/panel';
 import type { LeaderboardEntry } from '@/lib/api/schema';
 import { getHeroDisplayName, getHeroIconUrl } from '@/lib/data/heroes';
@@ -51,13 +50,12 @@ export function NaLeaderboardPanel({ entries, headerActions, outerRef }: NaLeade
                 }
 
                 return (
-                  <Image
+                  <img
                     key={heroId}
                     src={iconUrl}
                     alt={`${heroName} icon`}
                     width={24}
                     height={24}
-                    sizes="24px"
                     className="h-6 w-6 object-cover"
                   />
                 );

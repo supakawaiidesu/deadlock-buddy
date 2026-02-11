@@ -2,17 +2,10 @@ import { throttle } from './rate-limit';
 
 const DEFAULT_BASE_URL = 'https://api.deadlock-api.com';
 
-type DeadlockRequestInit = RequestInit & {
-  next?: {
-    revalidate?: number;
-    tags?: string[];
-  };
-};
-
 export type ApiRequestOptions = {
   readonly path: string;
   readonly searchParams?: Record<string, string | number | boolean | undefined | null>;
-  readonly init?: DeadlockRequestInit;
+  readonly init?: RequestInit;
 };
 
 export class ApiError extends Error {
@@ -26,7 +19,7 @@ export class ApiError extends Error {
   }
 }
 
-const baseUrl = process.env.NEXT_PUBLIC_DEADLOCK_API_BASE ?? DEFAULT_BASE_URL;
+const baseUrl = import.meta.env.VITE_DEADLOCK_API_BASE ?? DEFAULT_BASE_URL;
 
 function buildUrl(path: string, searchParams?: ApiRequestOptions['searchParams']) {
   const url = new URL(path, baseUrl);
@@ -49,10 +42,6 @@ async function executeRequest(options: ApiRequestOptions) {
       ...init?.headers,
     },
     ...init,
-    next: {
-      revalidate: 60,
-      ...init?.next,
-    },
   });
 
   if (!response.ok) {

@@ -1,42 +1,37 @@
-"use client";
-
-import Link from "next/link";
-import { usePathname, useRouter } from "next/navigation";
-import { FormEvent, useEffect, useMemo, useState } from "react";
-import { Plus } from "lucide-react";
-import { clsx } from "clsx";
+import { Link, useLocation, useNavigate } from '@tanstack/react-router';
+import { FormEvent, useEffect, useMemo, useState } from 'react';
+import { Plus } from 'lucide-react';
+import { clsx } from 'clsx';
 
 const navLinks = [
-  { href: "/", label: "Home" },
-  { href: "/players", label: "Players" },
-  { href: "/heroes", label: "Heroes" },
-  { href: "/meta", label: "Meta" },
+  { href: '/', label: 'Home' },
+  { href: '/players', label: 'Players' },
+  { href: '/heroes', label: 'Heroes' },
+  { href: '/meta', label: 'Meta' },
 ];
 
-const ADD_MENU_TOGGLE_EVENT = "dashboard:add-panel-menu-toggle";
-const ADD_MENU_CLOSE_EVENT = "dashboard:add-panel-menu-close";
-const ADD_MENU_STATE_EVENT = "dashboard:add-panel-menu-state";
+const ADD_MENU_TOGGLE_EVENT = 'dashboard:add-panel-menu-toggle';
+const ADD_MENU_CLOSE_EVENT = 'dashboard:add-panel-menu-close';
+const ADD_MENU_STATE_EVENT = 'dashboard:add-panel-menu-state';
 
 export function TopNav() {
-  const pathname = usePathname() ?? "/";
-  const router = useRouter();
-  const [value, setValue] = useState("");
+  const pathname = useLocation({ select: (loc) => loc.pathname });
+  const navigate = useNavigate();
+  const [value, setValue] = useState('');
   const [isAddMenuOpen, setIsAddMenuOpen] = useState(false);
 
   const active = useMemo(() => {
-    const match = navLinks.find((link) => link.href !== "/" && pathname.startsWith(link.href));
+    const match = navLinks.find((link) => link.href !== '/' && pathname.startsWith(link.href));
     if (match) return match.href;
     return pathname;
   }, [pathname]);
 
-  const isHome = pathname === "/";
+  const isHome = pathname === '/';
 
   useEffect(() => {
-    if (typeof window === "undefined") return;
-
     const handleState = (event: Event) => {
       const custom = event as CustomEvent<{ open?: boolean }>;
-      if (typeof custom.detail?.open === "boolean") {
+      if (typeof custom.detail?.open === 'boolean') {
         setIsAddMenuOpen(custom.detail.open);
       }
     };
@@ -48,7 +43,7 @@ export function TopNav() {
   }, []);
 
   useEffect(() => {
-    if (!isHome && typeof window !== "undefined") {
+    if (!isHome) {
       setIsAddMenuOpen(false);
       window.dispatchEvent(new Event(ADD_MENU_CLOSE_EVENT));
     }
@@ -61,12 +56,11 @@ export function TopNav() {
     if (!trimmed || Number.isNaN(numericId) || numericId <= 0) {
       return;
     }
-    router.push(`/players/${numericId}`);
-    setValue("");
+    navigate({ to: '/players/$accountId', params: { accountId: String(numericId) } });
+    setValue('');
   }
 
   const handleToggleAddMenu = () => {
-    if (typeof window === "undefined") return;
     window.dispatchEvent(new Event(ADD_MENU_TOGGLE_EVENT));
   };
 
@@ -74,7 +68,7 @@ export function TopNav() {
     <header className="grid h-14 grid-cols-[auto_1fr_auto] items-center border-b border-[var(--surface-border-muted)] bg-[var(--surface)] px-4">
       <div className="flex items-center gap-4">
         <Link
-          href="/"
+          to="/"
           className="text-xs font-semibold uppercase tracking-[0.32em] text-[rgba(245,247,245,0.65)]"
         >
           618Lock
@@ -83,10 +77,10 @@ export function TopNav() {
           {navLinks.map((link) => (
             <Link
               key={link.href}
-              href={link.href}
+              to={link.href}
               className={clsx(
-                "border-b border-transparent pb-1 transition-colors",
-                active === link.href && "border-[var(--accent)] text-[var(--accent)]",
+                'border-b border-transparent pb-1 transition-colors',
+                active === link.href && 'border-[var(--accent)] text-[var(--accent)]',
               )}
             >
               {link.label}
@@ -120,10 +114,10 @@ export function TopNav() {
             onClick={handleToggleAddMenu}
             aria-pressed={isAddMenuOpen}
             className={clsx(
-              "hidden flex-shrink-0 items-center gap-2 rounded-sm border px-3 py-1 text-[10px] uppercase tracking-[0.22em] transition focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--accent)] sm:flex",
+              'hidden flex-shrink-0 items-center gap-2 rounded-sm border px-3 py-1 text-[10px] uppercase tracking-[0.22em] transition focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--accent)] sm:flex',
               isAddMenuOpen
-                ? "border-[var(--accent)] bg-[rgba(245,247,245,0.12)] text-white"
-                : "border-[rgba(245,247,245,0.12)] bg-[rgba(245,247,245,0.05)] text-[rgba(245,247,245,0.65)] hover:border-[var(--accent)] hover:text-white",
+                ? 'border-[var(--accent)] bg-[rgba(245,247,245,0.12)] text-white'
+                : 'border-[rgba(245,247,245,0.12)] bg-[rgba(245,247,245,0.05)] text-[rgba(245,247,245,0.65)] hover:border-[var(--accent)] hover:text-white',
             )}
           >
             <Plus className="h-3.5 w-3.5" aria-hidden="true" />

@@ -1,6 +1,3 @@
-'use client';
-
-import Image from 'next/image';
 import { useCallback, type ReactNode } from 'react';
 import {
   FilterableLeaderboardPanel,
@@ -77,12 +74,11 @@ export function ItemLeaderboardPanel({
             <div className="flex items-center gap-3">
               <span className="text-[rgba(245,247,245,0.45)]">#{entry.rank}</span>
               {iconUrl ? (
-                <Image
+                <img
                   src={iconUrl}
                   alt={`${itemName} icon`}
                   width={28}
                   height={28}
-                  sizes="28px"
                   className="h-7 w-7 object-cover"
                 />
               ) : (

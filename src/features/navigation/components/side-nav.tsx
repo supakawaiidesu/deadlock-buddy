@@ -1,19 +1,16 @@
-"use client";
-
-import Link from "next/link";
-import { usePathname } from "next/navigation";
-import { clsx } from "clsx";
+import { Link, useLocation } from '@tanstack/react-router';
+import { clsx } from 'clsx';
 
 const links = [
-  { label: "Dashboard", href: "/" },
-  { label: "Players", href: "/players" },
-  { label: "Heroes", href: "/heroes" },
-  { label: "Leaderboards", href: "/leaderboards" },
-  { label: "Patches", href: "/patches" },
+  { label: 'Dashboard', href: '/' },
+  { label: 'Players', href: '/players' },
+  { label: 'Heroes', href: '/heroes' },
+  { label: 'Leaderboards', href: '/leaderboards' },
+  { label: 'Patches', href: '/patches' },
 ];
 
 export function SideNav() {
-  const pathname = usePathname() ?? "/";
+  const pathname = useLocation({ select: (loc) => loc.pathname });
 
   return (
     <nav className="flex h-full flex-col gap-0 bg-[var(--surface)]">
@@ -25,7 +22,7 @@ export function SideNav() {
         return (
           <Link
             key={link.href}
-            href={link.href}
+            to={link.href}
             title={link.label}
             className={clsx(
               'flex aspect-square w-full items-center justify-center border border-[rgba(255,255,255,0.05)] bg-[var(--surface-muted)] transition-colors',

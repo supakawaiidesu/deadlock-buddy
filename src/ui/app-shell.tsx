@@ -1,5 +1,3 @@
-"use client";
-
 import { ReactNode } from "react";
 import { TopNav } from "@/features/navigation/components/top-nav";
 import { SideNav } from "@/features/navigation/components/side-nav";

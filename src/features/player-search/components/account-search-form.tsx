@@ -1,6 +1,4 @@
-'use client';
-
-import { useRouter } from 'next/navigation';
+import { useNavigate } from '@tanstack/react-router';
 import { FormEvent, useState } from 'react';
 import { clsx } from 'clsx';
 
@@ -9,7 +7,7 @@ type AccountSearchFormProps = {
 };
 
 export function AccountSearchForm({ className }: AccountSearchFormProps) {
-  const router = useRouter();
+  const navigate = useNavigate();
   const [value, setValue] = useState('');
   const [error, setError] = useState<string | null>(null);
 
@@ -25,7 +23,7 @@ export function AccountSearchForm({ className }: AccountSearchFormProps) {
       return;
     }
 
-    router.push(`/players/${numericId}`);
+    navigate({ to: '/players/$accountId', params: { accountId: String(numericId) } });
   };
 
   return (
