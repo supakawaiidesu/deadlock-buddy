@@ -1,36 +1,55 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# Deadlock Buddy (618Lock)
+
+Player insights and hero analytics for Valve's Deadlock. Client-side SPA built with Vite, React 19, and TypeScript.
+
+## Requirements
+
+- Bun (package manager/runtime)
 
 ## Getting Started
 
-First, run the development server:
-
 ```bash
-npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
+bun install
+bun run dev
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+Open http://localhost:5173 in your browser.
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+## Stack
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+- Vite SPA + React 19 + TypeScript
+- Routing: TanStack Router (file-based in `src/routes/`)
+- Data: TanStack Query with localStorage persistence (30 min TTL)
+- Styling: Tailwind CSS v4 (CSS-first config)
+- Animation: Framer Motion
+- Testing: Vitest
+- Linting: ESLint (typescript-eslint flat config)
 
-## Learn More
+## Scripts
 
-To learn more about Next.js, take a look at the following resources:
+- `bun run dev` - start the Vite dev server
+- `bun run build` - production build to `dist/`
+- `bun run preview` - preview the production build
+- `bun run lint`
+- `bun test`
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+## Project Structure
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+- `src/main.tsx` - app entry point (createRoot + RouterProvider)
+- `src/providers.tsx` - React Query client + persistence
+- `src/routes/` - TanStack Router file-based routes
+- `src/routeTree.gen.ts` - auto-generated route tree (do not edit)
+- `src/globals.css` - Tailwind v4 imports + CSS variables
+- `vite.config.ts` - Vite + TanStack Router plugin setup
+- `index.html` - Vite SPA entry point
+- `public/` - static assets
+- `tests/` - Vitest specs
 
-## Deploy on Vercel
+## Environment Variables
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+- `VITE_DEADLOCK_API_BASE` - base URL for the Deadlock API (default: https://api.deadlock-api.com)
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+## Docs
+
+- `docs/project-overview.md` - architecture, routes, and runtime details
+- `docs/data-model.md` - API schema notes and data transforms
