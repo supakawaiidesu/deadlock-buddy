@@ -65,7 +65,7 @@ export function TopNav() {
   };
 
   return (
-    <header className="panel-header !grid h-12 w-full grid-cols-[auto_minmax(0,1fr)_auto] bg-[var(--surface)] lg:grid-cols-[minmax(0,1fr)_auto_minmax(0,1fr)]">
+    <header className="panel panel-header !grid h-12 mx-[4px] mt-[4px] grid-cols-[auto_minmax(0,1fr)_auto] bg-[var(--surface)] lg:grid-cols-[minmax(0,1fr)_auto_minmax(0,1fr)]">
       <div className="flex min-w-0 self-stretch">
         <Link
           to="/"

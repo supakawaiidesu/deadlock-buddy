@@ -11,7 +11,7 @@ type NaLeaderboardPanelProps = {
 
 export function NaLeaderboardPanel({ entries, headerActions, outerRef }: NaLeaderboardPanelProps) {
   return (
-    <Panel ref={outerRef} className="flex flex-col gap-[2px] !p-0">
+    <Panel ref={outerRef} className="flex flex-col gap-[4px] !p-0">
       <div className="panel-header">
         <h2 className="min-w-0 flex-1 px-4 py-3 text-sm font-semibold uppercase tracking-[0.2em] text-white">
           NA leaderboard highlight

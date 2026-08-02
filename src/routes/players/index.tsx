@@ -7,8 +7,8 @@ export const Route = createFileRoute('/players/')({
 
 function PlayerSearchPage() {
   return (
-    <div className="flex min-h-[calc(100vh-56px)] w-full flex-col gap-[2px] pb-[2px]">
-      <div className="flex flex-col gap-[2px] text-left">
+    <div className="flex min-h-[calc(100vh-60px)] w-full flex-col gap-[4px] pb-[4px]">
+      <div className="flex flex-col gap-[4px] text-left">
         <span className="border border-[var(--surface-border-muted)] bg-[var(--surface-muted)] px-4 py-1 text-xs font-semibold uppercase tracking-[0.32em] text-[rgba(245,247,245,0.6)]">
           Player Lookup
         </span>

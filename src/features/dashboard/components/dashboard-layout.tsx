@@ -177,7 +177,7 @@ export function DashboardLayout({ data }: DashboardLayoutProps) {
           onDragEnd={handleDragEnd}
         >
           <SortableContext items={panels.map((panel) => panel.id)} strategy={rectSortingStrategy}>
-            <div className="grid gap-[2px] lg:grid-cols-3">
+            <div className="grid gap-[4px] lg:grid-cols-3">
               {panels.map((instance) => (
                 <SortablePanel
                   key={instance.id}

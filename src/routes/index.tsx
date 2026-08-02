@@ -15,7 +15,7 @@ function DashboardPage() {
 
   if (isLoading) {
     return (
-      <div className="flex min-h-[calc(100vh-56px)] flex-col gap-[2px] pb-[2px] font-mono text-[13px]">
+      <div className="flex min-h-[calc(100vh-60px)] flex-col gap-[4px] pb-[4px] font-mono text-[13px]">
         <Skeleton className="h-48 w-full" />
         <Skeleton className="h-96 w-full" />
       </div>
@@ -24,7 +24,7 @@ function DashboardPage() {
 
   if (isError || !dashboardData) {
     return (
-      <div className="flex min-h-[calc(100vh-56px)] flex-col items-center justify-center gap-4 py-6 text-center">
+      <div className="flex min-h-[calc(100vh-60px)] flex-col items-center justify-center gap-4 py-6 text-center">
         <span className="border border-[var(--danger)] px-3 py-1 text-xs font-semibold uppercase tracking-[0.25em] text-[var(--danger)]">
           Error
         </span>
@@ -37,8 +37,8 @@ function DashboardPage() {
   }
 
   return (
-    <div className="flex min-h-[calc(100vh-56px)] flex-col gap-[2px] pb-[2px] font-mono text-[13px]">
-      <div className="grid gap-[2px] lg:grid-cols-[minmax(0,1.4fr)_minmax(0,1fr)]">
+    <div className="flex min-h-[calc(100vh-60px)] flex-col gap-[4px] pb-[4px] font-mono text-[13px]">
+      <div className="grid gap-[4px] lg:grid-cols-[minmax(0,1.4fr)_minmax(0,1fr)]">
         <Panel className="flex flex-col gap-4">
           <div className="flex items-center justify-between text-[11px] uppercase tracking-[0.28em] text-[rgba(245,247,245,0.55)]">
             <span>Deadlock API Patch:10-09-24</span>
@@ -52,7 +52,7 @@ function DashboardPage() {
               something something deadlock opensource blah blah
             </p>
           </div>
-          <div className="grid gap-[2px] sm:grid-cols-2">
+          <div className="grid gap-[4px] sm:grid-cols-2">
             <Link
               to="/players"
               className="flex items-center justify-between border border-[rgba(255,255,255,0.08)] bg-[var(--surface-muted)] px-4 py-3 text-xs uppercase tracking-[0.2em] text-[rgba(245,247,245,0.7)] transition hover:border-[var(--accent)] hover:text-white"
@@ -71,7 +71,7 @@ function DashboardPage() {
           </div>
         </Panel>
 
-        <Panel className="flex flex-col gap-[2px] !p-0">
+        <Panel className="flex flex-col gap-[4px] !p-0">
           <div className="panel-header">
             <h2 className="min-w-0 flex-1 px-4 py-3 text-sm font-semibold uppercase tracking-[0.2em] text-white">Quick routes</h2>
             <span className="panel-header-meta">Primary</span>

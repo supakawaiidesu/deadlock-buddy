@@ -164,6 +164,19 @@ textarea {
   border-radius: 9999px;
 }
 
+html,
+.scrollbar-hidden {
+  -ms-overflow-style: none;
+  scrollbar-width: none;
+}
+
+html::-webkit-scrollbar,
+.scrollbar-hidden::-webkit-scrollbar {
+  display: none;
+  width: 0;
+  height: 0;
+}
+
 .recharts-responsive-container:focus,
 .recharts-responsive-container:focus-visible,
 .recharts-wrapper:focus,

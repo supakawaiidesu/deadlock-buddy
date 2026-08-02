@@ -252,7 +252,7 @@ export function FilterableLeaderboardPanel<TEntry>({
   };
 
   return (
-    <Panel ref={outerRef} className={clsx('flex flex-col gap-[2px] !p-0', panelClassName)}>
+    <Panel ref={outerRef} className={clsx('flex flex-col gap-[4px] !p-0', panelClassName)}>
       <div className="panel-header">
         <div className="flex min-w-0 flex-1 flex-col justify-center px-4 py-3">
           <h2 className="text-sm font-semibold uppercase tracking-[0.2em] text-white">{title}</h2>

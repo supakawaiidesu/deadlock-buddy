@@ -11,7 +11,7 @@ function PlayerProfilePage() {
 
   if (Number.isNaN(parsedId) || parsedId <= 0) {
     return (
-      <div className="flex min-h-[calc(100vh-56px)] flex-col items-center justify-center gap-4 py-6 text-center">
+      <div className="flex min-h-[calc(100vh-60px)] flex-col items-center justify-center gap-4 py-6 text-center">
         <span className="border border-[var(--danger)] px-3 py-1 text-xs font-semibold uppercase tracking-[0.25em] text-[var(--danger)]">
           Invalid ID
         </span>

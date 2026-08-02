@@ -50,7 +50,7 @@ function HeroesPage() {
 
   if (isLoading) {
     return (
-      <div className="flex min-h-[calc(100vh-56px)] flex-col gap-[2px] pb-[2px] font-mono text-[13px]">
+      <div className="flex min-h-[calc(100vh-60px)] flex-col gap-[4px] pb-[4px] font-mono text-[13px]">
         <Skeleton className="h-16 w-full" />
         <Skeleton className="h-96 w-full" />
       </div>
@@ -59,7 +59,7 @@ function HeroesPage() {
 
   if (isError) {
     return (
-      <div className="flex min-h-[calc(100vh-56px)] flex-col items-center justify-center gap-4 py-6 text-center">
+      <div className="flex min-h-[calc(100vh-60px)] flex-col items-center justify-center gap-4 py-6 text-center">
         <span className="border border-[var(--danger)] px-3 py-1 text-xs font-semibold uppercase tracking-[0.25em] text-[var(--danger)]">
           Error
         </span>
@@ -69,7 +69,7 @@ function HeroesPage() {
   }
 
   return (
-    <div className="flex min-h-[calc(100vh-56px)] flex-col gap-[2px] pb-[2px] font-mono text-[13px]">
+    <div className="flex min-h-[calc(100vh-60px)] flex-col gap-[4px] pb-[4px] font-mono text-[13px]">
       <Panel className="flex flex-wrap items-center justify-between gap-3 px-4 py-3 text-[11px] uppercase tracking-[0.24em] text-[rgba(245,247,245,0.6)]">
         <div className="flex items-center gap-3 text-white">
           <span className="text-[10px] uppercase tracking-[0.28em] text-[rgba(245,247,245,0.5)]">

@@ -128,11 +128,11 @@ export function PlayerProfile({ accountId }: PlayerProfileProps) {
   const bestWinHeroCode = formatHeroCode(bestWinHero.heroId);
 
   return (
-    <div className="flex min-h-[calc(100vh-56px)] flex-col gap-[2px] pb-[2px] font-mono text-[13px]">
-      <div className="grid gap-[2px] lg:grid-cols-[minmax(0,1.7fr)_minmax(0,1fr)]">
-        <div className="grid gap-[2px]">
-          <Panel className="grid gap-[2px] lg:grid-cols-[1.4fr_1fr]">
-            <div className="space-y-[2px]">
+    <div className="flex min-h-[calc(100vh-60px)] flex-col gap-[4px] pb-[4px] font-mono text-[13px]">
+      <div className="grid gap-[4px] lg:grid-cols-[minmax(0,1.7fr)_minmax(0,1fr)]">
+        <div className="grid gap-[4px]">
+          <Panel className="grid gap-[4px] lg:grid-cols-[1.4fr_1fr]">
+            <div className="space-y-[4px]">
               <span className="text-xs font-semibold uppercase tracking-[0.32em] text-[rgba(245,247,245,0.5)]">
                 Player Overview
               </span>
@@ -146,7 +146,7 @@ export function PlayerProfile({ accountId }: PlayerProfileProps) {
                 </p>
               ) : null}
             </div>
-            <div className="grid grid-cols-1 gap-[2px] sm:grid-cols-3">
+            <div className="grid grid-cols-1 gap-[4px] sm:grid-cols-3">
               <Stat
                 label="Player Score"
                 value={formatNumber(mmr?.player_score ?? 0)}
@@ -170,7 +170,7 @@ export function PlayerProfile({ accountId }: PlayerProfileProps) {
             </div>
           </Panel>
 
-          <Panel className="flex flex-col gap-[2px]">
+          <Panel className="flex flex-col gap-[4px]">
             <div className="flex items-center justify-between">
               <h2 className="text-sm font-semibold uppercase tracking-[0.2em] text-white">Score Momentum</h2>
               <span className="text-xs uppercase tracking-[0.2em] text-[rgba(245,247,245,0.5)]">Recent matches</span>
@@ -276,7 +276,7 @@ export function PlayerProfile({ accountId }: PlayerProfileProps) {
           </Panel>
         </div>
 
-        <div className="grid gap-[2px]">
+        <div className="grid gap-[4px]">
           <Panel className="flex flex-col gap-3">
             <h2 className="text-sm font-semibold uppercase tracking-[0.22em] text-white">Profile Signals</h2>
             <ul className="grid gap-1 text-xs text-[rgba(245,247,245,0.72)]">

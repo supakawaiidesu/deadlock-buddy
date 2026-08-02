@@ -43,7 +43,7 @@ export function HeroDetailHeader({ heroName, heroSlug, iconUrl, metrics }: HeroD
         </div>
       </div>
 
-      <div className="grid gap-[2px] sm:grid-cols-2 md:min-w-[260px] md:flex-1 lg:grid-cols-4">
+      <div className="grid gap-[4px] sm:grid-cols-2 md:min-w-[260px] md:flex-1 lg:grid-cols-4">
         {metrics.map((metric) => (
           <div
             key={metric.label}
