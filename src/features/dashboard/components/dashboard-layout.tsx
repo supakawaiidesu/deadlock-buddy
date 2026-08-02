@@ -247,15 +247,37 @@ function SortablePanel({ instance, data, onRemove }: SortablePanelProps) {
   };
 
   const headerActions = (
-    <button
-      type="button"
-      onClick={() => onRemove(instance.id)}
-      className="panel-header-action relative z-10"
-      aria-label="Hide panel"
-      title="Hide panel"
-    >
-      <X className="h-4 w-4" aria-hidden="true" />
-    </button>
+    <>
+      <button
+        type="button"
+        {...attributes}
+        {...listeners}
+        className={clsx(
+          'panel-header-action touch-none cursor-grab',
+          isDragging ? 'cursor-grabbing bg-[var(--accent-muted)] text-[var(--accent)]' : '',
+        )}
+        aria-label="Move panel"
+        title="Move panel"
+      >
+        <svg width="12" height="12" viewBox="0 0 12 12" fill="none" aria-hidden="true">
+          <circle cx="3" cy="3" r="0.8" fill="currentColor" />
+          <circle cx="9" cy="3" r="0.8" fill="currentColor" />
+          <circle cx="3" cy="6" r="0.8" fill="currentColor" />
+          <circle cx="9" cy="6" r="0.8" fill="currentColor" />
+          <circle cx="3" cy="9" r="0.8" fill="currentColor" />
+          <circle cx="9" cy="9" r="0.8" fill="currentColor" />
+        </svg>
+      </button>
+      <button
+        type="button"
+        onClick={() => onRemove(instance.id)}
+        className="panel-header-action relative z-10"
+        aria-label="Hide panel"
+        title="Hide panel"
+      >
+        <X className="h-4 w-4" aria-hidden="true" />
+      </button>
+    </>
   );
 
   const content = definition.render({
@@ -275,22 +297,6 @@ function SortablePanel({ instance, data, onRemove }: SortablePanelProps) {
       )}
     >
       {content}
-      <button
-        type="button"
-        {...attributes}
-        {...listeners}
-        className={clsx(
-          'absolute right-0 top-0 h-6 w-6 cursor-grab text-transparent opacity-0 transition group-hover:opacity-100 focus-visible:opacity-100',
-          isDragging ? 'cursor-grabbing opacity-100' : '',
-        )}
-        aria-label="Move panel"
-      >
-        <span
-          aria-hidden="true"
-          className="absolute right-0 top-0 h-3 w-3 bg-[rgba(245,247,245,0.22)] transition-colors duration-150 group-hover:bg-[var(--accent)]"
-          style={{ clipPath: 'polygon(100% 0, 100% 100%, 0 0)' }}
-        />
-      </button>
     </div>
   );
 }
