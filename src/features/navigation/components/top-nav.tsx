@@ -1,6 +1,6 @@
 import { Link, useLocation, useNavigate } from '@tanstack/react-router';
 import { FormEvent, useEffect, useMemo, useState } from 'react';
-import { Plus } from 'lucide-react';
+import { ArrowRight, Plus, Search } from 'lucide-react';
 import { clsx } from 'clsx';
 
 const navLinks = [
@@ -65,22 +65,29 @@ export function TopNav() {
   };
 
   return (
-    <header className="grid h-14 grid-cols-[auto_1fr_auto] items-center border-b border-[var(--surface-border-muted)] bg-[var(--surface)] px-4">
-      <div className="flex items-center gap-4">
+    <header className="panel-header !grid h-12 w-full grid-cols-[auto_minmax(0,1fr)_auto] bg-[var(--surface)] lg:grid-cols-[minmax(0,1fr)_auto_minmax(0,1fr)]">
+      <div className="flex min-w-0 self-stretch">
         <Link
           to="/"
-          className="text-xs font-semibold uppercase tracking-[0.32em] text-[rgba(245,247,245,0.65)]"
+          aria-label="618Lock home"
+          className="panel-header-interactive panel-header-meta flex-none border-r border-[var(--surface-border-muted)] !px-4 font-semibold !tracking-[0.24em]"
         >
-          618Lock
+          <span className="text-white">618</span>
+          <span className="text-[var(--accent)]">Lock</span>
         </Link>
-        <nav className="hidden items-center gap-3 text-[11px] uppercase tracking-[0.22em] text-[rgba(245,247,245,0.5)] md:flex">
+
+        <nav
+          aria-label="Primary navigation"
+          className="hidden self-stretch border-r border-[var(--surface-border-muted)] lg:flex"
+        >
           {navLinks.map((link) => (
             <Link
               key={link.href}
               to={link.href}
               className={clsx(
-                'border-b border-transparent pb-1 transition-colors',
-                active === link.href && 'border-[var(--accent)] text-[var(--accent)]',
+                'panel-header-interactive panel-header-meta',
+                active === link.href &&
+                  'bg-[var(--accent-subtle)] !text-[var(--accent)] shadow-[inset_0_-2px_0_var(--accent)]',
               )}
             >
               {link.label}
@@ -88,47 +95,55 @@ export function TopNav() {
           ))}
         </nav>
       </div>
-      <div className="mx-auto flex w-full max-w-lg items-center gap-3 justify-self-center">
-        <form onSubmit={handleSubmit} className="flex w-full items-center gap-2">
-          <label className="flex w-full items-center gap-2 rounded-sm border border-[rgba(255,255,255,0.08)] bg-[rgba(255,255,255,0.02)] px-3 py-2 text-[11px] uppercase tracking-[0.22em] text-[rgba(245,247,245,0.6)]">
-            <span className="text-[rgba(245,247,245,0.45)]">ID</span>
+
+      <div className="flex min-w-0 w-full justify-center self-stretch lg:w-auto">
+        <form
+          onSubmit={handleSubmit}
+          className="flex min-w-0 flex-1 self-stretch border-l border-[var(--surface-border-muted)] md:w-[clamp(15rem,24vw,22rem)] md:flex-none"
+        >
+          <label className="flex min-w-0 flex-1 items-center gap-3 px-3 text-[rgba(245,247,245,0.45)] transition-colors focus-within:bg-[var(--accent-subtle)] focus-within:shadow-[inset_0_0_0_2px_var(--accent)] sm:px-4">
+            <span className="sr-only">Search by Deadlock account ID</span>
+            <Search className="h-4 w-4 flex-none" aria-hidden="true" />
             <input
               value={value}
               onChange={(event) => setValue(event.target.value)}
-              placeholder="Account..."
-              className="h-5 flex-1 border-none bg-transparent text-sm text-[var(--foreground)] caret-[var(--accent)] outline-none placeholder:text-[rgba(245,247,245,0.35)]"
+              placeholder="Account ID..."
+              className="min-w-0 flex-1 border-0 bg-transparent text-xs text-[var(--foreground)] caret-[var(--accent)] outline-none placeholder:text-[rgba(245,247,245,0.35)] sm:text-sm"
               inputMode="numeric"
               autoComplete="off"
             />
           </label>
           <button
             type="submit"
-            className="flex h-9 w-9 items-center justify-center rounded-sm border border-[rgba(255,255,255,0.12)] bg-[var(--surface-muted)] text-xs font-semibold uppercase tracking-[0.18em] text-[rgba(245,247,245,0.65)] transition hover:border-[var(--accent)] hover:text-[var(--accent)]"
+            className="panel-header-action"
+            aria-label="Search for player"
+            title="Search for player"
           >
-            ↵
+            <ArrowRight className="h-4 w-4" aria-hidden="true" />
           </button>
         </form>
+
         {isHome ? (
           <button
             type="button"
             onClick={handleToggleAddMenu}
             aria-pressed={isAddMenuOpen}
+            aria-label="Add dashboard panel"
+            title="Add dashboard panel"
             className={clsx(
-              'hidden flex-shrink-0 items-center gap-2 rounded-sm border px-3 py-1 text-[10px] uppercase tracking-[0.22em] transition focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--accent)] sm:flex',
-              isAddMenuOpen
-                ? 'border-[var(--accent)] bg-[rgba(245,247,245,0.12)] text-white'
-                : 'border-[rgba(245,247,245,0.12)] bg-[rgba(245,247,245,0.05)] text-[rgba(245,247,245,0.65)] hover:border-[var(--accent)] hover:text-white',
+              'panel-header-action border-r border-[var(--surface-border-muted)]',
+              isAddMenuOpen && 'bg-[var(--accent-muted)] !text-[var(--accent)]',
             )}
           >
-            <Plus className="h-3.5 w-3.5" aria-hidden="true" />
-            <span>Add panel</span>
+            <Plus className="h-4 w-4" aria-hidden="true" />
           </button>
         ) : null}
       </div>
-      <div className="flex items-center justify-end gap-2">
-        <div className="hidden items-center gap-2 text-[10px] uppercase tracking-[0.3em] text-[rgba(245,247,245,0.4)] sm:flex">
-          <span>Beta</span>
-        </div>
+
+      <div className="panel-header-actions justify-self-end">
+        <span className="panel-header-meta hidden border-l border-[var(--surface-border-muted)] lg:flex">
+          Beta
+        </span>
       </div>
     </header>
   );
