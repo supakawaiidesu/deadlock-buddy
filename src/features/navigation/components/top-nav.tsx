@@ -1,6 +1,6 @@
 import { Link, useLocation, useNavigate } from '@tanstack/react-router';
-import { FormEvent, useEffect, useMemo, useState } from 'react';
-import { ArrowRight, Plus, Search } from 'lucide-react';
+import { FormEvent, useEffect, useMemo, useRef, useState } from 'react';
+import { ArrowRight, Moon, Plus, Search, Sun } from 'lucide-react';
 import { clsx } from 'clsx';
 
 const navLinks = [
@@ -19,6 +19,8 @@ export function TopNav() {
   const navigate = useNavigate();
   const [value, setValue] = useState('');
   const [isAddMenuOpen, setIsAddMenuOpen] = useState(false);
+  const [isThemeMenuOpen, setIsThemeMenuOpen] = useState(false);
+  const themeMenuRef = useRef<HTMLDivElement | null>(null);
 
   const active = useMemo(() => {
     const match = navLinks.find((link) => link.href !== '/' && pathname.startsWith(link.href));
@@ -48,6 +50,31 @@ export function TopNav() {
       window.dispatchEvent(new Event(ADD_MENU_CLOSE_EVENT));
     }
   }, [isHome]);
+
+  useEffect(() => {
+    if (!isThemeMenuOpen) return undefined;
+
+    const handleKeyDown = (event: KeyboardEvent) => {
+      if (event.key === 'Escape') {
+        setIsThemeMenuOpen(false);
+      }
+    };
+    const handlePointerDown = (event: PointerEvent) => {
+      const target = event.target as Node | null;
+      const menuNode = themeMenuRef.current;
+      if (menuNode && target && !menuNode.contains(target)) {
+        setIsThemeMenuOpen(false);
+      }
+    };
+
+    window.addEventListener('keydown', handleKeyDown);
+    window.addEventListener('pointerdown', handlePointerDown);
+
+    return () => {
+      window.removeEventListener('keydown', handleKeyDown);
+      window.removeEventListener('pointerdown', handlePointerDown);
+    };
+  }, [isThemeMenuOpen]);
 
   function handleSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
@@ -144,6 +171,51 @@ export function TopNav() {
         <span className="panel-header-meta hidden border-l border-[var(--surface-border-muted)] lg:flex">
           Beta
         </span>
+        <div ref={themeMenuRef} className="relative self-stretch">
+          <button
+            type="button"
+            onClick={() => setIsThemeMenuOpen((open) => !open)}
+            aria-expanded={isThemeMenuOpen}
+            aria-haspopup="menu"
+            aria-label="Open theme menu"
+            title="Open theme menu"
+            className={clsx(
+              'panel-header-action',
+              isThemeMenuOpen && 'bg-[var(--accent-muted)] !text-[var(--accent)]',
+            )}
+          >
+            <Sun className="h-4 w-4" aria-hidden="true" />
+          </button>
+          {isThemeMenuOpen ? (
+            <div
+              role="menu"
+              aria-label="Theme options"
+              className="absolute right-0 top-[calc(100%+4px)] z-[70] w-44 rounded-sm border border-[rgba(245,247,245,0.16)] bg-[rgba(8,12,11,0.97)] p-2 shadow-lg shadow-[rgba(0,0,0,0.35)] backdrop-blur-sm"
+            >
+              <span className="mb-2 block text-[10px] uppercase tracking-[0.22em] text-[rgba(245,247,245,0.5)]">
+                Theme
+              </span>
+              <div className="flex flex-col gap-1">
+                <button
+                  type="button"
+                  role="menuitem"
+                  className="flex w-full items-center gap-2 rounded-sm border border-transparent px-2 py-2 text-left text-[11px] uppercase tracking-[0.16em] text-[rgba(245,247,245,0.75)] transition hover:border-[var(--accent)] hover:text-white"
+                >
+                  <Sun className="h-4 w-4 flex-none" aria-hidden="true" />
+                  <span>Light mode</span>
+                </button>
+                <button
+                  type="button"
+                  role="menuitem"
+                  className="flex w-full items-center gap-2 rounded-sm border border-transparent px-2 py-2 text-left text-[11px] uppercase tracking-[0.16em] text-[rgba(245,247,245,0.75)] transition hover:border-[var(--accent)] hover:text-white"
+                >
+                  <Moon className="h-4 w-4 flex-none" aria-hidden="true" />
+                  <span>Dark mode</span>
+                </button>
+              </div>
+            </div>
+          ) : null}
+        </div>
       </div>
     </header>
   );
