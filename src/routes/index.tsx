@@ -72,9 +72,9 @@ function DashboardPage() {
         </Panel>
 
         <Panel className="flex flex-col gap-[2px] !p-0">
-          <div className="flex items-center justify-between border-b border-[var(--surface-border-muted)] px-4 py-3">
-            <h2 className="text-sm font-semibold uppercase tracking-[0.2em] text-white">Quick routes</h2>
-            <span className="text-[10px] uppercase tracking-[0.28em] text-[rgba(245,247,245,0.45)]">Primary</span>
+          <div className="panel-header">
+            <h2 className="min-w-0 flex-1 px-4 py-3 text-sm font-semibold uppercase tracking-[0.2em] text-white">Quick routes</h2>
+            <span className="panel-header-meta">Primary</span>
           </div>
           <ul className="flex flex-col">
             <li className="flex items-center justify-between border-b border-[rgba(245,247,245,0.12)] px-4 py-3 text-xs text-[rgba(245,247,245,0.65)]">

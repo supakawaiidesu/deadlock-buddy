@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useRef, useState, type ReactNode } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { clsx } from 'clsx';
-import { Settings } from 'lucide-react';
+import { Filter } from 'lucide-react';
 import { Panel } from '@/ui/panel';
 
 export type DateRangeFilters = {
@@ -253,8 +253,8 @@ export function FilterableLeaderboardPanel<TEntry>({
 
   return (
     <Panel ref={outerRef} className={clsx('flex flex-col gap-[2px] !p-0', panelClassName)}>
-      <div className="flex items-center justify-between border-b border-[var(--surface-border-muted)] px-4 py-3">
-        <div className="flex flex-col">
+      <div className="panel-header">
+        <div className="flex min-w-0 flex-1 flex-col justify-center px-4 py-3">
           <h2 className="text-sm font-semibold uppercase tracking-[0.2em] text-white">{title}</h2>
           {headerSubtitle ? (
             <span className="text-[10px] uppercase tracking-[0.18em] text-[rgba(245,247,245,0.45)]">
@@ -262,20 +262,16 @@ export function FilterableLeaderboardPanel<TEntry>({
             </span>
           ) : null}
         </div>
-        <div className="flex items-center gap-2">
+        <div className="panel-header-actions">
           <button
             type="button"
             onClick={handleToggleSettings}
-            className="flex items-center gap-2 rounded-sm border border-[rgba(245,247,245,0.16)] bg-[rgba(245,247,245,0.05)] px-3 py-1 text-[10px] uppercase tracking-[0.2em] text-[rgba(245,247,245,0.65)] transition hover:border-[var(--accent)] hover:text-white"
+            aria-label={isSettingsOpen ? 'Apply filters' : 'Open filters'}
+            title={isSettingsOpen ? 'Apply filters' : 'Open filters'}
+            aria-pressed={isSettingsOpen}
+            className={clsx('panel-header-action', isSettingsOpen && 'bg-[var(--accent-muted)] text-[var(--accent)]')}
           >
-            {isSettingsOpen ? (
-              'Apply'
-            ) : (
-              <>
-                <Settings className="h-3.5 w-3.5" aria-hidden="true" />
-                <span>Filters</span>
-              </>
-            )}
+            <Filter className="h-4 w-4" aria-hidden="true" />
           </button>
           {headerActions}
         </div>

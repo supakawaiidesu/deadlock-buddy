@@ -12,14 +12,12 @@ type NaLeaderboardPanelProps = {
 export function NaLeaderboardPanel({ entries, headerActions, outerRef }: NaLeaderboardPanelProps) {
   return (
     <Panel ref={outerRef} className="flex flex-col gap-[2px] !p-0">
-      <div className="flex items-center justify-between border-b border-[var(--surface-border-muted)] px-4 py-3">
-        <h2 className="text-sm font-semibold uppercase tracking-[0.2em] text-white">
+      <div className="panel-header">
+        <h2 className="min-w-0 flex-1 px-4 py-3 text-sm font-semibold uppercase tracking-[0.2em] text-white">
           NA leaderboard highlight
         </h2>
-        <div className="flex items-center gap-2">
-          <span className="text-[10px] uppercase tracking-[0.28em] text-[rgba(245,247,245,0.45)]">
-            Top {entries.length || 0}
-          </span>
+        <div className="panel-header-actions">
+          <span className="panel-header-meta">Top {entries.length || 0}</span>
           {headerActions}
         </div>
       </div>

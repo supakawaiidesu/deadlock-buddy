@@ -10,6 +10,7 @@ import {
 } from '@dnd-kit/core';
 import { SortableContext, arrayMove, useSortable, rectSortingStrategy } from '@dnd-kit/sortable';
 import { CSS } from '@dnd-kit/utilities';
+import { X } from 'lucide-react';
 import { clsx } from 'clsx';
 import type {
   DashboardDataBundle,
@@ -249,10 +250,11 @@ function SortablePanel({ instance, data, onRemove }: SortablePanelProps) {
     <button
       type="button"
       onClick={() => onRemove(instance.id)}
-      className="flex h-6 w-6 items-center justify-center rounded-sm border border-transparent text-[rgba(245,247,245,0.55)] transition hover:text-white focus-visible:text-white"
+      className="panel-header-action relative z-10"
       aria-label="Hide panel"
+      title="Hide panel"
     >
-      <span aria-hidden="true">&times;</span>
+      <X className="h-4 w-4" aria-hidden="true" />
     </button>
   );
 

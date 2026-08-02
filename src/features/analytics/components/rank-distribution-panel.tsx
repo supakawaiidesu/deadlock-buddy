@@ -10,6 +10,7 @@ import {
   YAxis,
   type TooltipContentProps,
 } from 'recharts';
+import { Filter } from 'lucide-react';
 import { Panel } from '@/ui/panel';
 import type { RankDistributionEntry } from '@/lib/api/schema';
 
@@ -183,27 +184,25 @@ export function RankDistributionPanel({
 
   return (
     <Panel ref={outerRef} className="flex h-full flex-col gap-[2px] !p-0">
-      <div className="flex items-center justify-between border-b border-[var(--surface-border-muted)] px-4 py-3">
-        <h2 className="text-sm font-semibold uppercase tracking-[0.2em] text-white">
+      <div className="panel-header">
+        <h2 className="min-w-0 flex-1 px-4 py-3 text-sm font-semibold uppercase tracking-[0.2em] text-white">
           Rank distribution histogram
         </h2>
-        <div className="flex items-center gap-2">
-          <span className="rounded-sm border border-[rgba(245,247,245,0.18)] px-2 py-[3px] text-[10px] uppercase tracking-[0.18em] text-[rgba(245,247,245,0.65)]">
-            {timeLabel}
-          </span>
-          <span className="rounded-sm border border-[rgba(245,247,245,0.18)] px-2 py-[3px] text-[10px] uppercase tracking-[0.18em] text-[rgba(245,247,245,0.65)]">
-            {playersLabel}
-          </span>
+        <div className="panel-header-actions">
+          <span className="panel-header-meta">{timeLabel}</span>
+          <span className="panel-header-meta">{playersLabel}</span>
           <button
             type="button"
             onClick={() =>
               window.dispatchEvent(new CustomEvent('rank-distribution:open-filters'))
             }
-            className="rounded-sm border border-[rgba(245,247,245,0.18)] px-2 py-[3px] text-[10px] uppercase tracking-[0.18em] text-[rgba(245,247,245,0.65)] transition hover:border-[var(--accent)] hover:text-white focus-visible:border-[var(--accent)] focus-visible:text-white focus-visible:outline-none"
+            className="panel-header-action"
+            aria-label="Open filters"
+            title="Open filters"
           >
-            Filters
+            <Filter className="h-4 w-4" aria-hidden="true" />
           </button>
-          <div className="flex items-center">{headerActions}</div>
+          {headerActions}
         </div>
       </div>
 

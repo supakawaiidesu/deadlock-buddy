@@ -28,9 +28,9 @@ export function TelemetrySnapshotPanel({
 
   return (
     <Panel ref={outerRef} className="flex h-full flex-col gap-[2px] !p-0">
-      <div className="flex items-center justify-between border-b border-[var(--surface-border-muted)] px-4 py-3">
-        <h2 className="text-sm font-semibold uppercase tracking-[0.2em] text-white">Telemetry snapshot</h2>
-        <div className="flex items-center">{headerActions}</div>
+      <div className="panel-header">
+        <h2 className="min-w-0 flex-1 px-4 py-3 text-sm font-semibold uppercase tracking-[0.2em] text-white">Telemetry snapshot</h2>
+        <div className="panel-header-actions">{headerActions}</div>
       </div>
       <ul className="flex flex-1 flex-col gap-[6px] px-4 py-3 text-xs text-[rgba(245,247,245,0.65)]">
         <li className="flex items-center justify-between border-b border-[var(--surface-border-muted)] pb-2 leading-tight">
