@@ -29,17 +29,17 @@ export function TelemetrySnapshotPanel({
   return (
     <Panel ref={outerRef} className="flex h-full flex-col gap-[4px] !p-0">
       <div className="panel-header">
-        <h2 className="min-w-0 flex-1 px-4 py-3 text-sm font-semibold uppercase tracking-[0.2em] text-white">Telemetry snapshot</h2>
+        <h2 className="min-w-0 flex-1 px-4 py-3 text-sm font-semibold uppercase tracking-[0.2em] text-[var(--text-strong)]">Telemetry snapshot</h2>
         <div className="panel-header-actions">{headerActions}</div>
       </div>
-      <ul className="flex flex-1 flex-col gap-[6px] px-4 py-3 text-xs text-[rgba(245,247,245,0.65)]">
+      <ul className="flex flex-1 flex-col gap-[6px] px-4 py-3 text-xs text-[rgb(var(--text-rgb)/0.65)]">
         <li className="flex items-center justify-between border-b border-[var(--surface-border-muted)] pb-2 leading-tight">
           <span>Leaderboard sample</span>
-          <span className="font-semibold text-white">{leaderboardSampleSize || '—'}</span>
+          <span className="font-semibold text-[var(--text-strong)]">{leaderboardSampleSize || '—'}</span>
         </li>
         <li className="flex items-center justify-between border-b border-[var(--surface-border-muted)] pb-2 leading-tight">
           <span>Hero roster tracked</span>
-          <span className="font-semibold text-white">{heroCount}</span>
+          <span className="font-semibold text-[var(--text-strong)]">{heroCount}</span>
         </li>
         <li className="flex items-center justify-between leading-tight">
           <span>Highest badge · sample</span>
@@ -53,7 +53,7 @@ export function TelemetrySnapshotPanel({
         </li>
         <li className="flex items-center justify-between leading-tight">
           <span>Data refresh</span>
-          <span className="font-semibold text-[rgba(245,247,245,0.55)]">~60 seconds</span>
+          <span className="font-semibold text-[rgb(var(--text-rgb)/0.55)]">~60 seconds</span>
         </li>
       </ul>
     </Panel>

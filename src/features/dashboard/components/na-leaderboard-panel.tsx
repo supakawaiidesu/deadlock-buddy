@@ -13,7 +13,7 @@ export function NaLeaderboardPanel({ entries, headerActions, outerRef }: NaLeade
   return (
     <Panel ref={outerRef} className="flex flex-col gap-[4px] !p-0">
       <div className="panel-header">
-        <h2 className="min-w-0 flex-1 px-4 py-3 text-sm font-semibold uppercase tracking-[0.2em] text-white">
+        <h2 className="min-w-0 flex-1 px-4 py-3 text-sm font-semibold uppercase tracking-[0.2em] text-[var(--text-strong)]">
           NA leaderboard highlight
         </h2>
         <div className="panel-header-actions">
@@ -25,11 +25,11 @@ export function NaLeaderboardPanel({ entries, headerActions, outerRef }: NaLeade
         {entries.map((entry) => (
           <li
             key={`${entry.rank}-${entry.account_name}`}
-            className="flex items-center justify-between border-b border-[rgba(245,247,245,0.12)] px-4 py-3 text-xs text-[rgba(245,247,245,0.7)]"
+            className="flex items-center justify-between border-b border-[rgb(var(--text-rgb)/0.12)] px-4 py-3 text-xs text-[rgb(var(--text-rgb)/0.7)]"
           >
             <div className="flex items-center gap-3">
-              <span className="text-[rgba(245,247,245,0.45)]">#{entry.rank}</span>
-              <span className="font-semibold text-white">{entry.account_name}</span>
+              <span className="text-[rgb(var(--text-rgb)/0.45)]">#{entry.rank}</span>
+              <span className="font-semibold text-[var(--text-strong)]">{entry.account_name}</span>
             </div>
             <div className="flex items-center gap-2">
               {entry.top_hero_ids.slice(0, 3).map((heroId) => {
@@ -40,7 +40,7 @@ export function NaLeaderboardPanel({ entries, headerActions, outerRef }: NaLeade
                   return (
                     <span
                       key={heroId}
-                      className="flex h-6 w-6 items-center justify-center border border-[rgba(255,255,255,0.12)] text-[10px] uppercase text-[rgba(245,247,245,0.55)]"
+                      className="flex h-6 w-6 items-center justify-center border border-[rgb(var(--neutral-rgb)/0.12)] text-[10px] uppercase text-[rgb(var(--text-rgb)/0.55)]"
                     >
                       {heroName.slice(0, 1)}
                     </span>
@@ -62,7 +62,7 @@ export function NaLeaderboardPanel({ entries, headerActions, outerRef }: NaLeade
           </li>
         ))}
         {entries.length === 0 ? (
-          <li className="px-4 py-3 text-xs text-[rgba(245,247,245,0.6)]">
+          <li className="px-4 py-3 text-xs text-[rgb(var(--text-rgb)/0.6)]">
             Leaderboard data unavailable right now.
           </li>
         ) : null}

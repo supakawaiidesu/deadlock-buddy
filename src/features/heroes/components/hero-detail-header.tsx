@@ -23,21 +23,21 @@ export function HeroDetailHeader({ heroName, heroSlug, iconUrl, metrics }: HeroD
             alt={`${heroName} icon`}
             width={72}
             height={72}
-            className="h-[72px] w-[72px] rounded-sm border border-[rgba(245,247,245,0.12)] object-cover"
+            className="h-[72px] w-[72px] rounded-sm border border-[rgb(var(--text-rgb)/0.12)] object-cover"
           />
         ) : (
-          <span className="flex h-[72px] w-[72px] items-center justify-center rounded-sm border border-[rgba(245,247,245,0.12)] text-2xl uppercase text-[rgba(245,247,245,0.55)]">
+          <span className="flex h-[72px] w-[72px] items-center justify-center rounded-sm border border-[rgb(var(--text-rgb)/0.12)] text-2xl uppercase text-[rgb(var(--text-rgb)/0.55)]">
             {heroName.slice(0, 1)}
           </span>
         )}
         <div className="flex flex-col gap-2 text-left">
-          <span className="text-[11px] uppercase tracking-[0.28em] text-[rgba(245,247,245,0.5)]">
+          <span className="text-[11px] uppercase tracking-[0.28em] text-[rgb(var(--text-rgb)/0.5)]">
             Hero dossier
           </span>
-          <h1 className="font-[var(--font-display)] text-3xl font-semibold uppercase tracking-[0.14em] text-white md:text-4xl">
+          <h1 className="font-[var(--font-display)] text-3xl font-semibold uppercase tracking-[0.14em] text-[var(--text-strong)] md:text-4xl">
             {heroName}
           </h1>
-          <span className="text-[10px] uppercase tracking-[0.28em] text-[rgba(245,247,245,0.55)]">
+          <span className="text-[10px] uppercase tracking-[0.28em] text-[rgb(var(--text-rgb)/0.55)]">
             /heroes/{heroSlug}
           </span>
         </div>
@@ -47,14 +47,14 @@ export function HeroDetailHeader({ heroName, heroSlug, iconUrl, metrics }: HeroD
         {metrics.map((metric) => (
           <div
             key={metric.label}
-            className="flex flex-col gap-1 border border-[rgba(245,247,245,0.1)] bg-[rgba(255,255,255,0.015)] px-4 py-3 text-left"
+            className="flex flex-col gap-1 border border-[rgb(var(--text-rgb)/0.1)] bg-[rgb(var(--neutral-rgb)/0.015)] px-4 py-3 text-left"
           >
-            <span className="text-[10px] uppercase tracking-[0.2em] text-[rgba(245,247,245,0.5)]">
+            <span className="text-[10px] uppercase tracking-[0.2em] text-[rgb(var(--text-rgb)/0.5)]">
               {metric.label}
             </span>
             <span
               className={`text-lg font-semibold ${
-                metric.accent ? 'text-[var(--accent)]' : 'text-white'
+                metric.accent ? 'text-[var(--accent)]' : 'text-[var(--text-strong)]'
               }`}
             >
               {metric.value}

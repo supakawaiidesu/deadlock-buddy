@@ -255,9 +255,9 @@ export function FilterableLeaderboardPanel<TEntry>({
     <Panel ref={outerRef} className={clsx('flex flex-col gap-[4px] !p-0', panelClassName)}>
       <div className="panel-header">
         <div className="flex min-w-0 flex-1 flex-col justify-center px-4 py-3">
-          <h2 className="text-sm font-semibold uppercase tracking-[0.2em] text-white">{title}</h2>
+          <h2 className="text-sm font-semibold uppercase tracking-[0.2em] text-[var(--text-strong)]">{title}</h2>
           {headerSubtitle ? (
-            <span className="text-[10px] uppercase tracking-[0.18em] text-[rgba(245,247,245,0.45)]">
+            <span className="text-[10px] uppercase tracking-[0.18em] text-[rgb(var(--text-rgb)/0.45)]">
               {headerSubtitle}
             </span>
           ) : null}
@@ -279,10 +279,10 @@ export function FilterableLeaderboardPanel<TEntry>({
 
       <div className="relative flex-1">
         {isSettingsOpen ? (
-          <div className="absolute inset-0 z-10 flex flex-col gap-4 bg-[rgba(8,12,11,0.95)] p-4">
-            <div className="flex flex-wrap items-center gap-3 text-xs uppercase tracking-[0.2em] text-[rgba(245,247,245,0.55)]">
-              <span className="text-[rgba(245,247,245,0.6)]">Date:</span>
-              <label className="flex items-center gap-2 text-[rgba(245,247,245,0.55)]">
+          <div className="absolute inset-0 z-10 flex flex-col gap-4 bg-[var(--overlay-soft-background)] p-4">
+            <div className="flex flex-wrap items-center gap-3 text-xs uppercase tracking-[0.2em] text-[rgb(var(--text-rgb)/0.55)]">
+              <span className="text-[rgb(var(--text-rgb)/0.6)]">Date:</span>
+              <label className="flex items-center gap-2 text-[rgb(var(--text-rgb)/0.55)]">
                 <span>Min</span>
                 <input
                   type="date"
@@ -290,10 +290,10 @@ export function FilterableLeaderboardPanel<TEntry>({
                   onChange={(event) =>
                     setDraftFilters((prev) => ({ ...prev, minDate: event.target.value }))
                   }
-                  className="rounded-sm border border-[rgba(245,247,245,0.18)] bg-[rgba(245,247,245,0.05)] px-2 py-1 text-[11px] normal-case tracking-normal text-white focus:border-[var(--accent)] focus:outline-none"
+                  className="rounded-sm border border-[rgb(var(--text-rgb)/0.18)] bg-[rgb(var(--text-rgb)/0.05)] px-2 py-1 text-[11px] normal-case tracking-normal text-[var(--text-strong)] focus:border-[var(--accent)] focus:outline-none"
                 />
               </label>
-              <label className="flex items-center gap-2 text-[rgba(245,247,245,0.55)]">
+              <label className="flex items-center gap-2 text-[rgb(var(--text-rgb)/0.55)]">
                 <span>Max</span>
                 <input
                   type="date"
@@ -301,7 +301,7 @@ export function FilterableLeaderboardPanel<TEntry>({
                   onChange={(event) =>
                     setDraftFilters((prev) => ({ ...prev, maxDate: event.target.value }))
                   }
-                  className="rounded-sm border border-[rgba(245,247,245,0.18)] bg-[rgba(245,247,245,0.05)] px-2 py-1 text-[11px] normal-case tracking-normal text-white focus:border-[var(--accent)] focus:outline-none"
+                  className="rounded-sm border border-[rgb(var(--text-rgb)/0.18)] bg-[rgb(var(--text-rgb)/0.05)] px-2 py-1 text-[11px] normal-case tracking-normal text-[var(--text-strong)] focus:border-[var(--accent)] focus:outline-none"
                 />
               </label>
             </div>
@@ -309,11 +309,11 @@ export function FilterableLeaderboardPanel<TEntry>({
               <button
                 type="button"
                 onClick={() => setDraftFilters({ minDate: '', maxDate: '' })}
-                className="rounded-sm border border-transparent px-2 py-1 text-[rgba(245,247,245,0.55)] transition hover:text-white"
+                className="rounded-sm border border-transparent px-2 py-1 text-[rgb(var(--text-rgb)/0.55)] transition hover:text-[var(--text-strong)]"
               >
                 Clear
               </button>
-              <span className="text-[rgba(245,247,245,0.45)]">Click apply to refresh</span>
+              <span className="text-[rgb(var(--text-rgb)/0.45)]">Click apply to refresh</span>
             </div>
           </div>
         ) : null}
@@ -321,29 +321,29 @@ export function FilterableLeaderboardPanel<TEntry>({
         <ul className={clsx('flex max-h-80 flex-col overflow-y-auto pr-2 scroll-quiet', listClassName)}>
           {isRefreshing ? (
             <li className="px-4 pt-2">
-              <div className="h-[3px] w-full overflow-hidden rounded-full bg-[rgba(245,247,245,0.14)]">
+              <div className="h-[3px] w-full overflow-hidden rounded-full bg-[rgb(var(--text-rgb)/0.14)]">
                 <div
                   className="h-full bg-[var(--accent)] transition-[width] duration-200 ease-out"
                   style={{ width: `${progress}%` }}
                 />
               </div>
-              <span className="mt-1 block text-[9px] uppercase tracking-[0.22em] text-[rgba(245,247,245,0.55)]">
+              <span className="mt-1 block text-[9px] uppercase tracking-[0.22em] text-[rgb(var(--text-rgb)/0.55)]">
                 {fetchingLabel}
               </span>
             </li>
           ) : null}
 
           {isError ? (
-            <li className="px-4 py-4 text-xs text-[rgba(245,247,245,0.6)]">{errorMessage}</li>
+            <li className="px-4 py-4 text-xs text-[rgb(var(--text-rgb)/0.6)]">{errorMessage}</li>
           ) : data.length === 0 ? (
-            <li className="px-4 py-4 text-xs text-[rgba(245,247,245,0.6)]">{emptyMessage}</li>
+            <li className="px-4 py-4 text-xs text-[rgb(var(--text-rgb)/0.6)]">{emptyMessage}</li>
           ) : (
             data.map((entry, index) => (
               <li
                 key={getEntryKey(entry, index)}
                 className={
                   rowClassName ??
-                  'flex items-center justify-between border-b border-[rgba(245,247,245,0.12)] px-4 py-3 text-xs text-[rgba(245,247,245,0.72)]'
+                  'flex items-center justify-between border-b border-[rgb(var(--text-rgb)/0.12)] px-4 py-3 text-xs text-[rgb(var(--text-rgb)/0.72)]'
                 }
               >
                 {renderEntry(entry, index)}
@@ -352,7 +352,7 @@ export function FilterableLeaderboardPanel<TEntry>({
           )}
 
           {isFetching ? (
-            <li className="px-4 py-3 text-[10px] uppercase tracking-[0.18em] text-[rgba(245,247,245,0.5)]">
+            <li className="px-4 py-3 text-[10px] uppercase tracking-[0.18em] text-[rgb(var(--text-rgb)/0.5)]">
               {refreshingLabel}
             </li>
           ) : null}

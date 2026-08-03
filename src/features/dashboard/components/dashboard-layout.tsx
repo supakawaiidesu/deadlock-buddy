@@ -164,9 +164,9 @@ export function DashboardLayout({ data }: DashboardLayoutProps) {
   return (
     <>
       {showEmptyState ? (
-        <div className="flex flex-col items-center justify-center rounded-sm border border-[rgba(245,247,245,0.12)] bg-[rgba(245,247,245,0.03)] px-6 py-16 text-center text-[13px] text-[rgba(245,247,245,0.6)]">
+        <div className="flex flex-col items-center justify-center rounded-sm border border-[rgb(var(--text-rgb)/0.12)] bg-[rgb(var(--text-rgb)/0.03)] px-6 py-16 text-center text-[13px] text-[rgb(var(--text-rgb)/0.6)]">
           <p>Nothing on the dashboard yet.</p>
-          <p className="mt-2 text-[11px] uppercase tracking-[0.18em] text-[rgba(245,247,245,0.45)]">
+          <p className="mt-2 text-[11px] uppercase tracking-[0.18em] text-[rgb(var(--text-rgb)/0.45)]">
             Use &ldquo;Add panel&rdquo; to bring metrics back.
           </p>
         </div>
@@ -193,9 +193,9 @@ export function DashboardLayout({ data }: DashboardLayoutProps) {
       {isAddMenuOpen ? (
         <div
           ref={menuRef}
-          className="fixed right-8 top-[76px] z-[60] w-56 rounded-sm border border-[rgba(245,247,245,0.16)] bg-[rgba(8,12,11,0.97)] p-2 shadow-lg shadow-[rgba(0,0,0,0.35)] backdrop-blur-sm"
+          className="fixed right-8 top-[76px] z-[60] w-56 rounded-sm border border-[rgb(var(--text-rgb)/0.16)] bg-[var(--overlay-background)] p-2 shadow-lg shadow-[rgb(var(--shadow-rgb)/0.35)] backdrop-blur-sm"
         >
-          <span className="mb-2 block text-[10px] uppercase tracking-[0.22em] text-[rgba(245,247,245,0.5)]">
+          <span className="mb-2 block text-[10px] uppercase tracking-[0.22em] text-[rgb(var(--text-rgb)/0.5)]">
             Panel types
           </span>
           <ul className="flex flex-col gap-1 text-left">
@@ -204,7 +204,7 @@ export function DashboardLayout({ data }: DashboardLayoutProps) {
                 <button
                   type="button"
                   onClick={() => handleAddPanel(panel.type)}
-                  className="w-full rounded-sm border border-transparent px-2 py-2 text-left text-[11px] uppercase tracking-[0.16em] text-[rgba(245,247,245,0.75)] transition hover:border-[var(--accent)] hover:text-white"
+                  className="w-full rounded-sm border border-transparent px-2 py-2 text-left text-[11px] uppercase tracking-[0.16em] text-[rgb(var(--text-rgb)/0.75)] transition hover:border-[var(--accent)] hover:text-[var(--text-strong)]"
                 >
                   {panel.title}
                 </button>
@@ -293,7 +293,7 @@ function SortablePanel({ instance, data, onRemove }: SortablePanelProps) {
       className={clsx(
         'group relative',
         getColumnSpanClass(definition.columnSpan),
-        isDragging ? 'scale-[1.01] shadow-lg shadow-[rgba(0,0,0,0.35)]' : 'shadow-none',
+        isDragging ? 'scale-[1.01] shadow-lg shadow-[rgb(var(--shadow-rgb)/0.35)]' : 'shadow-none',
       )}
     >
       {content}

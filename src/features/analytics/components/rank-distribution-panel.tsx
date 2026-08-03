@@ -125,20 +125,20 @@ function RankDistributionTooltip(props: TooltipContentProps<number, string>) {
   if (!datum) return null;
 
   return (
-    <div className="rounded-sm border border-[rgba(245,247,245,0.16)] bg-[rgba(8,12,11,0.97)] px-3 py-2 text-xs text-[rgba(245,247,245,0.75)] shadow-lg shadow-[rgba(0,0,0,0.35)] backdrop-blur-sm">
-      <div className="flex items-center justify-between gap-4 text-[rgba(245,247,245,0.55)]">
-        <span className="uppercase tracking-[0.18em] text-[rgba(245,247,245,0.6)]">
+    <div className="rounded-sm border border-[rgb(var(--text-rgb)/0.16)] bg-[var(--overlay-background)] px-3 py-2 text-xs text-[rgb(var(--text-rgb)/0.75)] shadow-lg shadow-[rgb(var(--shadow-rgb)/0.35)] backdrop-blur-sm">
+      <div className="flex items-center justify-between gap-4 text-[rgb(var(--text-rgb)/0.55)]">
+        <span className="uppercase tracking-[0.18em] text-[rgb(var(--text-rgb)/0.6)]">
           {datum.tierName}
         </span>
-        <span className="text-[rgba(245,247,245,0.45)]">#{datum.rank}</span>
+        <span className="text-[rgb(var(--text-rgb)/0.45)]">#{datum.rank}</span>
       </div>
       <div className="mt-1 flex items-center justify-between gap-6 text-[11px]">
-        <span className="font-semibold text-white">{datum.tierLabel}</span>
+        <span className="font-semibold text-[var(--text-strong)]">{datum.tierLabel}</span>
         <span className="font-semibold" style={{ color: datum.color }}>
           {formatPercent(datum.percent)}
         </span>
       </div>
-      <div className="mt-1 text-[10px] uppercase tracking-[0.2em] text-[rgba(245,247,245,0.45)]">
+      <div className="mt-1 text-[10px] uppercase tracking-[0.2em] text-[rgb(var(--text-rgb)/0.45)]">
         {datum.players.toLocaleString()} players
       </div>
     </div>
@@ -185,7 +185,7 @@ export function RankDistributionPanel({
   return (
     <Panel ref={outerRef} className="flex h-full flex-col gap-[4px] !p-0">
       <div className="panel-header">
-        <h2 className="min-w-0 flex-1 px-4 py-3 text-sm font-semibold uppercase tracking-[0.2em] text-white">
+        <h2 className="min-w-0 flex-1 px-4 py-3 text-sm font-semibold uppercase tracking-[0.2em] text-[var(--text-strong)]">
           Rank distribution histogram
         </h2>
         <div className="panel-header-actions">
@@ -208,7 +208,7 @@ export function RankDistributionPanel({
 
       <div className="flex flex-1 flex-col px-4 pb-0">
         {chartData.length === 0 ? (
-          <div className="flex h-48 flex-col items-center justify-center rounded-sm border border-[rgba(245,247,245,0.12)] bg-[rgba(245,247,245,0.02)] px-4 text-center text-xs text-[rgba(245,247,245,0.6)]">
+          <div className="flex h-48 flex-col items-center justify-center rounded-sm border border-[rgb(var(--text-rgb)/0.12)] bg-[rgb(var(--text-rgb)/0.02)] px-4 text-center text-xs text-[rgb(var(--text-rgb)/0.6)]">
             Distribution data unavailable. Try again later.
           </div>
         ) : (
@@ -224,24 +224,24 @@ export function RankDistributionPanel({
               >
                 <CartesianGrid
                   vertical={false}
-                  stroke="rgba(245,247,245,0.08)"
+                  stroke="rgb(var(--text-rgb)/0.08)"
                 />
                 <XAxis
                   dataKey="rank"
                   tickLine={false}
-                  axisLine={{ stroke: 'rgba(245,247,245,0.12)' }}
-                  stroke="rgba(245,247,245,0.45)"
+                  axisLine={{ stroke: 'rgb(var(--text-rgb)/0.12)' }}
+                  stroke="rgb(var(--text-rgb)/0.45)"
                   tick={{ fontSize: 10 }}
                 />
                 <YAxis
                   tickLine={false}
-                  axisLine={{ stroke: 'rgba(245,247,245,0.12)' }}
-                  stroke="rgba(245,247,245,0.45)"
+                  axisLine={{ stroke: 'rgb(var(--text-rgb)/0.12)' }}
+                  stroke="rgb(var(--text-rgb)/0.45)"
                   tick={{ fontSize: 10 }}
                   width={38}
                 />
                 <Tooltip
-                  cursor={{ fill: 'rgba(63,201,109,0.12)' }}
+                  cursor={{ fill: 'rgb(var(--accent-rgb)/0.12)' }}
                   content={RankDistributionTooltip}
                 />
                 <Bar

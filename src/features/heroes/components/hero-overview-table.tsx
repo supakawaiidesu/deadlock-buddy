@@ -82,7 +82,7 @@ export function HeroOverviewTable({ rows }: HeroOverviewTableProps) {
   const renderSortIndicator = (key: SortKey) => {
     const isActive = sortState.key === key;
     const baseTriClass = 'text-[8px] leading-none';
-    const inactiveColor = 'text-[rgba(245,247,245,0.35)]';
+    const inactiveColor = 'text-[rgb(var(--text-rgb)/0.35)]';
     const activeColor = 'text-[var(--accent)]';
 
     const upColor = isActive && sortState.direction === 'asc' ? activeColor : inactiveColor;
@@ -98,8 +98,8 @@ export function HeroOverviewTable({ rows }: HeroOverviewTableProps) {
 
   return (
     <div className="overflow-x-auto">
-      <table className="min-w-full border-b border-[rgba(245,247,245,0.12)] text-left text-[12px]">
-        <thead className="text-[rgba(245,247,245,0.55)]">
+      <table className="min-w-full border-b border-[rgb(var(--text-rgb)/0.12)] text-left text-[12px]">
+        <thead className="text-[rgb(var(--text-rgb)/0.55)]">
           <tr className="uppercase tracking-[0.18em]">
             <th className="px-4 py-3 text-sm font-medium">Rank</th>
             <th className="px-4 py-3 text-sm font-medium">Hero</th>
@@ -108,7 +108,7 @@ export function HeroOverviewTable({ rows }: HeroOverviewTableProps) {
               <button
                 type="button"
                 onClick={() => handleSortToggle('winrate')}
-                className="flex w-full items-center justify-end gap-2 text-right transition hover:text-white"
+                className="flex w-full items-center justify-end gap-2 text-right transition hover:text-[var(--text-strong)]"
               >
                 Win rate
                 {renderSortIndicator('winrate')}
@@ -118,7 +118,7 @@ export function HeroOverviewTable({ rows }: HeroOverviewTableProps) {
               <button
                 type="button"
                 onClick={() => handleSortToggle('pickRate')}
-                className="flex w-full items-center justify-end gap-2 text-right transition hover:text-white"
+                className="flex w-full items-center justify-end gap-2 text-right transition hover:text-[var(--text-strong)]"
               >
                 Pick rate
                 {renderSortIndicator('pickRate')}
@@ -128,7 +128,7 @@ export function HeroOverviewTable({ rows }: HeroOverviewTableProps) {
               <button
                 type="button"
                 onClick={() => handleSortToggle('matches')}
-                className="flex w-full items-center justify-end gap-2 text-right transition hover:text-white"
+                className="flex w-full items-center justify-end gap-2 text-right transition hover:text-[var(--text-strong)]"
               >
                 Games
                 {renderSortIndicator('matches')}
@@ -138,7 +138,7 @@ export function HeroOverviewTable({ rows }: HeroOverviewTableProps) {
               <button
                 type="button"
                 onClick={() => handleSortToggle('players')}
-                className="flex w-full items-center justify-end gap-2 text-right transition hover:text-white"
+                className="flex w-full items-center justify-end gap-2 text-right transition hover:text-[var(--text-strong)]"
               >
                 Players
                 {renderSortIndicator('players')}
@@ -154,9 +154,9 @@ export function HeroOverviewTable({ rows }: HeroOverviewTableProps) {
             return (
               <tr
                 key={row.heroId}
-                className="border-t border-[rgba(245,247,245,0.08)] transition hover:bg-[rgba(255,255,255,0.02)]"
+                className="border-t border-[rgb(var(--text-rgb)/0.08)] transition hover:bg-[rgb(var(--neutral-rgb)/0.02)]"
               >
-                <td className="px-4 py-3 text-[rgba(245,247,245,0.55)]">#{rankLabel}</td>
+                <td className="px-4 py-3 text-[rgb(var(--text-rgb)/0.55)]">#{rankLabel}</td>
                 <td className="px-4 py-3">
                   <div className="flex items-center gap-3">
                     {row.iconUrl ? (
@@ -165,37 +165,37 @@ export function HeroOverviewTable({ rows }: HeroOverviewTableProps) {
                         alt={`${row.name} icon`}
                         width={32}
                         height={32}
-                        className="h-8 w-8 rounded-sm border border-[rgba(245,247,245,0.12)] object-cover"
+                        className="h-8 w-8 rounded-sm border border-[rgb(var(--text-rgb)/0.12)] object-cover"
                       />
                     ) : (
-                      <span className="flex h-8 w-8 items-center justify-center rounded-sm border border-[rgba(245,247,245,0.12)] text-[11px] uppercase text-[rgba(245,247,245,0.5)]">
+                      <span className="flex h-8 w-8 items-center justify-center rounded-sm border border-[rgb(var(--text-rgb)/0.12)] text-[11px] uppercase text-[rgb(var(--text-rgb)/0.5)]">
                         {row.name.slice(0, 1)}
                       </span>
                     )}
                     <Link
                       to="/heroes/$slug"
                       params={{ slug: row.slug }}
-                      className="font-semibold text-white transition hover:text-[var(--accent)]"
+                      className="font-semibold text-[var(--text-strong)] transition hover:text-[var(--accent)]"
                     >
                       {row.name}
                     </Link>
                   </div>
                 </td>
                 <td className="px-4 py-3">
-                  <span className="inline-flex h-6 w-6 items-center justify-center rounded-sm border border-[rgba(245,247,245,0.18)] text-[11px] font-semibold text-[rgba(245,247,245,0.8)]">
+                  <span className="inline-flex h-6 w-6 items-center justify-center rounded-sm border border-[rgb(var(--text-rgb)/0.18)] text-[11px] font-semibold text-[rgb(var(--text-rgb)/0.8)]">
                     {tierLabel}
                   </span>
                 </td>
                 <td className="px-4 py-3 text-right text-[var(--accent)]">
                   {formatPercent(row.winrate)}
                 </td>
-                <td className="px-4 py-3 text-right text-white">
+                <td className="px-4 py-3 text-right text-[var(--text-strong)]">
                   {formatPercent(row.pickRate)}
                 </td>
-                <td className="px-4 py-3 text-right text-[rgba(245,247,245,0.75)]">
+                <td className="px-4 py-3 text-right text-[rgb(var(--text-rgb)/0.75)]">
                   {formatNumber(row.matches)}
                 </td>
-                <td className="px-4 py-3 text-right text-[rgba(245,247,245,0.75)]">
+                <td className="px-4 py-3 text-right text-[rgb(var(--text-rgb)/0.75)]">
                   {formatNumber(row.players)}
                 </td>
               </tr>

@@ -15,8 +15,8 @@ function PlayerProfilePage() {
         <span className="border border-[var(--danger)] px-3 py-1 text-xs font-semibold uppercase tracking-[0.25em] text-[var(--danger)]">
           Invalid ID
         </span>
-        <h2 className="text-3xl font-semibold text-white">Invalid account ID.</h2>
-        <p className="text-sm text-[rgba(245,247,245,0.65)]">
+        <h2 className="text-3xl font-semibold text-[var(--text-strong)]">Invalid account ID.</h2>
+        <p className="text-sm text-[rgb(var(--text-rgb)/0.65)]">
           &ldquo;{accountId}&rdquo; is not a valid Deadlock account ID.
         </p>
       </div>

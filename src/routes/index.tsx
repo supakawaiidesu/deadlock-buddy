@@ -28,8 +28,8 @@ function DashboardPage() {
         <span className="border border-[var(--danger)] px-3 py-1 text-xs font-semibold uppercase tracking-[0.25em] text-[var(--danger)]">
           Error
         </span>
-        <h2 className="text-2xl font-semibold text-white">Failed to load dashboard data.</h2>
-        <p className="text-sm text-[rgba(245,247,245,0.65)]">
+        <h2 className="text-2xl font-semibold text-[var(--text-strong)]">Failed to load dashboard data.</h2>
+        <p className="text-sm text-[rgb(var(--text-rgb)/0.65)]">
           Please try refreshing the page.
         </p>
       </div>
@@ -40,58 +40,58 @@ function DashboardPage() {
     <div className="flex min-h-[calc(100vh-60px)] flex-col gap-[4px] pb-[4px] font-mono text-[13px]">
       <div className="grid gap-[4px] lg:grid-cols-[minmax(0,1.4fr)_minmax(0,1fr)]">
         <Panel className="flex flex-col gap-4">
-          <div className="flex items-center justify-between text-[11px] uppercase tracking-[0.28em] text-[rgba(245,247,245,0.55)]">
+          <div className="flex items-center justify-between text-[11px] uppercase tracking-[0.28em] text-[rgb(var(--text-rgb)/0.55)]">
             <span>Deadlock API Patch:10-09-24</span>
             <span>Region · {LEADERBOARD_REGION}</span>
           </div>
           <div>
-            <h1 className="text-3xl font-semibold uppercase tracking-[0.14em] text-white">
+            <h1 className="text-3xl font-semibold uppercase tracking-[0.14em] text-[var(--text-strong)]">
             618Lock
             </h1>
-            <p className="mt-3 max-w-xl text-sm leading-relaxed text-[rgba(245,247,245,0.7)]">
+            <p className="mt-3 max-w-xl text-sm leading-relaxed text-[rgb(var(--text-rgb)/0.7)]">
               something something deadlock opensource blah blah
             </p>
           </div>
           <div className="grid gap-[4px] sm:grid-cols-2">
             <Link
               to="/players"
-              className="flex items-center justify-between border border-[rgba(255,255,255,0.08)] bg-[var(--surface-muted)] px-4 py-3 text-xs uppercase tracking-[0.2em] text-[rgba(245,247,245,0.7)] transition hover:border-[var(--accent)] hover:text-white"
+              className="flex items-center justify-between border border-[rgb(var(--neutral-rgb)/0.08)] bg-[var(--surface-muted)] px-4 py-3 text-xs uppercase tracking-[0.2em] text-[rgb(var(--text-rgb)/0.7)] transition hover:border-[var(--accent)] hover:text-[var(--text-strong)]"
             >
               <span>Player lookup</span>
-              <span className="text-[rgba(245,247,245,0.45)]">↗</span>
+              <span className="text-[rgb(var(--text-rgb)/0.45)]">↗</span>
             </Link>
             <Link
               to="/players/$accountId"
               params={{ accountId: '342189169' }}
-              className="flex items-center justify-between border border-[rgba(255,255,255,0.08)] bg-[var(--surface-muted)] px-4 py-3 text-xs uppercase tracking-[0.2em] text-[rgba(245,247,245,0.7)] transition hover:border-[var(--accent)] hover:text-white"
+              className="flex items-center justify-between border border-[rgb(var(--neutral-rgb)/0.08)] bg-[var(--surface-muted)] px-4 py-3 text-xs uppercase tracking-[0.2em] text-[rgb(var(--text-rgb)/0.7)] transition hover:border-[var(--accent)] hover:text-[var(--text-strong)]"
             >
               <span>Sample profile</span>
-              <span className="text-[rgba(245,247,245,0.45)]">↗</span>
+              <span className="text-[rgb(var(--text-rgb)/0.45)]">↗</span>
             </Link>
           </div>
         </Panel>
 
         <Panel className="flex flex-col gap-[4px] !p-0">
           <div className="panel-header">
-            <h2 className="min-w-0 flex-1 px-4 py-3 text-sm font-semibold uppercase tracking-[0.2em] text-white">Quick routes</h2>
+            <h2 className="min-w-0 flex-1 px-4 py-3 text-sm font-semibold uppercase tracking-[0.2em] text-[var(--text-strong)]">Quick routes</h2>
             <span className="panel-header-meta">Primary</span>
           </div>
           <ul className="flex flex-col">
-            <li className="flex items-center justify-between border-b border-[rgba(245,247,245,0.12)] px-4 py-3 text-xs text-[rgba(245,247,245,0.65)]">
+            <li className="flex items-center justify-between border-b border-[rgb(var(--text-rgb)/0.12)] px-4 py-3 text-xs text-[rgb(var(--text-rgb)/0.65)]">
               <span>Hero directory</span>
-              <Link to="/heroes" className="text-[rgba(245,247,245,0.45)] hover:text-[var(--accent)]">
+              <Link to="/heroes" className="text-[rgb(var(--text-rgb)/0.45)] hover:text-[var(--accent)]">
                 /heroes
               </Link>
             </li>
-            <li className="flex items-center justify-between border-b border-[rgba(245,247,245,0.12)] px-4 py-3 text-xs text-[rgba(245,247,245,0.65)]">
+            <li className="flex items-center justify-between border-b border-[rgb(var(--text-rgb)/0.12)] px-4 py-3 text-xs text-[rgb(var(--text-rgb)/0.65)]">
               <span>MMR leaderboards</span>
-              <span className="text-[rgba(245,247,245,0.45)]">
+              <span className="text-[rgb(var(--text-rgb)/0.45)]">
                 /leaderboards
               </span>
             </li>
-            <li className="flex items-center justify-between px-4 py-3 text-xs text-[rgba(245,247,245,0.65)]">
+            <li className="flex items-center justify-between px-4 py-3 text-xs text-[rgb(var(--text-rgb)/0.65)]">
               <span>Meta breakdown</span>
-              <span className="text-[rgba(245,247,245,0.45)]">
+              <span className="text-[rgb(var(--text-rgb)/0.45)]">
                 /meta
               </span>
             </li>

@@ -1,7 +1,9 @@
 import { Link, useLocation, useNavigate } from '@tanstack/react-router';
 import { FormEvent, useEffect, useMemo, useRef, useState } from 'react';
-import { ArrowRight, Moon, Plus, Search, Sun } from 'lucide-react';
+import { ArrowRight, Check, Palette, Plus, Search } from 'lucide-react';
 import { clsx } from 'clsx';
+import { getTheme } from '@/features/theme/theme';
+import { useTheme } from '@/features/theme/theme-provider';
 
 const navLinks = [
   { href: '/', label: 'Home' },
@@ -17,6 +19,8 @@ const ADD_MENU_STATE_EVENT = 'dashboard:add-panel-menu-state';
 export function TopNav() {
   const pathname = useLocation({ select: (loc) => loc.pathname });
   const navigate = useNavigate();
+  const { themeId, themes, setThemeId } = useTheme();
+  const currentTheme = getTheme(themeId);
   const [value, setValue] = useState('');
   const [isAddMenuOpen, setIsAddMenuOpen] = useState(false);
   const [isThemeMenuOpen, setIsThemeMenuOpen] = useState(false);
@@ -99,7 +103,7 @@ export function TopNav() {
           aria-label="618Lock home"
           className="panel-header-interactive panel-header-meta flex-none border-r border-[var(--surface-border-muted)] !px-4 font-semibold !tracking-[0.24em]"
         >
-          <span className="text-white">618</span>
+          <span className="text-[var(--text-strong)]">618</span>
           <span className="text-[var(--accent)]">Lock</span>
         </Link>
 
@@ -128,14 +132,14 @@ export function TopNav() {
           onSubmit={handleSubmit}
           className="flex min-w-0 flex-1 self-stretch border-l border-[var(--surface-border-muted)] md:w-[clamp(15rem,24vw,22rem)] md:flex-none"
         >
-          <label className="flex min-w-0 flex-1 items-center gap-3 px-3 text-[rgba(245,247,245,0.45)] transition-colors focus-within:bg-[var(--accent-subtle)] focus-within:shadow-[inset_0_0_0_2px_var(--accent)] sm:px-4">
+          <label className="flex min-w-0 flex-1 items-center gap-3 px-3 text-[rgb(var(--text-rgb)/0.45)] transition-colors focus-within:bg-[var(--accent-subtle)] focus-within:shadow-[inset_0_0_0_2px_var(--accent)] sm:px-4">
             <span className="sr-only">Search by Deadlock account ID</span>
             <Search className="h-4 w-4 flex-none" aria-hidden="true" />
             <input
               value={value}
               onChange={(event) => setValue(event.target.value)}
               placeholder="Account ID..."
-              className="min-w-0 flex-1 border-0 bg-transparent text-xs text-[var(--foreground)] caret-[var(--accent)] outline-none placeholder:text-[rgba(245,247,245,0.35)] sm:text-sm"
+              className="min-w-0 flex-1 border-0 bg-transparent text-xs text-[var(--foreground)] caret-[var(--accent)] outline-none placeholder:text-[rgb(var(--text-rgb)/0.35)] sm:text-sm"
               inputMode="numeric"
               autoComplete="off"
             />
@@ -177,41 +181,57 @@ export function TopNav() {
             onClick={() => setIsThemeMenuOpen((open) => !open)}
             aria-expanded={isThemeMenuOpen}
             aria-haspopup="menu"
-            aria-label="Open theme menu"
-            title="Open theme menu"
+            aria-label={`Theme: ${currentTheme.label}. Open theme menu`}
+            title={`Theme: ${currentTheme.label}. Open theme menu`}
             className={clsx(
               'panel-header-action',
               isThemeMenuOpen && 'bg-[var(--accent-muted)] !text-[var(--accent)]',
             )}
           >
-            <Sun className="h-4 w-4" aria-hidden="true" />
+            <Palette className="h-4 w-4" aria-hidden="true" />
           </button>
           {isThemeMenuOpen ? (
             <div
               role="menu"
               aria-label="Theme options"
-              className="absolute right-0 top-[calc(100%+4px)] z-[70] w-44 rounded-sm border border-[rgba(245,247,245,0.16)] bg-[rgba(8,12,11,0.97)] p-2 shadow-lg shadow-[rgba(0,0,0,0.35)] backdrop-blur-sm"
+              className="absolute right-0 top-[calc(100%+4px)] z-[70] w-44 rounded-sm border border-[rgb(var(--text-rgb)/0.16)] bg-[var(--overlay-background)] p-2 shadow-lg shadow-[rgb(var(--shadow-rgb)/0.35)] backdrop-blur-sm"
             >
-              <span className="mb-2 block text-[10px] uppercase tracking-[0.22em] text-[rgba(245,247,245,0.5)]">
+              <span className="mb-2 block text-[10px] uppercase tracking-[0.22em] text-[rgb(var(--text-rgb)/0.5)]">
                 Theme
               </span>
               <div className="flex flex-col gap-1">
-                <button
-                  type="button"
-                  role="menuitem"
-                  className="flex w-full items-center gap-2 rounded-sm border border-transparent px-2 py-2 text-left text-[11px] uppercase tracking-[0.16em] text-[rgba(245,247,245,0.75)] transition hover:border-[var(--accent)] hover:text-white"
-                >
-                  <Sun className="h-4 w-4 flex-none" aria-hidden="true" />
-                  <span>Light mode</span>
-                </button>
-                <button
-                  type="button"
-                  role="menuitem"
-                  className="flex w-full items-center gap-2 rounded-sm border border-transparent px-2 py-2 text-left text-[11px] uppercase tracking-[0.16em] text-[rgba(245,247,245,0.75)] transition hover:border-[var(--accent)] hover:text-white"
-                >
-                  <Moon className="h-4 w-4 flex-none" aria-hidden="true" />
-                  <span>Dark mode</span>
-                </button>
+                {themes.map((theme) => {
+                  const isSelected = theme.id === themeId;
+                  return (
+                    <button
+                      key={theme.id}
+                      type="button"
+                      role="menuitemradio"
+                      aria-checked={isSelected}
+                      onClick={() => {
+                        setThemeId(theme.id);
+                        setIsThemeMenuOpen(false);
+                      }}
+                      className={clsx(
+                        'flex w-full items-center gap-2 rounded-sm border border-transparent px-2 py-2 text-left text-[11px] uppercase tracking-[0.16em] text-[rgb(var(--text-rgb)/0.75)] transition',
+                        isSelected
+                          ? 'bg-[var(--accent-muted)] text-[var(--accent)]'
+                          : 'hover:bg-[var(--accent-subtle)] hover:text-[var(--text-strong)]',
+                      )}
+                    >
+                      <span
+                        className="flex h-4 w-7 flex-none overflow-hidden border border-[var(--surface-border-muted)]"
+                        aria-hidden="true"
+                      >
+                        <span className="flex-1" style={{ backgroundColor: theme.tokens['--background'] }} />
+                        <span className="flex-1" style={{ backgroundColor: theme.tokens['--surface'] }} />
+                        <span className="flex-1" style={{ backgroundColor: theme.tokens['--accent'] }} />
+                      </span>
+                      <span className="min-w-0 flex-1">{theme.label}</span>
+                      {isSelected ? <Check className="h-4 w-4 flex-none" aria-hidden="true" /> : null}
+                    </button>
+                  );
+                })}
               </div>
             </div>
           ) : null}

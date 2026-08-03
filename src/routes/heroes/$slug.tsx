@@ -118,8 +118,8 @@ function HeroDetailPage() {
         <span className="border border-[var(--danger)] px-3 py-1 text-xs font-semibold uppercase tracking-[0.25em] text-[var(--danger)]">
           Not Found
         </span>
-        <h2 className="text-3xl font-semibold text-white">Hero not found.</h2>
-        <p className="text-sm text-[rgba(245,247,245,0.65)]">
+        <h2 className="text-3xl font-semibold text-[var(--text-strong)]">Hero not found.</h2>
+        <p className="text-sm text-[rgb(var(--text-rgb)/0.65)]">
           No hero matches the slug &ldquo;{slug}&rdquo;.
         </p>
       </div>
@@ -141,8 +141,8 @@ function HeroDetailPage() {
         <span className="border border-[var(--danger)] px-3 py-1 text-xs font-semibold uppercase tracking-[0.25em] text-[var(--danger)]">
           No Data
         </span>
-        <h2 className="text-3xl font-semibold text-white">No stats available for {heroSummary.name}.</h2>
-        <p className="text-sm text-[rgba(245,247,245,0.65)]">
+        <h2 className="text-3xl font-semibold text-[var(--text-strong)]">No stats available for {heroSummary.name}.</h2>
+        <p className="text-sm text-[rgb(var(--text-rgb)/0.65)]">
           This hero may not have enough match data yet.
         </p>
       </div>

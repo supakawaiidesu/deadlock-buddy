@@ -15,19 +15,19 @@ export function Stat({ label, value, description, accent = false }: StatProps) {
         accent && 'border-[var(--surface-border)]',
       )}
     >
-      <span className="text-xs font-medium uppercase tracking-[0.24em] text-[rgba(244,247,244,0.58)]">
+      <span className="text-xs font-medium uppercase tracking-[0.24em] text-[rgb(var(--text-rgb)/0.58)]">
         {label}
       </span>
       <span
         className={clsx(
-          'text-2xl font-semibold text-white',
+          'text-2xl font-semibold text-[var(--text-strong)]',
           accent && 'text-[var(--accent)]',
         )}
       >
         {value}
       </span>
       {description ? (
-        <span className="text-sm text-[rgba(244,247,244,0.65)]">{description}</span>
+        <span className="text-sm text-[rgb(var(--text-rgb)/0.65)]">{description}</span>
       ) : null}
     </div>
   );
