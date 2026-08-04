@@ -47,12 +47,15 @@ export function MatchActivityPanel({ accountId }: Props) {
       {historyQuery.isLoading || !days ? (
         <Skeleton className="h-full min-h-[112px] w-full" />
       ) : (
-        /* Cells share edges: no gap, no padding — the grid itself is the panel. */
-        <div className="grid flex-1 grid-cols-10">
+        /*
+         * Cell size comes from the ten-column width; the grid must not stretch
+         * its rows to consume the identity card's spare height.
+         */
+        <div className="grid flex-1 content-start grid-cols-10 gap-px p-0">
           {days.map((day) => (
             <div
               key={day.date}
-              className="aspect-square w-full"
+              className="aspect-square w-full self-start"
               style={{ backgroundColor: dayCellColor(day) }}
               onMouseEnter={(event) =>
                 setHover({ day, rect: event.currentTarget.getBoundingClientRect() })

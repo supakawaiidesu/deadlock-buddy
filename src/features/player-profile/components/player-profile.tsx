@@ -76,8 +76,8 @@ export function PlayerProfile({ accountId }: PlayerProfileProps) {
       <div className="grid min-w-0 grid-cols-1 gap-[4px] lg:grid-cols-[minmax(0,1.7fr)_minmax(0,1fr)]">
         <div className="grid min-w-0 grid-cols-1 gap-[4px]">
 
-          {/* ── identity card + match activity share the top row ───── */}
-          <div className="grid min-w-0 grid-cols-1 gap-[4px] xl:grid-cols-[minmax(0,1fr)_minmax(0,340px)]">
+          {/* The fixed activity track preserves square cells across the shared top row. */}
+          <div className="grid min-w-0 grid-cols-1 gap-[4px] xl:grid-cols-[minmax(0,1fr)_minmax(0,378px)]">
             <PlayerIdentityPanel accountId={accountId} />
             <MatchActivityPanel accountId={accountId} />
           </div>
