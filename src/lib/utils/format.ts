@@ -29,6 +29,21 @@ export function formatCompactNumber(value: number, fallback = '—') {
   return getFormatter('compact', { notation: 'compact', maximumFractionDigits: 1 }).format(value);
 }
 
+let dateFormatter: Intl.DateTimeFormat | undefined;
+
+/** Absolute calendar date, e.g. `May 2, 2016`. Used for Steam account creation. */
+export function formatDate(epochSeconds: number | null | undefined, fallback = '—') {
+  if (!epochSeconds || !Number.isFinite(epochSeconds)) return fallback;
+
+  dateFormatter ??= new Intl.DateTimeFormat('en-US', {
+    month: 'short',
+    day: 'numeric',
+    year: 'numeric',
+  });
+
+  return dateFormatter.format(new Date(epochSeconds * 1000));
+}
+
 export function formatMinutes(totalSeconds: number) {
   if (Number.isNaN(totalSeconds) || !Number.isFinite(totalSeconds)) return '—';
   const minutes = Math.floor(totalSeconds / 60);

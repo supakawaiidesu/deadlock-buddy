@@ -2,15 +2,21 @@ import { useMemo } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import {
   fetchPlayerHeroStats,
+  fetchPlayerMatchHistory,
   fetchPlayerMMR,
   fetchPlayerMMRHistory,
+  fetchPlayerRank,
 } from '@/lib/api/players';
+import { fetchSteamProfile, hasSteamService } from '@/lib/api/steam';
 
 export const playerQueryKeys = {
   base: ['player'],
   heroStats: (accountId: number) => ['player', accountId, 'hero-stats'] as const,
   overview: (accountId: number) => ['player', accountId, 'overview'] as const,
   mmrHistory: (accountId: number) => ['player', accountId, 'mmr-history'] as const,
+  rank: (accountId: number) => ['player', accountId, 'rank'] as const,
+  matchHistory: (accountId: number) => ['player', accountId, 'match-history'] as const,
+  steamProfile: (accountId: number) => ['player', accountId, 'steam-profile'] as const,
 };
 
 export function usePlayerHeroStats(accountId: number) {
@@ -26,6 +32,40 @@ export function usePlayerOverview(accountId: number) {
     queryKey: playerQueryKeys.overview(accountId),
     queryFn: () => fetchPlayerMMR(accountId),
     enabled: accountId > 0,
+  });
+}
+
+/** Current ranked badge (tier + sub-rank) for the identity row. */
+export function usePlayerRank(accountId: number) {
+  return useQuery({
+    queryKey: playerQueryKeys.rank(accountId),
+    queryFn: () => fetchPlayerRank(accountId),
+    enabled: accountId > 0,
+  });
+}
+
+export function usePlayerMatchHistory(accountId: number) {
+  return useQuery({
+    queryKey: playerQueryKeys.matchHistory(accountId),
+    queryFn: () => fetchPlayerMatchHistory(accountId),
+    enabled: accountId > 0,
+  });
+}
+
+/**
+ * Steam identity (persona, avatar, creation date, ban posture).
+ *
+ * Stays disabled when `VITE_STEAM_API_BASE` is unset so the profile page still
+ * renders without the identity service. Unlike the dashboard queries, a failure
+ * here is surfaced rather than degraded to an empty result: the panel must be
+ * able to tell "clean" apart from "unchecked".
+ */
+export function useSteamProfile(accountId: number) {
+  return useQuery({
+    queryKey: playerQueryKeys.steamProfile(accountId),
+    queryFn: () => fetchSteamProfile(accountId),
+    enabled: accountId > 0 && hasSteamService,
+    staleTime: 60 * 60 * 1000,
   });
 }
 

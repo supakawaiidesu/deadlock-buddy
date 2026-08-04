@@ -225,3 +225,60 @@ export const RankDistributionEntrySchema = z.object({
 export type RankDistributionEntry = z.infer<typeof RankDistributionEntrySchema>;
 
 export const RankDistributionResponseSchema = z.array(RankDistributionEntrySchema);
+
+export const PlayerRankSchema = z
+  .object({
+    badge: NullableNumberSchema,
+    rank: NullableNumberSchema,
+    subrank: NullableNumberSchema,
+  })
+  .passthrough();
+
+export type PlayerRank = z.infer<typeof PlayerRankSchema>;
+
+/**
+ * A single entry from `/v1/players/{id}/match-history`.
+ *
+ * `player_match_outcome` is unset (`0`) on the overwhelming majority of rows, so
+ * the win test compares `match_result` against `player_team` instead.
+ */
+export const PlayerMatchHistoryEntrySchema = z
+  .object({
+    match_id: z.number(),
+    start_time: z.number(),
+    match_duration_s: NullableNumberSchema,
+    match_result: NullableNumberSchema,
+    player_team: NullableNumberSchema,
+  })
+  .passthrough();
+
+export type PlayerMatchHistoryEntry = z.infer<typeof PlayerMatchHistoryEntrySchema>;
+
+export const PlayerMatchHistoryResponseSchema = z.array(PlayerMatchHistoryEntrySchema);
+
+
+export const SteamProfileSchema = z.object({
+  account_id: z.number(),
+  steam_id_64: z.string(),
+  persona_name: z.string(),
+  real_name: z.string().nullable(),
+  profile_url: z.string(),
+  avatar_url: z.string(),
+  avatar_full_url: z.string(),
+  country_code: z.string().nullable(),
+  visibility: z.string(),
+  time_created: z.number().nullable(),
+  vac_banned: z.boolean().nullable(),
+  vac_ban_count: z.number().nullable(),
+  game_ban_count: z.number().nullable(),
+  community_banned: z.boolean().nullable(),
+  economy_ban: z.string().nullable(),
+  days_since_last_ban: z.number().nullable(),
+  fetched_at: z.number(),
+}).passthrough();
+
+export type SteamProfile = z.infer<typeof SteamProfileSchema>;
+
+export const SteamProfilesResponseSchema = z.object({
+  profiles: z.array(SteamProfileSchema),
+});

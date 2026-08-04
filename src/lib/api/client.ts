@@ -6,6 +6,8 @@ export type ApiRequestOptions = {
   readonly path: string;
   readonly searchParams?: Record<string, string | number | boolean | undefined | null>;
   readonly init?: RequestInit;
+  /** Overrides the Deadlock API base. Used by the Steam identity service. */
+  readonly baseUrl?: string;
 };
 
 export class ApiError extends Error {
@@ -19,10 +21,14 @@ export class ApiError extends Error {
   }
 }
 
-const baseUrl = import.meta.env.VITE_DEADLOCK_API_BASE ?? DEFAULT_BASE_URL;
+export const deadlockApiBaseUrl = import.meta.env.VITE_DEADLOCK_API_BASE ?? DEFAULT_BASE_URL;
 
-function buildUrl(path: string, searchParams?: ApiRequestOptions['searchParams']) {
-  const url = new URL(path, baseUrl);
+function buildUrl(
+  path: string,
+  searchParams?: ApiRequestOptions['searchParams'],
+  base: string = deadlockApiBaseUrl,
+) {
+  const url = new URL(path, base);
 
   if (searchParams) {
     Object.entries(searchParams).forEach(([key, value]) => {
@@ -36,7 +42,7 @@ function buildUrl(path: string, searchParams?: ApiRequestOptions['searchParams']
 
 async function executeRequest(options: ApiRequestOptions) {
   const { init } = options;
-  const response = await fetch(buildUrl(options.path, options.searchParams), {
+  const response = await fetch(buildUrl(options.path, options.searchParams, options.baseUrl), {
     headers: {
       Accept: 'application/json',
       ...init?.headers,
@@ -52,7 +58,7 @@ async function executeRequest(options: ApiRequestOptions) {
       body = await response.text();
     }
     throw new ApiError(
-      `Deadlock API request failed: ${response.status} ${response.statusText}`,
+      `API request failed: ${response.status} ${response.statusText}`,
       response.status,
       body,
     );

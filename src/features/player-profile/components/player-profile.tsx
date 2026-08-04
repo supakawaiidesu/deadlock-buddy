@@ -1,78 +1,24 @@
 import { useMemo } from 'react';
-import {
-  usePlayerHeroStats,
-  usePlayerMMRHistory,
-  usePlayerOverview,
-} from '@/features/players/api/queries';
+import { usePlayerHeroStats, usePlayerOverview } from '@/features/players/api/queries';
 import { buildHeroRows, computeOverallRecord, computeTopHeroes } from '@/features/players/lib/metrics';
-import {
-  formatCompactNumber,
-  formatNumber,
-  formatPercent,
-  formatRelativeTimestamp,
-} from '@/lib/utils/format';
+import { formatNumber, formatPercent, formatRelativeTimestamp } from '@/lib/utils/format';
 import { getHeroDisplayName, getHeroIconUrl } from '@/lib/data/heroes';
 import { Panel } from '@/ui/panel';
-import { Stat } from '@/ui/stat';
 import { Skeleton } from '@/ui/skeleton';
-import { Line, LineChart, ResponsiveContainer, Tooltip, XAxis, YAxis } from 'recharts';
+import { PlayerIdentityPanel } from './player-identity-panel';
+import { MatchActivityPanel } from './match-activity-panel';
 
 type PlayerProfileProps = {
   accountId: number;
-};
-
-type ChartDatum = {
-  label: string;
-  score: number;
-  delta: number;
 };
 
 function formatHeroCode(heroId: number): string {
   return heroId.toString().padStart(2, '0');
 }
 
-function buildHistoryChartData(
-  history: Array<{ start_time: number; player_score: number; delta: number }>,
-): ChartDatum[] {
-  return history.map((entry) => ({
-    label: new Date(entry.start_time * 1000).toLocaleDateString('en-US', {
-      month: 'short',
-      day: 'numeric',
-    }),
-    score: entry.player_score ?? 0,
-    delta: entry.delta ?? 0,
-  }));
-}
-
-function HistoryTooltip({
-  active,
-  payload,
-  label,
-}: {
-  active?: boolean;
-  payload?: Array<{ value: number; payload: ChartDatum }>;
-  label?: string;
-}) {
-  if (!active || !payload || !payload.length) return null;
-
-  const point = payload[0]?.payload;
-  const deltaValue = point?.delta ?? 0;
-  const signedDelta =
-    deltaValue > 0 ? `+${formatNumber(deltaValue)}` : deltaValue < 0 ? `\u2212${formatNumber(Math.abs(deltaValue))}` : '0';
-
-  return (
-    <div className="space-y-1 border border-[var(--surface-border)] bg-[var(--surface-raised)] px-4 py-3 text-sm">
-      <p className="font-medium text-[var(--text-strong)]">{label}</p>
-      <p className="text-xs text-[rgb(var(--text-rgb)/0.65)]">Score {formatNumber(payload[0].value ?? 0)}</p>
-      <p className="text-xs text-[var(--accent)]">{'\u0394'} {signedDelta}</p>
-    </div>
-  );
-}
-
 export function PlayerProfile({ accountId }: PlayerProfileProps) {
   const heroStatsQuery = usePlayerHeroStats(accountId);
   const overviewQuery = usePlayerOverview(accountId);
-  const historyQuery = usePlayerMMRHistory(accountId);
 
   const heroRows = useMemo(
     () => (heroStatsQuery.data ? buildHeroRows(heroStatsQuery.data) : []),
@@ -91,13 +37,11 @@ export function PlayerProfile({ accountId }: PlayerProfileProps) {
   );
   const record = useMemo(() => computeOverallRecord(heroRows), [heroRows]);
   const mmr = overviewQuery.data ?? null;
-  const historyData = useMemo(() => buildHistoryChartData(historyQuery.data ?? []), [historyQuery.data]);
 
   if (heroStatsQuery.isLoading) {
     return (
-      <div className="flex flex-col gap-6 py-6">
-        <Skeleton className="h-32 w-full" />
-        <Skeleton className="h-64 w-full" />
+      <div className="flex flex-col gap-[4px] py-6">
+        <Skeleton className="h-28 w-full" />
         <Skeleton className="h-80 w-full" />
       </div>
     );
@@ -129,88 +73,29 @@ export function PlayerProfile({ accountId }: PlayerProfileProps) {
 
   return (
     <div className="flex min-h-[calc(100vh-60px)] flex-col gap-[4px] pb-[4px] font-mono text-[13px]">
-      <div className="grid gap-[4px] lg:grid-cols-[minmax(0,1.7fr)_minmax(0,1fr)]">
-        <div className="grid gap-[4px]">
-          <Panel className="grid gap-[4px] lg:grid-cols-[1.4fr_1fr]">
-            <div className="space-y-[4px]">
-              <span className="text-xs font-semibold uppercase tracking-[0.32em] text-[rgb(var(--text-rgb)/0.5)]">
-                Player Overview
-              </span>
-              <h1 className="text-4xl font-semibold text-[var(--text-strong)] md:text-5xl">{accountId}</h1>
-              <p className="text-sm leading-relaxed text-[rgb(var(--text-rgb)/0.68)]">
-                Snapshot of your competitive footprint&mdash;score, win record, and hero depth condensed for quick reads.
-              </p>
-              {mmr?.start_time ? (
-                <p className="text-xs uppercase tracking-[0.24em] text-[rgb(var(--text-rgb)/0.45)]">
-                  Updated {formatRelativeTimestamp(mmr.start_time)}
-                </p>
-              ) : null}
-            </div>
-            <div className="grid grid-cols-1 gap-[4px] sm:grid-cols-3">
-              <Stat
-                label="Player Score"
-                value={formatNumber(mmr?.player_score ?? 0)}
-                description="Latest hidden rating snapshot."
-                accent
-              />
-              <Stat
-                label="Leaderboard"
-                value={mmr?.rank ? `Rank ${formatNumber(mmr.rank)}` : 'Unranked'}
-                description={
-                  mmr?.division
-                    ? `Division ${mmr.division ?? '\u2014'} \u00B7 Tier ${mmr.division_tier ?? '\u2014'}`
-                    : 'Global ladder slot.'
-                }
-              />
-              <Stat
-                label="Lifetime Record"
-                value={`${formatNumber(record.wins)}W \u00B7 ${formatNumber(record.losses)}L`}
-                description={`${formatPercent(record.winRate)} win rate overall.`}
-              />
-            </div>
-          </Panel>
+      <div className="grid min-w-0 grid-cols-1 gap-[4px] lg:grid-cols-[minmax(0,1.7fr)_minmax(0,1fr)]">
+        <div className="grid min-w-0 grid-cols-1 gap-[4px]">
 
-          <Panel className="flex flex-col gap-[4px]">
-            <div className="flex items-center justify-between">
-              <h2 className="text-sm font-semibold uppercase tracking-[0.2em] text-[var(--text-strong)]">Score Momentum</h2>
-              <span className="text-xs uppercase tracking-[0.2em] text-[rgb(var(--text-rgb)/0.5)]">Recent matches</span>
-            </div>
-            <div className="h-56 w-full lg:h-64">
-              {historyData.length > 1 ? (
-                <ResponsiveContainer>
-                  <LineChart data={historyData}>
-                    <XAxis dataKey="label" stroke="rgb(var(--neutral-rgb)/0.28)" tickLine={false} />
-                    <YAxis
-                      stroke="rgb(var(--neutral-rgb)/0.28)"
-                      tickLine={false}
-                      width={64}
-                      tickFormatter={(value: number) => formatCompactNumber(value)}
-                    />
-                    <Tooltip content={<HistoryTooltip />} />
-                    <Line
-                      type="monotone"
-                      dataKey="score"
-                      stroke="var(--accent)"
-                      strokeWidth={2}
-                      dot={{ stroke: 'var(--accent)', strokeWidth: 1.5, r: 2.5 }}
-                      activeDot={{ r: 4, fill: 'var(--accent)' }}
-                    />
-                  </LineChart>
-                </ResponsiveContainer>
-              ) : (
-                <div className="flex h-full items-center justify-center border border-dashed border-[var(--surface-border-muted)] text-xs text-[rgb(var(--text-rgb)/0.6)]">
-                  Not enough matches to plot score history yet.
-                </div>
-              )}
-            </div>
-          </Panel>
+          {/* ── identity card + match activity share the top row ───── */}
+          <div className="grid min-w-0 grid-cols-1 gap-[4px] xl:grid-cols-[minmax(0,1fr)_minmax(0,340px)]">
+            <PlayerIdentityPanel accountId={accountId} />
+            <MatchActivityPanel accountId={accountId} />
+          </div>
 
+          {/* ── hero performance table ─────────────────────────────── */}
           <Panel className="flex flex-col gap-0 !p-0">
-            <div className="flex items-center justify-between border-b border-[var(--surface-border-muted)] px-3 py-3">
-              <h2 className="text-sm font-semibold uppercase tracking-[0.2em] text-[var(--text-strong)]">Hero Performance</h2>
-              <span className="text-xs uppercase tracking-[0.18em] text-[rgb(var(--text-rgb)/0.5)]">Role agnostic</span>
+            <div className="panel-header">
+              <h2 className="min-w-0 flex-1 px-4 py-3 text-sm font-semibold uppercase tracking-[0.2em] text-[var(--text-strong)]">
+                Hero Performance
+              </h2>
+              <div className="panel-header-actions">
+                <span className="panel-header-meta">{heroRows.length} heroes</span>
+              </div>
             </div>
-            <table className="w-full border-collapse text-xs">
+            {/* Eight columns exceed a phone's width; scroll the table rather than
+                letting its intrinsic width stretch every sibling panel. */}
+            <div className="w-full overflow-x-auto">
+            <table className="w-full min-w-[640px] border-collapse text-xs">
               <thead className="uppercase tracking-[0.18em] text-[rgb(var(--text-rgb)/0.5)]">
                 <tr>
                   <th className="border-b border-[rgb(var(--text-rgb)/0.14)] py-2 pl-3 pr-2 text-left font-medium">Hero</th>
@@ -220,8 +105,7 @@ export function PlayerProfile({ accountId }: PlayerProfileProps) {
                   <th className="border-b border-[rgb(var(--text-rgb)/0.14)] py-2 px-3 text-right font-medium">NW/Min</th>
                   <th className="border-b border-[rgb(var(--text-rgb)/0.14)] py-2 px-3 text-right font-medium">LH/Min</th>
                   <th className="border-b border-[rgb(var(--text-rgb)/0.14)] py-2 px-3 text-right font-medium">DMG/Min</th>
-                  <th className="border-b border-[rgb(var(--text-rgb)/0.14)] py-2 pr-3 text-right font-medium">
-                  </th>
+                  <th className="border-b border-[rgb(var(--text-rgb)/0.14)] py-2 pr-3 text-right font-medium"></th>
                 </tr>
               </thead>
               <tbody>
@@ -234,13 +118,7 @@ export function PlayerProfile({ accountId }: PlayerProfileProps) {
                       <td className="py-3 pl-3 pr-2">
                         <div className="flex items-center gap-3">
                           {iconUrl ? (
-                            <img
-                              src={iconUrl}
-                              alt={`${name} icon`}
-                              width={18}
-                              height={18}
-                              className="h-[18px] w-[18px] object-cover"
-                            />
+                            <img src={iconUrl} alt={`${name} icon`} width={18} height={18} className="h-[18px] w-[18px] object-cover" />
                           ) : null}
                           <span className="font-semibold text-[var(--text-strong)]">{name}</span>
                         </div>
@@ -248,68 +126,99 @@ export function PlayerProfile({ accountId }: PlayerProfileProps) {
                       <td className="py-3 px-3 text-right text-[rgb(var(--text-rgb)/0.82)]">{formatNumber(row.matches)}</td>
                       <td className="py-3 px-3 text-right text-[var(--accent)]">{formatPercent(row.winRate)}</td>
                       <td className="py-3 px-3 text-right text-[rgb(var(--text-rgb)/0.82)]">{row.kda.toFixed(2)}</td>
-                      <td className="py-3 px-3 text-right text-[rgb(var(--text-rgb)/0.82)]">
-                        {formatNumber(row.networthPerMin)}
-                      </td>
-                      <td className="py-3 px-3 text-right text-[rgb(var(--text-rgb)/0.82)]">
-                        {formatNumber(row.lastHitsPerMin)}
-                      </td>
-                      <td className="py-3 px-3 text-right text-[rgb(var(--text-rgb)/0.82)]">
-                        {formatNumber(row.damagePerMin)}
-                      </td>
-                      <td className="py-3 pr-3 text-right text-[rgb(var(--text-rgb)/0.6)]">
-                        {formatRelativeTimestamp(row.lastPlayed)}
-                      </td>
+                      <td className="py-3 px-3 text-right text-[rgb(var(--text-rgb)/0.82)]">{formatNumber(row.networthPerMin)}</td>
+                      <td className="py-3 px-3 text-right text-[rgb(var(--text-rgb)/0.82)]">{formatNumber(row.lastHitsPerMin)}</td>
+                      <td className="py-3 px-3 text-right text-[rgb(var(--text-rgb)/0.82)]">{formatNumber(row.damagePerMin)}</td>
+                      <td className="py-3 pr-3 text-right text-[rgb(var(--text-rgb)/0.6)]">{formatRelativeTimestamp(row.lastPlayed)}</td>
                     </tr>
                   );
                 })}
                 {heroRows.length === 0 ? (
                   <tr>
-                    <td className="px-3 py-4 text-left text-[rgb(var(--text-rgb)/0.6)]" colSpan={8}>
-                      No hero data yet.
-                    </td>
+                    <td className="px-3 py-4 text-left text-[rgb(var(--text-rgb)/0.6)]" colSpan={8}>No hero data yet.</td>
                   </tr>
                 ) : null}
               </tbody>
             </table>
+            </div>
           </Panel>
         </div>
 
-        <div className="grid gap-[4px]">
-          <Panel className="flex flex-col gap-3">
-            <h2 className="text-sm font-semibold uppercase tracking-[0.22em] text-[var(--text-strong)]">Profile Signals</h2>
-            <ul className="grid gap-1 text-xs text-[rgb(var(--text-rgb)/0.72)]">
-              <li className="flex items-center justify-between border-b border-[var(--surface-border-muted)] pb-1">
-                <span className="uppercase tracking-[0.18em] text-[rgb(var(--text-rgb)/0.55)]">Matches tracked</span>
-                <span className="font-semibold text-[var(--text-strong)]">{formatNumber(matchesPlayed)}</span>
+        <div className="grid min-w-0 grid-cols-1 gap-[4px]">
+          {/* ── profile signals ────────────────────────────────────── */}
+          <Panel className="flex flex-col gap-0 !p-0">
+            <div className="panel-header">
+              <h2 className="min-w-0 flex-1 px-4 py-3 text-sm font-semibold uppercase tracking-[0.22em] text-[var(--text-strong)]">
+                Profile Signals
+              </h2>
+            </div>
+            <ul className="flex flex-col divide-y divide-[var(--surface-border-muted)] text-xs text-[rgb(var(--text-rgb)/0.72)]">
+              <li className="flex items-center justify-between gap-3 px-4 py-2.5">
+                <span className="shrink-0 uppercase tracking-[0.18em] text-[rgb(var(--text-rgb)/0.55)]">Player score</span>
+                <span className="truncate font-semibold text-[var(--accent)]">
+                  {formatNumber(mmr?.player_score ?? 0)}
+                </span>
               </li>
-              <li className="flex items-center justify-between border-b border-[var(--surface-border-muted)] pb-1">
-                <span className="uppercase tracking-[0.18em] text-[rgb(var(--text-rgb)/0.55)]">Unique heroes</span>
-                <span className="font-semibold text-[var(--text-strong)]">{formatNumber(uniqueHeroes)}</span>
+              <li className="flex items-center justify-between gap-3 px-4 py-2.5">
+                <span className="shrink-0 uppercase tracking-[0.18em] text-[rgb(var(--text-rgb)/0.55)]">Leaderboard</span>
+                <span className="truncate font-semibold text-[var(--text-strong)]">
+                  {mmr?.rank ? `Rank ${formatNumber(mmr.rank)}` : 'Unranked'}
+                </span>
               </li>
-              <li className="flex items-center justify-between border-b border-[var(--surface-border-muted)] pb-1">
-                <span className="uppercase tracking-[0.18em] text-[rgb(var(--text-rgb)/0.55)]">Avg matches / hero</span>
-                <span className="font-semibold text-[var(--text-strong)]">{avgMatchesPerHero.toFixed(1)}</span>
+              {mmr?.division ? (
+                <li className="flex items-center justify-between gap-3 px-4 py-2.5">
+                  <span className="shrink-0 uppercase tracking-[0.18em] text-[rgb(var(--text-rgb)/0.55)]">Division</span>
+                  <span className="truncate font-semibold text-[var(--text-strong)]">
+                    {formatNumber(mmr.division)} {'\u00B7'} Tier {mmr.division_tier ?? '\u2014'}
+                  </span>
+                </li>
+              ) : null}
+              <li className="flex items-center justify-between gap-3 px-4 py-2.5">
+                <span className="shrink-0 uppercase tracking-[0.18em] text-[rgb(var(--text-rgb)/0.55)]">Lifetime record</span>
+                <span className="truncate font-semibold text-[var(--text-strong)]">
+                  {formatNumber(record.wins)}W {'\u00B7'} {formatNumber(record.losses)}L
+                </span>
               </li>
-              <li className="flex items-center justify-between border-b border-[var(--surface-border-muted)] pb-1">
-                <span className="uppercase tracking-[0.18em] text-[rgb(var(--text-rgb)/0.55)]">Volume anchor</span>
-                <span className="font-semibold text-[var(--text-strong)]">
+              <li className="flex items-center justify-between gap-3 px-4 py-2.5">
+                <span className="shrink-0 uppercase tracking-[0.18em] text-[rgb(var(--text-rgb)/0.55)]">Win rate</span>
+                <span className="truncate font-semibold text-[var(--text-strong)]">{formatPercent(record.winRate)}</span>
+              </li>
+              <li className="flex items-center justify-between gap-3 px-4 py-2.5">
+                <span className="shrink-0 uppercase tracking-[0.18em] text-[rgb(var(--text-rgb)/0.55)]">Matches tracked</span>
+                <span className="truncate font-semibold text-[var(--text-strong)]">{formatNumber(matchesPlayed)}</span>
+              </li>
+              <li className="flex items-center justify-between gap-3 px-4 py-2.5">
+                <span className="shrink-0 uppercase tracking-[0.18em] text-[rgb(var(--text-rgb)/0.55)]">Unique heroes</span>
+                <span className="truncate font-semibold text-[var(--text-strong)]">{formatNumber(uniqueHeroes)}</span>
+              </li>
+              <li className="flex items-center justify-between gap-3 px-4 py-2.5">
+                <span className="shrink-0 uppercase tracking-[0.18em] text-[rgb(var(--text-rgb)/0.55)]">Avg matches / hero</span>
+                <span className="truncate font-semibold text-[var(--text-strong)]">{avgMatchesPerHero.toFixed(1)}</span>
+              </li>
+              <li className="flex items-center justify-between gap-3 px-4 py-2.5">
+                <span className="shrink-0 uppercase tracking-[0.18em] text-[rgb(var(--text-rgb)/0.55)]">Volume anchor</span>
+                <span className="truncate font-semibold text-[var(--text-strong)]">
                   [{highestVolumeHeroCode}] {highestVolumeHeroName.toUpperCase()}
                 </span>
               </li>
-              <li className="flex items-center justify-between">
-                <span className="uppercase tracking-[0.18em] text-[rgb(var(--text-rgb)/0.55)]">Best winrate</span>
-                <span className="font-semibold text-[var(--accent)]">
+              <li className="flex items-center justify-between gap-3 px-4 py-2.5">
+                <span className="shrink-0 uppercase tracking-[0.18em] text-[rgb(var(--text-rgb)/0.55)]">Best winrate</span>
+                <span className="truncate font-semibold text-[var(--accent)]">
                   [{bestWinHeroCode}] {bestWinHeroName.toUpperCase()} {'\u00B7'} {formatPercent(bestWinHero.winRate)}
                 </span>
               </li>
             </ul>
           </Panel>
 
+          {/* ── top heroes ─────────────────────────────────────────── */}
           <Panel className="flex flex-col gap-0 !p-0">
-            <div className="flex items-center justify-between border-b border-[var(--surface-border-muted)] px-3 py-3">
-              <h2 className="text-sm font-semibold uppercase tracking-[0.2em] text-[var(--text-strong)]">Top Heroes</h2>
-              <span className="text-xs uppercase tracking-[0.2em] text-[rgb(var(--text-rgb)/0.45)]">Volume {'\u00B7'} Win%</span>
+            <div className="panel-header">
+              <h2 className="min-w-0 flex-1 px-4 py-3 text-sm font-semibold uppercase tracking-[0.2em] text-[var(--text-strong)]">
+                Top Heroes
+              </h2>
+              <div className="panel-header-actions">
+                <span className="panel-header-meta">Volume {'\u00B7'} Win%</span>
+              </div>
             </div>
             <ul className="flex flex-col">
               {topHeroesWithMeta.map((hero) => (
@@ -319,13 +228,7 @@ export function PlayerProfile({ accountId }: PlayerProfileProps) {
                 >
                   <div className="flex items-center gap-3">
                     {hero.iconUrl ? (
-                      <img
-                        src={hero.iconUrl}
-                        alt={`${hero.name} icon`}
-                        width={24}
-                        height={24}
-                        className="h-6 w-6 object-cover"
-                      />
+                      <img src={hero.iconUrl} alt={`${hero.name} icon`} width={24} height={24} className="h-6 w-6 object-cover" />
                     ) : null}
                     <div className="flex flex-col text-left">
                       <span className="font-semibold text-[var(--text-strong)]">{hero.name}</span>

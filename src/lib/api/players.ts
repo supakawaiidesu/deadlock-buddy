@@ -1,8 +1,10 @@
 import { apiRequest } from './client';
 import {
   PlayerHeroStatsResponseSchema,
+  PlayerMatchHistoryResponseSchema,
   PlayerMMRHistoryResponseSchema,
   PlayerMMRResponseSchema,
+  PlayerRankSchema,
   RankDistributionResponseSchema,
 } from './schema';
 
@@ -37,6 +39,22 @@ export async function fetchPlayerMMRHistory(accountId: number, heroId?: number) 
   });
 
   return PlayerMMRHistoryResponseSchema.parse(result);
+}
+
+export async function fetchPlayerRank(accountId: number) {
+  const result = await apiRequest<unknown>({
+    path: `/v1/players/${accountId}/rank`,
+  });
+
+  return PlayerRankSchema.parse(result);
+}
+
+export async function fetchPlayerMatchHistory(accountId: number) {
+  const result = await apiRequest<unknown>({
+    path: `/v1/players/${accountId}/match-history`,
+  });
+
+  return PlayerMatchHistoryResponseSchema.parse(result);
 }
 
 export type RankDistributionFilters = {

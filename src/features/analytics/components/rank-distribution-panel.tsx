@@ -13,47 +13,13 @@ import {
 import { Filter } from 'lucide-react';
 import { Panel } from '@/ui/panel';
 import type { RankDistributionEntry } from '@/lib/api/schema';
+import { buildTierLabel, TIER_COLORS } from '@/lib/data/ranks';
 
 type RankDistributionPanelProps = {
   entries: readonly RankDistributionEntry[];
   minUnixTimestamp?: number;
   headerActions?: ReactNode;
   outerRef?: (node: HTMLDivElement | null) => void;
-};
-
-type RankTier = {
-  name: string;
-  start: number;
-  end: number;
-};
-
-const RANK_TIERS: RankTier[] = [
-  { name: 'Initiate', start: 11, end: 16 },
-  { name: 'Seeker', start: 21, end: 26 },
-  { name: 'Alchemist', start: 31, end: 36 },
-  { name: 'Arcanist', start: 41, end: 46 },
-  { name: 'Ritualist', start: 51, end: 56 },
-  { name: 'Emissary', start: 61, end: 66 },
-  { name: 'Archon', start: 71, end: 76 },
-  { name: 'Oracle', start: 81, end: 86 },
-  { name: 'Phantom', start: 91, end: 96 },
-  { name: 'Ascendant', start: 101, end: 106 },
-  { name: 'Eternus', start: 111, end: 116 },
-];
-
-const TIER_COLORS: Record<string, string> = {
-  Initiate: 'rgb(106, 62, 30)',
-  Seeker: 'rgb(136, 35, 85)',
-  Alchemist: 'rgb(92, 109, 171)',
-  Arcanist: 'rgb(113, 156, 71)',
-  Ritualist: 'rgb(221, 163, 38)',
-  Emissary: 'rgb(238, 79, 87)',
-  Archon: 'rgb(180, 127, 235)',
-  Oracle: 'rgb(149, 81, 56)',
-  Phantom: 'rgb(124, 124, 124)',
-  Ascendant: 'rgb(195, 151, 81)',
-  Eternus: 'rgb(85, 216, 157)',
-  Unclassified: 'var(--accent)',
 };
 
 type ChartDatum = {
@@ -64,28 +30,6 @@ type ChartDatum = {
   tierLabel: string;
   color: string;
 };
-
-function findRankTier(rank: number): RankTier | null {
-  return RANK_TIERS.find((tier) => rank >= tier.start && rank <= tier.end) ?? null;
-}
-
-function buildTierLabel(rank: number): { tierName: string; label: string } {
-  const tier = findRankTier(rank);
-  if (!tier) {
-    return {
-      tierName: 'Unclassified',
-      label: `Rank ${rank}`,
-    };
-  }
-
-  const subRank = rank - tier.start + 1;
-  const suffix = subRank > 0 ? ` ${subRank}` : '';
-
-  return {
-    tierName: tier.name,
-    label: `${tier.name}${suffix}`,
-  };
-}
 
 function formatPercent(value: number) {
   if (!Number.isFinite(value) || value <= 0) return '<0.1%';
