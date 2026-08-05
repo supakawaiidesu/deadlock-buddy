@@ -19,7 +19,6 @@ type RankDistributionPanelProps = {
   entries: readonly RankDistributionEntry[];
   minUnixTimestamp?: number;
   headerActions?: ReactNode;
-  outerRef?: (node: HTMLDivElement | null) => void;
 };
 
 type ChartDatum = {
@@ -93,7 +92,6 @@ export function RankDistributionPanel({
   entries,
   minUnixTimestamp,
   headerActions,
-  outerRef,
 }: RankDistributionPanelProps) {
   const totalPlayers = useMemo(
     () => entries.reduce((sum, entry) => sum + (entry.players ?? 0), 0),
@@ -127,7 +125,7 @@ export function RankDistributionPanel({
   );
 
   return (
-    <Panel ref={outerRef} className="flex h-full flex-col gap-[4px] !p-0">
+    <Panel className="flex h-full flex-col gap-[4px] !p-0">
       <div className="panel-header">
         <h2 className="min-w-0 flex-1 px-4 py-3 text-sm font-semibold uppercase tracking-[0.2em] text-[var(--text-strong)]">
           Rank distribution histogram
@@ -150,13 +148,13 @@ export function RankDistributionPanel({
         </div>
       </div>
 
-      <div className="flex flex-1 flex-col px-4 pb-0">
+      <div className="flex min-h-0 flex-1 flex-col px-4 pb-0">
         {chartData.length === 0 ? (
-          <div className="flex h-48 flex-col items-center justify-center rounded-sm border border-[rgb(var(--text-rgb)/0.12)] bg-[rgb(var(--text-rgb)/0.02)] px-4 text-center text-xs text-[rgb(var(--text-rgb)/0.6)]">
+          <div className="flex min-h-[120px] flex-1 flex-col items-center justify-center rounded-sm border border-[rgb(var(--text-rgb)/0.12)] bg-[rgb(var(--text-rgb)/0.02)] px-4 text-center text-xs text-[rgb(var(--text-rgb)/0.6)]">
             Distribution data unavailable. Try again later.
           </div>
         ) : (
-          <div className="h-80 w-full">
+          <div className="min-h-[180px] w-full flex-1">
             <ResponsiveContainer
               width="100%"
               height="100%"

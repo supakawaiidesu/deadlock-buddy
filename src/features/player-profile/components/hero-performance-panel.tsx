@@ -12,10 +12,9 @@ import {
 type Props = {
   accountId: number;
   headerActions?: ReactNode;
-  outerRef?: (node: HTMLDivElement | null) => void;
 };
 
-export function HeroPerformancePanel({ accountId, headerActions, outerRef }: Props) {
+export function HeroPerformancePanel({ accountId, headerActions }: Props) {
   const heroStatsQuery = usePlayerHeroStats(accountId);
   const heroRows = useMemo(
     () => (heroStatsQuery.data ? buildHeroRows(heroStatsQuery.data) : []),
@@ -27,14 +26,13 @@ export function HeroPerformancePanel({ accountId, headerActions, outerRef }: Pro
       title="Hero performance"
       meta={<span className="panel-header-meta">{heroRows.length} heroes</span>}
       headerActions={headerActions}
-      outerRef={outerRef}
     >
       {heroStatsQuery.isLoading ? (
-        <Skeleton className="h-48 w-full" />
+        <Skeleton className="min-h-0 w-full flex-1" />
       ) : heroStatsQuery.isError ? (
         <WidgetMessage>Hero stats are unavailable right now. Try again later.</WidgetMessage>
       ) : (
-        <div className="w-full overflow-x-auto">
+        <div className="min-h-0 w-full flex-1 overflow-auto scroll-quiet">
           <table className="w-full min-w-[640px] border-collapse text-xs">
             <thead className="uppercase tracking-[0.18em] text-[rgb(var(--text-rgb)/0.5)]">
               <tr>

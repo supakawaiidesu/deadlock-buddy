@@ -59,7 +59,6 @@ export type FilterableLeaderboardPanelProps<TEntry> = {
   fetchingLabel?: string;
   refreshingLabel?: string;
   headerActions?: ReactNode;
-  outerRef?: (node: HTMLDivElement | null) => void;
 };
 
 export function FilterableLeaderboardPanel<TEntry>({
@@ -79,7 +78,6 @@ export function FilterableLeaderboardPanel<TEntry>({
   fetchingLabel = 'Fetching stats…',
   refreshingLabel = 'Refreshing…',
   headerActions,
-  outerRef,
 }: FilterableLeaderboardPanelProps<TEntry>) {
   const [filters, setFilters] = useState<DateRangeFilters>({});
   const [isSettingsOpen, setIsSettingsOpen] = useState(false);
@@ -252,7 +250,7 @@ export function FilterableLeaderboardPanel<TEntry>({
   };
 
   return (
-    <Panel ref={outerRef} className={clsx('flex flex-col gap-[4px] !p-0', panelClassName)}>
+    <Panel className={clsx('flex h-full flex-col gap-[4px] !p-0', panelClassName)}>
       <div className="panel-header">
         <div className="flex min-w-0 flex-1 flex-col justify-center px-4 py-3">
           <h2 className="text-sm font-semibold uppercase tracking-[0.2em] text-[var(--text-strong)]">{title}</h2>
@@ -277,7 +275,7 @@ export function FilterableLeaderboardPanel<TEntry>({
         </div>
       </div>
 
-      <div className="relative flex-1">
+      <div className="relative flex min-h-0 flex-1 flex-col">
         {isSettingsOpen ? (
           <div className="absolute inset-0 z-10 flex flex-col gap-4 bg-[var(--overlay-soft-background)] p-4">
             <div className="flex flex-wrap items-center gap-3 text-xs uppercase tracking-[0.2em] text-[rgb(var(--text-rgb)/0.55)]">
@@ -318,7 +316,7 @@ export function FilterableLeaderboardPanel<TEntry>({
           </div>
         ) : null}
 
-        <ul className={clsx('flex max-h-80 flex-col overflow-y-auto pr-2 scroll-quiet', listClassName)}>
+        <ul className={clsx('flex min-h-0 flex-1 flex-col overflow-y-auto pr-2 scroll-quiet', listClassName)}>
           {isRefreshing ? (
             <li className="px-4 pt-2">
               <div className="h-[3px] w-full overflow-hidden rounded-full bg-[rgb(var(--text-rgb)/0.14)]">

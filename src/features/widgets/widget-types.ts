@@ -3,20 +3,26 @@ import type { ReactNode } from 'react';
 export type WidgetInstance<TType extends string> = {
   id: string;
   type: TType;
+  x: number;
+  y: number;
+  w: number;
+  h: number;
 };
 
 export type WidgetRenderProps<TType extends string, TData> = {
   instance: WidgetInstance<TType>;
   data: TData;
   headerActions?: ReactNode;
-  outerRef?: (node: HTMLDivElement | null) => void;
 };
 
 export type WidgetDefinition<TType extends string, TData> = {
   type: TType;
   title: string;
   description?: string;
-  columnSpan?: 1 | 2 | 3;
+  defaultW: 1 | 2 | 3;
+  defaultH: number;
+  minW: 1 | 2 | 3;
+  minH: number;
   render: (props: WidgetRenderProps<TType, TData>) => ReactNode;
 };
 

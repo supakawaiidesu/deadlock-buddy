@@ -56,10 +56,9 @@ const METRIC_TONE_CLASSES: Record<MatchHistoryMetricTone, string> = {
 type Props = {
   accountId: number;
   headerActions?: ReactNode;
-  outerRef?: (node: HTMLDivElement | null) => void;
 };
 
-export function MatchHistoryPanel({ accountId, headerActions, outerRef }: Props) {
+export function MatchHistoryPanel({ accountId, headerActions }: Props) {
   const feed = usePlayerMatchHistoryFeed(accountId);
   const accountIds = useMemo(
     () =>
@@ -96,10 +95,9 @@ export function MatchHistoryPanel({ accountId, headerActions, outerRef }: Props)
       title="Match history"
       meta={<span className="panel-header-meta">{rows.length} matches</span>}
       headerActions={headerActions}
-      outerRef={outerRef}
     >
       {feed.isLoading ? (
-        <div className="flex flex-col divide-y divide-[var(--surface-border-muted)]">
+        <div className="flex min-h-0 flex-1 flex-col divide-y divide-[var(--surface-border-muted)] overflow-y-auto scroll-quiet">
           {[0, 1, 2].map((index) => (
             <MatchHistoryRowSkeleton key={index} />
           ))}
@@ -119,7 +117,7 @@ export function MatchHistoryPanel({ accountId, headerActions, outerRef }: Props)
               Some enriched match details are unavailable. Basic history remains visible.
             </div>
           ) : null}
-          <div className="flex min-w-0 flex-col divide-y divide-[var(--surface-border-muted)]">
+          <div className="flex min-h-0 min-w-0 flex-1 flex-col divide-y divide-[var(--surface-border-muted)] overflow-y-auto scroll-quiet">
             {rows.map((row) => (
               <MatchHistoryRowView key={row.matchId} row={row} />
             ))}

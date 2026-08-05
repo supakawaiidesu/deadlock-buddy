@@ -8,7 +8,6 @@ type TelemetrySnapshotPanelProps = {
   highestBadge: number;
   heroWinrateEntries: readonly HeroLeaderboardEntry[];
   headerActions?: ReactNode;
-  outerRef?: (node: HTMLDivElement | null) => void;
 };
 
 function formatPercent(value?: number): string {
@@ -22,12 +21,11 @@ export function TelemetrySnapshotPanel({
   highestBadge,
   heroWinrateEntries,
   headerActions,
-  outerRef,
 }: TelemetrySnapshotPanelProps) {
   const topWinrate = heroWinrateEntries[0]?.value;
 
   return (
-    <Panel ref={outerRef} className="flex h-full flex-col gap-[4px] !p-0">
+    <Panel className="flex h-full flex-col gap-[4px] !p-0">
       <div className="panel-header">
         <h2 className="min-w-0 flex-1 px-4 py-3 text-sm font-semibold uppercase tracking-[0.2em] text-[var(--text-strong)]">Telemetry snapshot</h2>
         <div className="panel-header-actions">{headerActions}</div>

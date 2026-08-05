@@ -19,7 +19,6 @@ export function PlayerWidgetLayout({ accountId }: Props) {
       data={data}
       storageKey="deadlock-buddy-player-widgets.v1"
       emptyStateTitle="No widgets on this profile yet."
-      className="items-start"
     />
   );
 }

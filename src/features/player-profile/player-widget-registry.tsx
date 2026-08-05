@@ -12,12 +12,14 @@ export const playerWidgetRegistry: PlayerWidgetRegistry = {
     type: 'hero-performance',
     title: 'Hero performance',
     description: 'Per-hero matches, win rate, and per-minute economy.',
-    columnSpan: 2,
-    render: ({ data, headerActions, outerRef }) => (
+    defaultW: 2,
+    defaultH: 13,
+    minW: 1,
+    minH: 8,
+    render: ({ data, headerActions }) => (
       <HeroPerformancePanel
         accountId={data.accountId}
         headerActions={headerActions}
-        outerRef={outerRef}
       />
     ),
   },
@@ -25,11 +27,14 @@ export const playerWidgetRegistry: PlayerWidgetRegistry = {
     type: 'profile-signals',
     title: 'Profile signals',
     description: 'Score, leaderboard rank, lifetime record, and hero spread.',
-    render: ({ data, headerActions, outerRef }) => (
+    defaultW: 1,
+    defaultH: 13,
+    minW: 1,
+    minH: 8,
+    render: ({ data, headerActions }) => (
       <ProfileSignalsPanel
         accountId={data.accountId}
         headerActions={headerActions}
-        outerRef={outerRef}
       />
     ),
   },
@@ -37,12 +42,14 @@ export const playerWidgetRegistry: PlayerWidgetRegistry = {
     type: 'match-history',
     title: 'Match history',
     description: 'Recent matches with builds, teams, and per-match stats.',
-    columnSpan: 2,
-    render: ({ data, headerActions, outerRef }) => (
+    defaultW: 2,
+    defaultH: 18,
+    minW: 1,
+    minH: 10,
+    render: ({ data, headerActions }) => (
       <MatchHistoryPanel
         accountId={data.accountId}
         headerActions={headerActions}
-        outerRef={outerRef}
       />
     ),
   },
@@ -50,19 +57,22 @@ export const playerWidgetRegistry: PlayerWidgetRegistry = {
     type: 'top-heroes',
     title: 'Top heroes',
     description: 'Most-played heroes by volume and win rate.',
-    render: ({ data, headerActions, outerRef }) => (
+    defaultW: 1,
+    defaultH: 11,
+    minW: 1,
+    minH: 6,
+    render: ({ data, headerActions }) => (
       <TopHeroesPanel
         accountId={data.accountId}
         headerActions={headerActions}
-        outerRef={outerRef}
       />
     ),
   },
 };
 
 export const defaultPlayerWidgetLayout: PlayerWidgetInstance[] = [
-  { id: 'player-widget-hero-performance', type: 'hero-performance' },
-  { id: 'player-widget-profile-signals', type: 'profile-signals' },
-  { id: 'player-widget-match-history', type: 'match-history' },
-  { id: 'player-widget-top-heroes', type: 'top-heroes' },
+  { id: 'player-widget-top-heroes', type: 'top-heroes', x: 0, y: 0, w: 1, h: 11 },
+  { id: 'player-widget-hero-performance', type: 'hero-performance', x: 1, y: 0, w: 2, h: 13 },
+  { id: 'player-widget-profile-signals', type: 'profile-signals', x: 0, y: 11, w: 1, h: 13 },
+  { id: 'player-widget-match-history', type: 'match-history', x: 1, y: 13, w: 2, h: 18 },
 ];

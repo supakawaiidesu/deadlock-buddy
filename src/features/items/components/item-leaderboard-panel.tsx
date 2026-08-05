@@ -20,7 +20,6 @@ type ItemLeaderboardPanelProps = {
   limit?: number;
   initialEntries: ItemWinrateEntry[];
   headerActions?: ReactNode;
-  outerRef?: (node: HTMLDivElement | null) => void;
 };
 
 async function fetchLeaderboardData(
@@ -46,7 +45,6 @@ export function ItemLeaderboardPanel({
   limit,
   initialEntries,
   headerActions,
-  outerRef,
 }: ItemLeaderboardPanelProps) {
   const fetcher = useCallback(
     (params: { limit?: number; filters: DateRangeFilters }) =>
@@ -63,7 +61,6 @@ export function ItemLeaderboardPanel({
       fetcher={fetcher}
       getEntryKey={(entry) => `${panelKey}-${entry.itemId}`}
       headerActions={headerActions}
-      outerRef={outerRef}
       renderEntry={(entry) => {
         const itemName = getItemDisplayName(entry.itemId);
         const iconUrl = getItemIconUrl(entry.itemId);

@@ -12,14 +12,13 @@ import {
 type Props = {
   accountId: number;
   headerActions?: ReactNode;
-  outerRef?: (node: HTMLDivElement | null) => void;
 };
 
 function formatHeroCode(heroId: number): string {
   return heroId.toString().padStart(2, '0');
 }
 
-export function ProfileSignalsPanel({ accountId, headerActions, outerRef }: Props) {
+export function ProfileSignalsPanel({ accountId, headerActions }: Props) {
   const heroStatsQuery = usePlayerHeroStats(accountId);
   const overviewQuery = usePlayerOverview(accountId);
   const heroRows = useMemo(
@@ -31,15 +30,15 @@ export function ProfileSignalsPanel({ accountId, headerActions, outerRef }: Prop
 
   if (heroStatsQuery.isLoading) {
     return (
-      <WidgetPanel title="Profile signals" headerActions={headerActions} outerRef={outerRef}>
-        <Skeleton className="h-48 w-full" />
+      <WidgetPanel title="Profile signals" headerActions={headerActions}>
+        <Skeleton className="min-h-0 w-full flex-1" />
       </WidgetPanel>
     );
   }
 
   if (heroStatsQuery.isError) {
     return (
-      <WidgetPanel title="Profile signals" headerActions={headerActions} outerRef={outerRef}>
+      <WidgetPanel title="Profile signals" headerActions={headerActions}>
         <WidgetMessage>Profile signals are unavailable right now. Try again later.</WidgetMessage>
       </WidgetPanel>
     );
@@ -47,7 +46,7 @@ export function ProfileSignalsPanel({ accountId, headerActions, outerRef }: Prop
 
   if (heroRows.length === 0) {
     return (
-      <WidgetPanel title="Profile signals" headerActions={headerActions} outerRef={outerRef}>
+      <WidgetPanel title="Profile signals" headerActions={headerActions}>
         <WidgetMessage>No hero data yet.</WidgetMessage>
       </WidgetPanel>
     );
@@ -70,8 +69,8 @@ export function ProfileSignalsPanel({ accountId, headerActions, outerRef }: Prop
   const bestWinHeroCode = formatHeroCode(bestWinHero.heroId);
 
   return (
-    <WidgetPanel title="Profile signals" headerActions={headerActions} outerRef={outerRef}>
-      <ul className="flex flex-col divide-y divide-[var(--surface-border-muted)] text-xs text-[rgb(var(--text-rgb)/0.72)]">
+    <WidgetPanel title="Profile signals" headerActions={headerActions}>
+      <ul className="flex min-h-0 flex-1 flex-col divide-y divide-[var(--surface-border-muted)] overflow-y-auto scroll-quiet text-xs text-[rgb(var(--text-rgb)/0.72)]">
         <li className="flex items-center justify-between gap-3 px-4 py-2.5">
           <span className="shrink-0 uppercase tracking-[0.18em] text-[rgb(var(--text-rgb)/0.55)]">Player score</span>
           <span className="truncate font-semibold text-[var(--accent)]">

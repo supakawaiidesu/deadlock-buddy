@@ -6,12 +6,11 @@ import { getHeroDisplayName, getHeroIconUrl } from '@/lib/data/heroes';
 type NaLeaderboardPanelProps = {
   entries: readonly LeaderboardEntry[];
   headerActions?: ReactNode;
-  outerRef?: (node: HTMLDivElement | null) => void;
 };
 
-export function NaLeaderboardPanel({ entries, headerActions, outerRef }: NaLeaderboardPanelProps) {
+export function NaLeaderboardPanel({ entries, headerActions }: NaLeaderboardPanelProps) {
   return (
-    <Panel ref={outerRef} className="flex flex-col gap-[4px] !p-0">
+    <Panel className="flex h-full flex-col gap-[4px] !p-0">
       <div className="panel-header">
         <h2 className="min-w-0 flex-1 px-4 py-3 text-sm font-semibold uppercase tracking-[0.2em] text-[var(--text-strong)]">
           NA leaderboard highlight
@@ -21,7 +20,7 @@ export function NaLeaderboardPanel({ entries, headerActions, outerRef }: NaLeade
           {headerActions}
         </div>
       </div>
-      <ul className="flex max-h-80 flex-col overflow-y-auto pr-2 scroll-quiet">
+      <ul className="flex min-h-0 flex-1 flex-col overflow-y-auto pr-2 scroll-quiet">
         {entries.map((entry) => (
           <li
             key={`${entry.rank}-${entry.account_name}`}

@@ -7,7 +7,6 @@ type WidgetPanelProps = {
   title: string;
   meta?: ReactNode;
   headerActions?: ReactNode;
-  outerRef?: (node: HTMLDivElement | null) => void;
   className?: string;
   children: ReactNode;
 };
@@ -16,7 +15,6 @@ export function WidgetPanel({
   title,
   meta,
   headerActions,
-  outerRef,
   className,
   children,
 }: WidgetPanelProps) {
@@ -24,7 +22,6 @@ export function WidgetPanel({
 
   return (
     <Panel
-      ref={outerRef}
       className={clsx('flex h-full min-w-0 flex-col gap-0 !p-0', className)}
     >
       <div className="panel-header">
@@ -50,7 +47,7 @@ export function WidgetPanel({
         </div>
       </div>
 
-      <div className="relative min-w-0 flex-1">
+      <div className="relative flex min-h-0 min-w-0 flex-1 flex-col">
         {isOptionsOpen ? (
           <div className="absolute inset-0 z-10 flex flex-col items-start gap-3 bg-[var(--overlay-soft-background)] p-4">
             <span className="text-[10px] uppercase tracking-[0.22em] text-[rgb(var(--text-rgb)/0.5)]">

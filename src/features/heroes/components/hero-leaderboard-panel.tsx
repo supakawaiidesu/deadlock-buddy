@@ -21,7 +21,6 @@ type HeroLeaderboardPanelProps = {
   limit?: number;
   initialEntries: HeroLeaderboardEntry[];
   headerActions?: ReactNode;
-  outerRef?: (node: HTMLDivElement | null) => void;
 };
 
 function formatPercent(value?: number): string | null {
@@ -72,7 +71,6 @@ export function HeroLeaderboardPanel({
   limit,
   initialEntries,
   headerActions,
-  outerRef,
 }: HeroLeaderboardPanelProps) {
   const fetcher = useCallback(
     (params: { limit?: number; filters: DateRangeFilters }) =>
@@ -89,7 +87,6 @@ export function HeroLeaderboardPanel({
       fetcher={fetcher}
       getEntryKey={(entry) => `${panelKey}-${entry.hero_id}`}
       headerActions={headerActions}
-      outerRef={outerRef}
       renderEntry={(entry) => {
         const heroName = getHeroDisplayName(entry.hero_id);
         const iconUrl = getHeroIconUrl(entry.hero_id);

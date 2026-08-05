@@ -12,10 +12,9 @@ import {
 type Props = {
   accountId: number;
   headerActions?: ReactNode;
-  outerRef?: (node: HTMLDivElement | null) => void;
 };
 
-export function TopHeroesPanel({ accountId, headerActions, outerRef }: Props) {
+export function TopHeroesPanel({ accountId, headerActions }: Props) {
   const heroStatsQuery = usePlayerHeroStats(accountId);
   const heroRows = useMemo(
     () => (heroStatsQuery.data ? buildHeroRows(heroStatsQuery.data) : []),
@@ -37,14 +36,13 @@ export function TopHeroesPanel({ accountId, headerActions, outerRef }: Props) {
       title="Top heroes"
       meta={<span className="panel-header-meta">Volume {'\u00B7'} Win%</span>}
       headerActions={headerActions}
-      outerRef={outerRef}
     >
       {heroStatsQuery.isLoading ? (
-        <Skeleton className="h-48 w-full" />
+        <Skeleton className="min-h-0 w-full flex-1" />
       ) : heroStatsQuery.isError ? (
         <WidgetMessage>Hero stats are unavailable right now. Try again later.</WidgetMessage>
       ) : (
-        <ul className="flex flex-col">
+        <ul className="flex min-h-0 flex-1 flex-col overflow-y-auto scroll-quiet">
           {topHeroesWithMeta.map((hero) => (
             <li
               key={hero.heroId}
