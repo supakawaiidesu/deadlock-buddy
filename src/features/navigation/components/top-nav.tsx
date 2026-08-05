@@ -4,6 +4,11 @@ import { ArrowRight, Check, Palette, Plus, Search } from 'lucide-react';
 import { clsx } from 'clsx';
 import { getTheme } from '@/features/theme/theme';
 import { useTheme } from '@/features/theme/theme-provider';
+import {
+  WIDGET_ADD_MENU_CLOSE_EVENT,
+  WIDGET_ADD_MENU_STATE_EVENT,
+  WIDGET_ADD_MENU_TOGGLE_EVENT,
+} from '@/features/widgets/widget-events';
 
 const navLinks = [
   { href: '/', label: 'Home' },
@@ -11,10 +16,8 @@ const navLinks = [
   { href: '/heroes', label: 'Heroes' },
   { href: '/meta', label: 'Meta' },
 ];
+const WIDGET_SURFACE_PATTERNS = [/^\/$/, /^\/players\/\d+\/?$/];
 
-const ADD_MENU_TOGGLE_EVENT = 'dashboard:add-panel-menu-toggle';
-const ADD_MENU_CLOSE_EVENT = 'dashboard:add-panel-menu-close';
-const ADD_MENU_STATE_EVENT = 'dashboard:add-panel-menu-state';
 
 export function TopNav() {
   const pathname = useLocation({ select: (loc) => loc.pathname });
@@ -32,7 +35,7 @@ export function TopNav() {
     return pathname;
   }, [pathname]);
 
-  const isHome = pathname === '/';
+  const hasWidgetSurface = WIDGET_SURFACE_PATTERNS.some((pattern) => pattern.test(pathname));
 
   useEffect(() => {
     const handleState = (event: Event) => {
@@ -42,18 +45,18 @@ export function TopNav() {
       }
     };
 
-    window.addEventListener(ADD_MENU_STATE_EVENT, handleState);
+    window.addEventListener(WIDGET_ADD_MENU_STATE_EVENT, handleState);
     return () => {
-      window.removeEventListener(ADD_MENU_STATE_EVENT, handleState);
+      window.removeEventListener(WIDGET_ADD_MENU_STATE_EVENT, handleState);
     };
   }, []);
 
   useEffect(() => {
-    if (!isHome) {
+    if (!hasWidgetSurface) {
       setIsAddMenuOpen(false);
-      window.dispatchEvent(new Event(ADD_MENU_CLOSE_EVENT));
+      window.dispatchEvent(new Event(WIDGET_ADD_MENU_CLOSE_EVENT));
     }
-  }, [isHome]);
+  }, [hasWidgetSurface]);
 
   useEffect(() => {
     if (!isThemeMenuOpen) return undefined;
@@ -92,7 +95,7 @@ export function TopNav() {
   }
 
   const handleToggleAddMenu = () => {
-    window.dispatchEvent(new Event(ADD_MENU_TOGGLE_EVENT));
+    window.dispatchEvent(new Event(WIDGET_ADD_MENU_TOGGLE_EVENT));
   };
 
   return (
@@ -154,13 +157,13 @@ export function TopNav() {
           </button>
         </form>
 
-        {isHome ? (
+        {hasWidgetSurface ? (
           <button
             type="button"
             onClick={handleToggleAddMenu}
             aria-pressed={isAddMenuOpen}
-            aria-label="Add dashboard panel"
-            title="Add dashboard panel"
+            aria-label="Add widget"
+            title="Add widget"
             className={clsx(
               'panel-header-action border-r border-[var(--surface-border-muted)]',
               isAddMenuOpen && 'bg-[var(--accent-muted)] !text-[var(--accent)]',

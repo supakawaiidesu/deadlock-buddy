@@ -1,4 +1,8 @@
-import type { ReactNode } from 'react';
+import type {
+  WidgetDefinition,
+  WidgetInstance,
+  WidgetRegistry,
+} from '@/features/widgets/widget-types';
 import type { HeroLeaderboardEntry } from '@/features/heroes/components/hero-leaderboard-panel';
 import type { ItemWinrateEntry } from '@/lib/api/analytics';
 import type { LeaderboardEntry, RankDistributionEntry } from '@/lib/api/schema';
@@ -12,10 +16,7 @@ export type DashboardPanelType =
   | 'item-popularity'
   | 'item-winrate';
 
-export type DashboardPanelInstance = {
-  id: string;
-  type: DashboardPanelType;
-};
+export type DashboardPanelInstance = WidgetInstance<DashboardPanelType>;
 
 export type DashboardDataBundle = {
   leaderboardEntries: LeaderboardEntry[];
@@ -29,18 +30,12 @@ export type DashboardDataBundle = {
   highestBadge: number;
 };
 
-export type DashboardPanelDefinition = {
-  type: DashboardPanelType;
-  title: string;
-  description?: string;
-  panelKeyBase: string;
-  columnSpan?: 1 | 2 | 3;
-  render: (props: {
-    instance: DashboardPanelInstance;
-    data: DashboardDataBundle;
-    headerActions?: ReactNode;
-    outerRef?: (node: HTMLDivElement | null) => void;
-  }) => ReactNode;
-};
+export type DashboardPanelDefinition = WidgetDefinition<
+  DashboardPanelType,
+  DashboardDataBundle
+>;
 
-export type DashboardPanelRegistry = Record<DashboardPanelType, DashboardPanelDefinition>;
+export type DashboardPanelRegistry = WidgetRegistry<
+  DashboardPanelType,
+  DashboardDataBundle
+>;

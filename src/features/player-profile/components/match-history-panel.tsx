@@ -14,7 +14,7 @@ import {
   formatNumber,
   formatPercent,
 } from '@/lib/utils/format';
-import { Panel } from '@/ui/panel';
+import { WidgetPanel } from '@/features/widgets/components/widget-panel';
 import { Skeleton } from '@/ui/skeleton';
 import type {
   MatchHistoryMetricTone,
@@ -55,9 +55,11 @@ const METRIC_TONE_CLASSES: Record<MatchHistoryMetricTone, string> = {
 
 type Props = {
   accountId: number;
+  headerActions?: ReactNode;
+  outerRef?: (node: HTMLDivElement | null) => void;
 };
 
-export function MatchHistoryPanel({ accountId }: Props) {
+export function MatchHistoryPanel({ accountId, headerActions, outerRef }: Props) {
   const feed = usePlayerMatchHistoryFeed(accountId);
   const accountIds = useMemo(
     () =>
@@ -90,8 +92,12 @@ export function MatchHistoryPanel({ accountId }: Props) {
   }
 
   return (
-    <Panel className="flex min-w-0 flex-col gap-0 !p-0">
-
+    <WidgetPanel
+      title="Match history"
+      meta={<span className="panel-header-meta">{rows.length} matches</span>}
+      headerActions={headerActions}
+      outerRef={outerRef}
+    >
       {feed.isLoading ? (
         <div className="flex flex-col divide-y divide-[var(--surface-border-muted)]">
           {[0, 1, 2].map((index) => (
@@ -137,7 +143,7 @@ export function MatchHistoryPanel({ accountId }: Props) {
           ) : null}
         </>
       )}
-    </Panel>
+    </WidgetPanel>
   );
 }
 
