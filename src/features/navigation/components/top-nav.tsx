@@ -133,9 +133,9 @@ export function TopNav() {
       <div className="flex min-w-0 w-full justify-center self-stretch lg:w-auto">
         <form
           onSubmit={handleSubmit}
-          className="flex min-w-0 flex-1 self-stretch border-l border-[var(--surface-border-muted)] md:w-[clamp(15rem,24vw,22rem)] md:flex-none"
+          className="search-field flex min-w-0 flex-1 self-stretch border-l border-[var(--surface-border-muted)] md:w-[clamp(15rem,24vw,22rem)] md:flex-none"
         >
-          <label className="flex min-w-0 flex-1 items-center gap-3 px-3 text-[rgb(var(--text-rgb)/0.45)] transition-colors focus-within:bg-[var(--accent-subtle)] focus-within:shadow-[inset_0_0_0_2px_var(--accent)] sm:px-4">
+          <label className="flex min-w-0 flex-1 items-center gap-3 px-3 text-[rgb(var(--text-rgb)/0.45)] transition-colors sm:px-4">
             <span className="sr-only">Search by Deadlock account ID</span>
             <Search className="h-4 w-4 flex-none" aria-hidden="true" />
             <input

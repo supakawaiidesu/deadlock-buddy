@@ -1,51 +1,94 @@
-import { useNavigate } from '@tanstack/react-router';
-import { FormEvent, useState } from 'react';
+import { ArrowRight, LoaderCircle, Search } from 'lucide-react';
+import { useState, type FormEvent } from 'react';
 import { clsx } from 'clsx';
+import { useSteamLookup } from '@/features/players/api/queries';
+import { ApiError } from '@/lib/api/client';
+import { hasSteamService } from '@/lib/api/steam';
 
 type AccountSearchFormProps = {
   className?: string;
+  onResolved: (accountId: number) => void;
 };
 
-export function AccountSearchForm({ className }: AccountSearchFormProps) {
-  const navigate = useNavigate();
+function resolveLookupError(error: unknown): string {
+  if (!hasSteamService) {
+    return 'Player lookup is unavailable.';
+  }
+
+  if (error instanceof ApiError) {
+    if (error.status === 404) return 'No Steam profile found.';
+    if (error.status === 429) return 'Too many lookups. Try again shortly.';
+  }
+
+  return 'Unable to look up that player. Try again.';
+}
+
+export function AccountSearchForm({ className, onResolved }: AccountSearchFormProps) {
+  const lookupMutation = useSteamLookup();
   const [value, setValue] = useState('');
   const [error, setError] = useState<string | null>(null);
+  const isPending = lookupMutation.isPending;
 
-  const handleSubmit = (event: FormEvent<HTMLFormElement>) => {
+  const handleSubmit = async (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
+    if (isPending) return;
+
     setError(null);
-
     const trimmed = value.trim();
-    const numericId = Number.parseInt(trimmed, 10);
-
-    if (!trimmed || Number.isNaN(numericId) || numericId <= 0) {
-      setError('Enter a valid account ID.');
+    if (!trimmed) {
+      setError('Enter a Steam ID, profile URL, or name.');
+      return;
+    }
+    if (!hasSteamService) {
+      setError('Player lookup is unavailable.');
       return;
     }
 
-    navigate({ to: '/players/$accountId', params: { accountId: String(numericId) } });
+    try {
+      const profile = await lookupMutation.mutateAsync(trimmed);
+      onResolved(profile.account_id);
+    } catch (lookupError) {
+      setError(resolveLookupError(lookupError));
+    }
   };
 
   return (
-    <form onSubmit={handleSubmit} className={clsx('flex w-full max-w-xl flex-col gap-4', className)}>
-      <label className="flex flex-col gap-2">
-        <span className="text-sm font-medium text-[rgb(var(--text-rgb)/0.7)]">Deadlock account ID</span>
-        <input
-          value={value}
-          onChange={(event) => setValue(event.target.value)}
-          className="border border-[var(--surface-border-muted)] bg-[var(--surface-muted)] px-4 py-3 text-lg text-[var(--text-strong)] outline-none transition focus:border-[var(--accent)] focus:ring-2 focus:ring-[var(--accent-muted)] focus:ring-offset-0"
-          placeholder="e.g. 342189169"
-          autoComplete="off"
-          inputMode="numeric"
-        />
-      </label>
-      <button
-        type="submit"
-        className="inline-flex items-center justify-center border border-[var(--surface-border)] bg-[var(--surface)] px-4 py-3 text-sm font-semibold uppercase tracking-[0.24em] text-[var(--text-strong)] transition hover:border-[var(--accent)] hover:text-[var(--accent)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--accent-muted)] focus-visible:ring-offset-2 focus-visible:ring-offset-[var(--surface-muted)]"
-      >
-        View player
-      </button>
-      {error ? <p className="text-sm text-[var(--danger)]">{error}</p> : null}
+    <form onSubmit={handleSubmit} className={clsx('flex w-full flex-col gap-2', className)}>
+      <div className="panel search-field flex h-12 min-w-0 w-full overflow-hidden">
+        <label className="flex min-w-0 flex-1 items-center gap-3 px-3 text-[rgb(var(--text-rgb)/0.45)] transition-colors sm:px-4">
+          <span className="sr-only">Search for a Steam player</span>
+          <Search className="h-4 w-4 flex-none" aria-hidden="true" />
+          <input
+            value={value}
+            onChange={(event) => {
+              setValue(event.target.value);
+              if (error) setError(null);
+            }}
+            placeholder="steamid, profile url, or name"
+            className="min-w-0 flex-1 border-0 bg-transparent text-sm text-[var(--foreground)] caret-[var(--accent)] outline-none placeholder:text-[rgb(var(--text-rgb)/0.35)]"
+            autoComplete="off"
+            disabled={isPending}
+          />
+        </label>
+        <button
+          type="submit"
+          className="panel-header-action h-12 shrink-0 -my-px disabled:cursor-wait disabled:opacity-70"
+          aria-label="Search for player"
+          title="Search for player"
+          disabled={isPending}
+        >
+          {isPending ? (
+            <LoaderCircle className="h-4 w-4 animate-spin" aria-hidden="true" />
+          ) : (
+            <ArrowRight className="h-4 w-4" aria-hidden="true" />
+          )}
+        </button>
+      </div>
+      {error ? (
+        <p aria-live="polite" className="text-sm text-[var(--danger)]">
+          {error}
+        </p>
+      ) : null}
     </form>
   );
 }

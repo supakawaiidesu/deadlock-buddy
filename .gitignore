@@ -12,6 +12,9 @@
 
 # testing
 /coverage
+/tests
+/test-results
+/tmp
 
 # build output
 /dist

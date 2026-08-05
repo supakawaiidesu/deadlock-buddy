@@ -1,29 +1,42 @@
-import { createFileRoute } from '@tanstack/react-router';
+import { useState } from 'react';
+import { createFileRoute, useNavigate } from '@tanstack/react-router';
 import { AccountSearchForm } from '@/features/player-search/components/account-search-form';
+import { RecentPlayerList } from '@/features/player-search/components/recent-player-list';
+import {
+  promoteRecentPlayerId,
+  readRecentPlayerIds,
+  writeRecentPlayerIds,
+} from '@/features/player-search/lib/recent-players';
 
 export const Route = createFileRoute('/players/')({
   component: PlayerSearchPage,
 });
 
 function PlayerSearchPage() {
+  const navigate = useNavigate();
+  const [recentPlayerIds, setRecentPlayerIds] = useState(() =>
+    readRecentPlayerIds(window.localStorage),
+  );
+
+  const openPlayer = (accountId: number) => {
+    const nextRecentPlayerIds = promoteRecentPlayerId(recentPlayerIds, accountId);
+    writeRecentPlayerIds(window.localStorage, nextRecentPlayerIds);
+    setRecentPlayerIds(nextRecentPlayerIds);
+    navigate({
+      to: '/players/$accountId',
+      params: { accountId: String(accountId) },
+    });
+  };
+
   return (
-    <div className="flex min-h-[calc(100vh-60px)] w-full flex-col gap-[4px] pb-[4px]">
-      <div className="flex flex-col gap-[4px] text-left">
-        <span className="border border-[var(--surface-border-muted)] bg-[var(--surface-muted)] px-4 py-1 text-xs font-semibold uppercase tracking-[0.32em] text-[rgb(var(--text-rgb)/0.6)]">
-          Player Lookup
-        </span>
-        <h1 className="font-[var(--font-display)] text-4xl font-semibold text-[var(--text-strong)] md:text-5xl">
-          Track your climb with 618Lock
-        </h1>
-        <p className="text-lg text-[rgb(var(--text-rgb)/0.72)]">
-          Enter a Valve account ID to explore match performance, MMR trends, and hero mastery.
+    <div className="flex min-h-full w-full items-center justify-center">
+      <div className="flex w-full max-w-xl flex-col gap-3">
+        <p className="text-[10px] font-medium uppercase tracking-[0.3em] text-[rgb(var(--text-rgb)/0.5)]">
+          LOOKUP PLAYER
         </p>
+        <AccountSearchForm onResolved={openPlayer} />
+        <RecentPlayerList accountIds={recentPlayerIds} onOpen={openPlayer} />
       </div>
-      <AccountSearchForm className="w-full" />
-      <p className="text-xs text-[rgb(var(--text-rgb)/0.48)]">
-        We respect the upstream API guidelines and throttle requests automatically to keep things
-        fast and reliable.
-      </p>
     </div>
   );
 }

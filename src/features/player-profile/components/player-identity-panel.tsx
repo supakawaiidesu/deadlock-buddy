@@ -2,7 +2,7 @@ import type { ReactNode } from 'react';
 import { ExternalLink, ShieldAlert, ShieldCheck, ShieldQuestion } from 'lucide-react';
 import { clsx } from 'clsx';
 import { usePlayerRank, useSteamProfile } from '@/features/players/api/queries';
-import { resolveRankBadge } from '@/lib/data/ranks';
+import { getRankBadgeImageUrl, resolveRankBadge } from '@/lib/data/ranks';
 import { formatDate } from '@/lib/utils/format';
 import { steamProfileUrl, toSteam64 } from '@/lib/utils/steam-id';
 import { Panel } from '@/ui/panel';
@@ -37,6 +37,7 @@ const CELL_LABEL =
 export function PlayerIdentityPanel({ accountId }: Props) {
   const rankQuery = usePlayerRank(accountId);
   const rank = resolveRankBadge(rankQuery.data);
+  const rankImageUrl = rankQuery.data ? getRankBadgeImageUrl(rankQuery.data) : null;
   const steamQuery = useSteamProfile(accountId);
   const profile = steamQuery.data ?? null;
   const vacState = deriveVacState(profile);
@@ -103,11 +104,24 @@ export function PlayerIdentityPanel({ accountId }: Props) {
             {rankQuery.isLoading ? (
               <Skeleton className="h-5 w-24" />
             ) : (
-              <span
-                className="whitespace-nowrap text-sm font-semibold"
-                style={{ color: rank.color }}
-              >
-                {rank.label}
+              <span className="flex items-center gap-2">
+                {rankImageUrl ? (
+                  <img
+                    src={rankImageUrl}
+                    alt=""
+                    width={28}
+                    height={28}
+                    className="h-7 w-7 object-contain"
+                    aria-hidden="true"
+                    decoding="async"
+                  />
+                ) : null}
+                <span
+                  className="whitespace-nowrap text-sm font-semibold"
+                  style={{ color: rank.color }}
+                >
+                  {rank.label}
+                </span>
               </span>
             )}
           </div>

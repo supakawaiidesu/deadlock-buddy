@@ -1,9 +1,9 @@
 import { useMemo } from 'react';
-import { useInfiniteQuery, useQuery, useQueryClient } from '@tanstack/react-query';
+import { useInfiniteQuery, useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { fetchMatchMetadata, MATCH_METADATA_PAGE_SIZE } from '@/lib/api/matches';
 import { fetchPlayerHeroStats, fetchPlayerMatchHistory, fetchPlayerMMR, fetchPlayerMMRHistory, fetchPlayerRank, fetchPlayerSteamProfiles } from '@/lib/api/players';
-import { fetchSteamProfile, hasSteamService } from '@/lib/api/steam';
-import type { PlayerSteamProfile } from '@/lib/api/schema';
+import { fetchSteamLookup, fetchSteamProfile, fetchSteamProfiles, hasSteamService } from '@/lib/api/steam';
+import type { PlayerSteamProfile, SteamProfile } from '@/lib/api/schema';
 
 export const playerQueryKeys = {
   base: ['player'],
@@ -17,6 +17,7 @@ export const playerQueryKeys = {
   steamProfile: (accountId: number) => ['player', accountId, 'steam-profile'] as const,
   steamName: (accountId: number) => ['player', 'steam-name', accountId] as const,
   steamNames: (accountIds: readonly number[]) => ['player', 'steam-names', accountIds] as const,
+  steamProfiles: (accountIds: readonly number[]) => ['player', 'steam-profiles', accountIds] as const,
 };
 
 export function usePlayerHeroStats(accountId: number) {
@@ -102,6 +103,7 @@ export function usePlayerMatchHistoryFeed(accountId: number) {
 
 const STEAM_NAMES_CACHE_TIME = 10 * 60 * 1000;
 const STEAM_NAMES_BATCH_SIZE = 100;
+const STEAM_PROFILE_CACHE_TIME = 60 * 60 * 1000;
 
 export function usePlayerSteamProfiles(accountIds: readonly number[]) {
   const queryClient = useQueryClient();
@@ -162,6 +164,68 @@ export function usePlayerSteamProfiles(accountIds: readonly number[]) {
 }
 
 /**
+ * Resolve a flexible Steam identifier and prime its individual profile cache.
+ */
+export function useSteamLookup() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: fetchSteamLookup,
+    onSuccess: (profile) => {
+      queryClient.setQueryData(playerQueryKeys.steamProfile(profile.account_id), profile);
+    },
+  });
+}
+
+/**
+ * Steam identity for several recent accounts, reusing fresh individual profile
+ * cache entries before making one batch request for the remaining IDs.
+ */
+export function useSteamProfiles(accountIds: readonly number[]) {
+  const queryClient = useQueryClient();
+  const normalizedIds = useMemo(
+    () =>
+      Array.from(
+        new Set(accountIds.filter((accountId) => Number.isInteger(accountId) && accountId > 0)),
+      ).sort((a, b) => a - b),
+    [accountIds],
+  );
+
+  return useQuery({
+    queryKey: playerQueryKeys.steamProfiles(normalizedIds),
+    enabled: normalizedIds.length > 0 && hasSteamService,
+    queryFn: async () => {
+      const now = Date.now();
+      const profiles: Record<string, SteamProfile> = {};
+      const missingIds: number[] = [];
+
+      for (const accountId of normalizedIds) {
+        const state = queryClient.getQueryState<SteamProfile | null>(
+          playerQueryKeys.steamProfile(accountId),
+        );
+        if (state && now - state.dataUpdatedAt < STEAM_PROFILE_CACHE_TIME) {
+          if (state.data) profiles[String(accountId)] = state.data;
+          continue;
+        }
+        missingIds.push(accountId);
+      }
+
+      if (missingIds.length === 0) return profiles;
+
+      const fetchedProfiles = await fetchSteamProfiles(missingIds);
+      for (const profile of fetchedProfiles) {
+        queryClient.setQueryData(playerQueryKeys.steamProfile(profile.account_id), profile);
+        profiles[String(profile.account_id)] = profile;
+      }
+
+      return profiles;
+    },
+    staleTime: STEAM_PROFILE_CACHE_TIME,
+    gcTime: STEAM_PROFILE_CACHE_TIME,
+  });
+}
+
+/**
  * Steam identity (persona, avatar, creation date, ban posture).
  *
  * Stays disabled when `VITE_STEAM_API_BASE` is unset so the profile page still
@@ -174,7 +238,7 @@ export function useSteamProfile(accountId: number) {
     queryKey: playerQueryKeys.steamProfile(accountId),
     queryFn: () => fetchSteamProfile(accountId),
     enabled: accountId > 0 && hasSteamService,
-    staleTime: 60 * 60 * 1000,
+    staleTime: STEAM_PROFILE_CACHE_TIME,
   });
 }
 

@@ -366,6 +366,16 @@ export const SteamProfileSchema = z.object({
 }).passthrough();
 
 export type SteamProfile = z.infer<typeof SteamProfileSchema>;
+export const SteamLookupResponseSchema = z
+  .object({
+    input: z.string(),
+    input_format: z.string(),
+    profile: SteamProfileSchema,
+  })
+  .passthrough();
+
+export type SteamLookupResponse = z.infer<typeof SteamLookupResponseSchema>;
+
 
 export const SteamProfilesResponseSchema = z.object({
   profiles: z.array(SteamProfileSchema),

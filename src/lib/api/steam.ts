@@ -1,5 +1,9 @@
 import { apiRequest } from './client';
-import { SteamProfilesResponseSchema, type SteamProfile } from './schema';
+import {
+  SteamLookupResponseSchema,
+  SteamProfilesResponseSchema,
+  type SteamProfile,
+} from './schema';
 
 /**
  * Base URL of the Steam identity service. Valve's Web API requires a secret key
@@ -35,6 +39,29 @@ export async function fetchSteamProfiles(accountIds: readonly number[]): Promise
   });
 
   return SteamProfilesResponseSchema.parse(result).profiles;
+}
+
+/**
+ * Resolve a flexible Steam identifier through the Steam identity service.
+ *
+ * The service owns parsing Steam32/64, Steam2/3, profile URLs, and vanity
+ * names. The input is intentionally sent unchanged after the form trims it.
+ */
+export async function fetchSteamLookup(input: string): Promise<SteamProfile> {
+  if (!steamApiBaseUrl) {
+    throw new Error('VITE_STEAM_API_BASE is not configured');
+  }
+
+  const result = await apiRequest<unknown>({
+    baseUrl: steamApiBaseUrl,
+    path: '/steam/lookup',
+    searchParams: {
+      q: input,
+      extended: 0,
+    },
+  });
+
+  return SteamLookupResponseSchema.parse(result).profile;
 }
 
 /**

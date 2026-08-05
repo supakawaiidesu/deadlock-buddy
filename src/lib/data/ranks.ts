@@ -6,6 +6,12 @@
  * (Initiate spans 11-16) because that is what both the distribution histogram
  * and the per-player rank endpoint return.
  */
+export type RankBadgeInput = {
+  badge?: number | null;
+  rank?: number | null;
+  subrank?: number | null;
+};
+
 export type RankTier = {
   name: string;
   start: number;
@@ -27,6 +33,7 @@ export const RANK_TIERS: readonly RankTier[] = [
 ];
 
 export const UNCLASSIFIED_TIER = 'Unclassified';
+export const OBSCURUS_TIER = 'Obscurus';
 
 export const TIER_COLORS: Record<string, string> = {
   Initiate: 'rgb(106, 62, 30)',
@@ -40,11 +47,21 @@ export const TIER_COLORS: Record<string, string> = {
   Phantom: 'rgb(124, 124, 124)',
   Ascendant: 'rgb(195, 151, 81)',
   Eternus: 'rgb(85, 216, 157)',
+  [OBSCURUS_TIER]: 'rgb(var(--text-rgb)/0.45)',
   [UNCLASSIFIED_TIER]: 'var(--accent)',
 };
 
+const RANK_ASSET_BASE_URL =
+  'https://assets-bucket.deadlock-api.com/assets-api-res/images/ranks';
+const MAX_RANK_TIER = RANK_TIERS.length;
+const MAX_SUBRANK = 6;
+
 /** Tier plus sub-rank for a badge level, e.g. `86` -> `Oracle 6`. */
 export function buildTierLabel(badge: number): { tierName: string; label: string } {
+  if (badge === 0) {
+    return { tierName: OBSCURUS_TIER, label: OBSCURUS_TIER };
+  }
+
   const tier = RANK_TIERS.find((entry) => badge >= entry.start && badge <= entry.end);
   if (!tier) {
     return { tierName: UNCLASSIFIED_TIER, label: `Rank ${badge}` };
@@ -72,15 +89,24 @@ export type RankBadgeParts = {
  * Resolve the rank endpoint's `{ badge, rank, subrank }` triple into display parts.
  *
  * `rank` is the 1-based tier index and `subrank` the position inside it; both are
- * `0` for accounts that have never been ranked. `badge` is preferred when present
- * because it survives the tier/sub-rank pair being omitted.
+ * `0` for accounts that have never been ranked, which is the `Obscurus` tier.
+ * `badge` is preferred when present because it survives the tier/sub-rank pair being omitted.
  */
 export function resolveRankBadge(
-  input: { badge?: number | null; rank?: number | null; subrank?: number | null } | null | undefined,
+  input: RankBadgeInput | null | undefined,
 ): RankBadgeParts {
-  const badge = input?.badge ?? 0;
-  const tierIndex = input?.rank ?? 0;
-  const subrank = input?.subrank ?? 0;
+  if (!input) {
+    return {
+      tierName: UNCLASSIFIED_TIER,
+      subRank: null,
+      label: 'Unranked',
+      color: 'rgb(var(--text-rgb)/0.45)',
+    };
+  }
+
+  const badge = input.badge ?? 0;
+  const tierIndex = input.rank ?? 0;
+  const subrank = input.subrank ?? 0;
 
   if (badge > 0) {
     const { tierName, label } = buildTierLabel(badge);
@@ -89,6 +115,14 @@ export function resolveRankBadge(
       subRank: subrank > 0 ? subrank : null,
       label,
       color: TIER_COLORS[tierName] ?? TIER_COLORS[UNCLASSIFIED_TIER],
+    };
+  }
+  if (badge === 0 && tierIndex === 0) {
+    return {
+      tierName: OBSCURUS_TIER,
+      subRank: null,
+      label: OBSCURUS_TIER,
+      color: TIER_COLORS[OBSCURUS_TIER],
     };
   }
 
@@ -109,4 +143,77 @@ export function resolveRankBadge(
     label: 'Unranked',
     color: 'rgb(var(--text-rgb)/0.45)',
   };
+}
+
+function isPositiveInteger(value: number | null | undefined): value is number {
+  return typeof value === 'number' && Number.isInteger(value) && value > 0;
+}
+
+type RankAssetPosition = {
+  tier: number;
+  subrank: number | null;
+};
+
+function resolveRankAssetPosition(
+  input: RankBadgeInput | null | undefined,
+): RankAssetPosition | null {
+  if (!input) return null;
+
+  const badge = input.badge;
+  if (typeof badge === 'number' && Number.isInteger(badge) && badge > 0) {
+    const tier = Math.floor(badge / 10);
+    if (tier < 1 || tier > MAX_RANK_TIER) return null;
+
+    const badgeSubrank = badge % 10;
+    const explicitSubrank =
+      isPositiveInteger(input.subrank) && input.subrank <= MAX_SUBRANK
+        ? input.subrank
+        : null;
+    const subrank = explicitSubrank ?? badgeSubrank;
+
+    if (subrank < 1 || subrank > MAX_SUBRANK) return null;
+    return { tier, subrank };
+  }
+
+  const tier = isPositiveInteger(input.rank) ? input.rank : 0;
+  if (tier === 0) return { tier: 0, subrank: null };
+  if (tier > MAX_RANK_TIER) return null;
+
+  const subrank =
+    isPositiveInteger(input.subrank) && input.subrank <= MAX_SUBRANK
+      ? input.subrank
+      : null;
+  return { tier, subrank };
+}
+
+/**
+ * Resolve an immutable CDN badge URL without fetching the rank asset catalog.
+ * WebP is preferred because the rank endpoint's small WebP badges are about
+ * 8 KB, while the corresponding large badges are roughly 144 KB.
+ */
+export function getRankBadgeImageUrl(
+  input: RankBadgeInput | null | undefined,
+  options: { size?: 'small' | 'large'; prefer?: 'webp' | 'png' } = {},
+): string | null {
+  const position = resolveRankAssetPosition(input);
+  if (!position) return null;
+
+  const size = options.size ?? 'small';
+  const extension = (options.prefer ?? 'webp') === 'webp' ? 'webp' : 'png';
+
+  if (position.tier === 0) {
+    return size === 'large'
+      ? `${RANK_ASSET_BASE_URL}/rank00_lg.${extension}`
+      : `${RANK_ASSET_BASE_URL}/rank0/badge_sm.${extension}`;
+  }
+
+  if (position.subrank !== null) {
+    const badgeSize = size === 'large' ? 'lg' : 'sm';
+    return `${RANK_ASSET_BASE_URL}/rank${position.tier}/badge_${badgeSize}_subrank${position.subrank}.${extension}`;
+  }
+
+  // The API has no generic small badge for ranked tiers; use the tier badge
+  // rather than inventing a sub-rank when the endpoint omits one.
+  const paddedTier = String(position.tier).padStart(2, '0');
+  return `${RANK_ASSET_BASE_URL}/rank${paddedTier}_lg.${extension}`;
 }
