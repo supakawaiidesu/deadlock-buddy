@@ -65,7 +65,7 @@ This document captures the current state of the codebase so future work can resu
 - `/heroes` – Hero overview table with sortable columns.
 - `/heroes/$slug` – Hero detail page with stats and leaderboard.
 - `/players` – Account lookup form.
-- `/players/$accountId` – Player profile: overview stats, score momentum chart, hero performance table.
+- `/players/$accountId` – Player profile: overview stats, match activity grid, hero performance table, and paged enriched match history.
 
 ### Data Flow
 1. React Query hooks in `src/features/*/api/queries.ts` call Deadlock API endpoints.
@@ -78,6 +78,7 @@ This document captures the current state of the codebase so future work can resu
 
 ## Testing Snapshot
 - `tests/features/players/metrics.spec.ts` covers metric helpers.
+- `tests/features/player-profile/match-history.spec.ts` covers enriched match rows, final builds, team identity, and lightweight fallbacks.
 - `bun test -- --run` executes current suite; expand with component/integration tests as features grow.
 
 ## Known Follow-ups / Ideas

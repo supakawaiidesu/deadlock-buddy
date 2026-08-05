@@ -244,8 +244,18 @@ export type PlayerRank = z.infer<typeof PlayerRankSchema>;
  */
 export const PlayerMatchHistoryEntrySchema = z
   .object({
+    account_id: NullableNumberSchema,
     match_id: z.number(),
+    hero_id: NullableNumberSchema,
+    hero_level: NullableNumberSchema,
     start_time: z.number(),
+    game_mode: NullableNumberSchema,
+    match_mode: NullableNumberSchema,
+    player_kills: NullableNumberSchema,
+    player_deaths: NullableNumberSchema,
+    player_assists: NullableNumberSchema,
+    last_hits: NullableNumberSchema,
+    net_worth: NullableNumberSchema,
     match_duration_s: NullableNumberSchema,
     match_result: NullableNumberSchema,
     player_team: NullableNumberSchema,
@@ -255,6 +265,84 @@ export const PlayerMatchHistoryEntrySchema = z
 export type PlayerMatchHistoryEntry = z.infer<typeof PlayerMatchHistoryEntrySchema>;
 
 export const PlayerMatchHistoryResponseSchema = z.array(PlayerMatchHistoryEntrySchema);
+const NullableStringSchema = z
+  .union([z.string(), z.null(), z.undefined()])
+  .transform((value) => {
+    if (typeof value !== 'string') return null;
+    const trimmed = value.trim();
+    return trimmed.length > 0 ? trimmed : null;
+  });
+
+const MatchMetadataItemSchema = z
+  .object({
+    flags: z.number(),
+    game_time_s: z.number(),
+    item_id: z.number(),
+  })
+  .passthrough();
+
+export type MatchMetadataItem = z.infer<typeof MatchMetadataItemSchema>;
+
+const MatchFinalStatsSchema = z
+  .object({
+    assists: NullableNumberSchema,
+    deaths: NullableNumberSchema,
+    kills: NullableNumberSchema,
+    creep_kills: NullableNumberSchema,
+    hero_bullets_hit: NullableNumberSchema,
+    hero_bullets_hit_crit: NullableNumberSchema,
+    net_worth: NullableNumberSchema,
+    time_stamp_s: NullableNumberSchema,
+  })
+  .passthrough();
+
+export type MatchFinalStats = z.infer<typeof MatchFinalStatsSchema>;
+
+export const MatchMetadataPlayerSchema = z
+  .object({
+    account_id: z.number(),
+    hero_id: NullableNumberSchema,
+    final_stats: MatchFinalStatsSchema.nullable().optional(),
+    items: z
+      .union([z.array(MatchMetadataItemSchema), z.null(), z.undefined()])
+      .transform((value) => value ?? []),
+    player_slot: NullableNumberSchema,
+    team: NullableStringSchema,
+  })
+  .passthrough();
+
+export type MatchMetadataPlayer = z.infer<typeof MatchMetadataPlayerSchema>;
+
+export const MatchMetadataSchema = z
+  .object({
+    match_id: z.number(),
+    start_time: NullableStringSchema,
+    winning_team: NullableStringSchema,
+    duration_s: NullableNumberSchema,
+    match_outcome: NullableStringSchema,
+    match_mode: NullableStringSchema,
+    game_mode: NullableStringSchema,
+    players: z
+      .union([z.array(MatchMetadataPlayerSchema), z.null(), z.undefined()])
+      .transform((value) => value ?? []),
+    banned_hero_ids: NumberArraySchema,
+  })
+  .passthrough();
+
+export type MatchMetadata = z.infer<typeof MatchMetadataSchema>;
+
+export const MatchMetadataResponseSchema = z.array(MatchMetadataSchema);
+
+export const PlayerSteamProfileSchema = z
+  .object({
+    account_id: z.number(),
+    personaname: NullableStringSchema,
+  })
+  .transform(({ account_id, personaname }) => ({ account_id, personaname }));
+
+export type PlayerSteamProfile = z.infer<typeof PlayerSteamProfileSchema>;
+
+export const PlayerSteamProfilesResponseSchema = z.array(PlayerSteamProfileSchema);
 
 
 export const SteamProfileSchema = z.object({

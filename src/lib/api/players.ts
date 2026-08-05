@@ -5,6 +5,7 @@ import {
   PlayerMMRHistoryResponseSchema,
   PlayerMMRResponseSchema,
   PlayerRankSchema,
+  PlayerSteamProfilesResponseSchema,
   RankDistributionResponseSchema,
 } from './schema';
 
@@ -55,6 +56,28 @@ export async function fetchPlayerMatchHistory(accountId: number) {
   });
 
   return PlayerMatchHistoryResponseSchema.parse(result);
+}
+
+/**
+ * Fetch Steam persona names for a batch of Deadlock account IDs.
+ *
+ * The endpoint may omit accounts it cannot resolve and does not guarantee
+ * response order, so callers should index the result by `account_id`.
+ */
+export async function fetchPlayerSteamProfiles(accountIds: readonly number[]) {
+  const ids = Array.from(
+    new Set(accountIds.filter((accountId) => Number.isInteger(accountId) && accountId > 0)),
+  );
+  if (ids.length === 0) return [];
+
+  const result = await apiRequest<unknown>({
+    path: '/v1/players/steam',
+    searchParams: {
+      account_ids: ids,
+    },
+  });
+
+  return PlayerSteamProfilesResponseSchema.parse(result);
 }
 
 export type RankDistributionFilters = {

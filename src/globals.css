@@ -44,21 +44,14 @@
   --color-info: var(--info);
   --color-success: var(--success);
   --font-sans: var(--font-inter);
-  --font-display: var(--font-space-grotesk);
-  --font-mono: var(--font-jetbrains-mono);
+  --font-display: var(--font-inter);
+  --font-mono: var(--font-inter);
 }
 
 .fallback-font-inter {
   --font-inter: 'Inter', 'Helvetica Neue', Arial, sans-serif;
 }
 
-.fallback-font-space-grotesk {
-  --font-space-grotesk: 'Space Grotesk', 'Segoe UI', 'Helvetica Neue', Arial, sans-serif;
-}
-
-.fallback-font-jetbrains-mono {
-  --font-jetbrains-mono: 'JetBrains Mono', 'Fira Code', 'Courier New', monospace;
-}
 
 .panel {
   background-color: var(--panel-background);
@@ -136,7 +129,7 @@ body {
     repeating-linear-gradient(90deg, transparent 0, transparent 32px, var(--grid-line) 32px, var(--grid-line) 33px),
     var(--background);
   color: var(--foreground);
-  font-family: var(--font-mono), 'JetBrains Mono', 'Fira Code', 'SFMono-Regular', Menlo, monospace;
+  font-family: var(--font-inter), 'Helvetica Neue', Arial, sans-serif;
   font-variant-ligatures: none;
   text-rendering: optimizeLegibility;
 }

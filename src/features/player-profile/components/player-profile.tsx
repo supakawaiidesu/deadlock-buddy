@@ -7,6 +7,7 @@ import { Panel } from '@/ui/panel';
 import { Skeleton } from '@/ui/skeleton';
 import { PlayerIdentityPanel } from './player-identity-panel';
 import { MatchActivityPanel } from './match-activity-panel';
+import { MatchHistoryPanel } from './match-history-panel';
 
 type PlayerProfileProps = {
   accountId: number;
@@ -142,6 +143,8 @@ export function PlayerProfile({ accountId }: PlayerProfileProps) {
             </table>
             </div>
           </Panel>
+
+          <MatchHistoryPanel accountId={accountId} />
         </div>
 
         <div className="grid min-w-0 grid-cols-1 gap-[4px]">

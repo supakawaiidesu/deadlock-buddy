@@ -2,9 +2,17 @@ import { throttle } from './rate-limit';
 
 const DEFAULT_BASE_URL = 'https://api.deadlock-api.com';
 
+export type ApiSearchParamValue =
+  | string
+  | number
+  | boolean
+  | readonly (string | number | boolean)[]
+  | null
+  | undefined;
+
 export type ApiRequestOptions = {
   readonly path: string;
-  readonly searchParams?: Record<string, string | number | boolean | undefined | null>;
+  readonly searchParams?: Record<string, ApiSearchParamValue>;
   readonly init?: RequestInit;
   /** Overrides the Deadlock API base. Used by the Steam identity service. */
   readonly baseUrl?: string;
@@ -33,6 +41,10 @@ function buildUrl(
   if (searchParams) {
     Object.entries(searchParams).forEach(([key, value]) => {
       if (value === undefined || value === null) return;
+      if (Array.isArray(value)) {
+        value.forEach((item) => url.searchParams.append(key, String(item)));
+        return;
+      }
       url.searchParams.append(key, String(value));
     });
   }

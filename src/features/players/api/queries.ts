@@ -1,13 +1,9 @@
 import { useMemo } from 'react';
-import { useQuery } from '@tanstack/react-query';
-import {
-  fetchPlayerHeroStats,
-  fetchPlayerMatchHistory,
-  fetchPlayerMMR,
-  fetchPlayerMMRHistory,
-  fetchPlayerRank,
-} from '@/lib/api/players';
+import { useInfiniteQuery, useQuery, useQueryClient } from '@tanstack/react-query';
+import { fetchMatchMetadata, MATCH_METADATA_PAGE_SIZE } from '@/lib/api/matches';
+import { fetchPlayerHeroStats, fetchPlayerMatchHistory, fetchPlayerMMR, fetchPlayerMMRHistory, fetchPlayerRank, fetchPlayerSteamProfiles } from '@/lib/api/players';
 import { fetchSteamProfile, hasSteamService } from '@/lib/api/steam';
+import type { PlayerSteamProfile } from '@/lib/api/schema';
 
 export const playerQueryKeys = {
   base: ['player'],
@@ -16,7 +12,11 @@ export const playerQueryKeys = {
   mmrHistory: (accountId: number) => ['player', accountId, 'mmr-history'] as const,
   rank: (accountId: number) => ['player', accountId, 'rank'] as const,
   matchHistory: (accountId: number) => ['player', accountId, 'match-history'] as const,
+  matchMetadata: (accountId: number, historySignature: string) =>
+    ['player', accountId, 'match-metadata', historySignature] as const,
   steamProfile: (accountId: number) => ['player', accountId, 'steam-profile'] as const,
+  steamName: (accountId: number) => ['player', 'steam-name', accountId] as const,
+  steamNames: (accountIds: readonly number[]) => ['player', 'steam-names', accountIds] as const,
 };
 
 export function usePlayerHeroStats(accountId: number) {
@@ -49,6 +49,115 @@ export function usePlayerMatchHistory(accountId: number) {
     queryKey: playerQueryKeys.matchHistory(accountId),
     queryFn: () => fetchPlayerMatchHistory(accountId),
     enabled: accountId > 0,
+  });
+}
+
+export function usePlayerMatchHistoryFeed(accountId: number) {
+  const historyQuery = usePlayerMatchHistory(accountId);
+  const matches = historyQuery.data ?? [];
+  const historySignature = useMemo(
+    () => matches.map((match) => match.match_id).join(','),
+    [matches],
+  );
+
+  const metadataQuery = useInfiniteQuery({
+    queryKey: playerQueryKeys.matchMetadata(accountId, historySignature),
+    queryFn: ({ pageParam }) => {
+      const pageMatches = matches.slice(
+        pageParam * MATCH_METADATA_PAGE_SIZE,
+        (pageParam + 1) * MATCH_METADATA_PAGE_SIZE,
+      );
+
+      return fetchMatchMetadata(pageMatches.map((match) => match.match_id));
+    },
+    initialPageParam: 0,
+    enabled: accountId > 0 && matches.length > 0,
+    getNextPageParam: (_lastPage, _allPages, lastPageParam) => {
+      const nextPage = lastPageParam + 1;
+      return nextPage * MATCH_METADATA_PAGE_SIZE < matches.length ? nextPage : undefined;
+    },
+    staleTime: 10 * 60 * 1000,
+    gcTime: 10 * 60 * 1000,
+  });
+
+  const metadata = metadataQuery.data?.pages.flat() ?? [];
+  const loadedPageCount = metadataQuery.data?.pages.length ?? 0;
+  const visibleMatchCount =
+    metadataQuery.isError && loadedPageCount === 0
+      ? Math.min(matches.length, MATCH_METADATA_PAGE_SIZE)
+      : Math.min(matches.length, loadedPageCount * MATCH_METADATA_PAGE_SIZE);
+
+  return {
+    historyQuery,
+    metadataQuery,
+    matches,
+    metadata,
+    visibleMatches: matches.slice(0, visibleMatchCount),
+    hasMore: visibleMatchCount < matches.length,
+    isLoading:
+      historyQuery.isLoading ||
+      (matches.length > 0 && metadataQuery.isLoading && !metadataQuery.data),
+  };
+}
+
+const STEAM_NAMES_CACHE_TIME = 10 * 60 * 1000;
+const STEAM_NAMES_BATCH_SIZE = 100;
+
+export function usePlayerSteamProfiles(accountIds: readonly number[]) {
+  const queryClient = useQueryClient();
+  const normalizedIds = useMemo(
+    () =>
+      Array.from(
+        new Set(accountIds.filter((accountId) => Number.isInteger(accountId) && accountId > 0)),
+      ).sort((a, b) => a - b),
+    [accountIds],
+  );
+
+  return useQuery({
+    queryKey: playerQueryKeys.steamNames(normalizedIds),
+    enabled: normalizedIds.length > 0,
+    queryFn: async () => {
+      const now = Date.now();
+      const profiles: Record<string, PlayerSteamProfile> = {};
+      const missingIds: number[] = [];
+
+      for (const accountId of normalizedIds) {
+        const state = queryClient.getQueryState<PlayerSteamProfile | null>(
+          playerQueryKeys.steamName(accountId),
+        );
+        if (state && now - state.dataUpdatedAt < STEAM_NAMES_CACHE_TIME) {
+          if (state.data) profiles[String(accountId)] = state.data;
+          continue;
+        }
+        missingIds.push(accountId);
+      }
+
+      const batches: number[][] = [];
+      for (let index = 0; index < missingIds.length; index += STEAM_NAMES_BATCH_SIZE) {
+        batches.push(missingIds.slice(index, index + STEAM_NAMES_BATCH_SIZE));
+      }
+
+      const results = await Promise.allSettled(
+        batches.map((batch) => fetchPlayerSteamProfiles(batch)),
+      );
+
+      results.forEach((result, batchIndex) => {
+        if (result.status !== 'fulfilled') return;
+
+        const profilesById = new Map(
+          result.value.map((profile) => [profile.account_id, profile]),
+        );
+        for (const accountId of batches[batchIndex]) {
+          const profile = profilesById.get(accountId) ?? null;
+          queryClient.setQueryData(playerQueryKeys.steamName(accountId), profile);
+          if (profile) profiles[String(accountId)] = profile;
+        }
+      });
+
+      return profiles;
+    },
+    staleTime: STEAM_NAMES_CACHE_TIME,
+    gcTime: STEAM_NAMES_CACHE_TIME,
   });
 }
 
