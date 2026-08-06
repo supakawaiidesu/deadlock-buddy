@@ -1,7 +1,7 @@
 import { useMemo } from 'react';
 import { useInfiniteQuery, useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { fetchMatchMetadata, MATCH_METADATA_PAGE_SIZE } from '@/lib/api/matches';
-import { fetchPlayerHeroStats, fetchPlayerMatchHistory, fetchPlayerMMR, fetchPlayerMMRHistory, fetchPlayerRank, fetchPlayerSteamProfiles } from '@/lib/api/players';
+import { fetchPlayerHeroStats, fetchPlayerMatchHistory, fetchPlayerMMR, fetchPlayerMMRHistory, fetchPlayerRank, fetchPlayerSteamProfiles, fetchPlayerSteamSearch } from '@/lib/api/players';
 import { fetchSteamLookup, fetchSteamProfile, fetchSteamProfiles, hasSteamService } from '@/lib/api/steam';
 import type { PlayerSteamProfile, SteamProfile } from '@/lib/api/schema';
 
@@ -18,6 +18,7 @@ export const playerQueryKeys = {
   steamName: (accountId: number) => ['player', 'steam-name', accountId] as const,
   steamNames: (accountIds: readonly number[]) => ['player', 'steam-names', accountIds] as const,
   steamProfiles: (accountIds: readonly number[]) => ['player', 'steam-profiles', accountIds] as const,
+  playerSearch: (query: string) => ['player', 'player-search', query] as const,
 };
 
 export function usePlayerHeroStats(accountId: number) {
@@ -174,6 +175,17 @@ export function useSteamLookup() {
     onSuccess: (profile) => {
       queryClient.setQueryData(playerQueryKeys.steamProfile(profile.account_id), profile);
     },
+  });
+}
+
+export function usePlayerSearch(query: string) {
+  const trimmedQuery = query.trim();
+
+  return useQuery({
+    queryKey: playerQueryKeys.playerSearch(trimmedQuery),
+    queryFn: ({ signal }) => fetchPlayerSteamSearch(trimmedQuery, signal),
+    enabled: trimmedQuery.length > 0,
+    select: (results) => results.slice(0, 7),
   });
 }
 

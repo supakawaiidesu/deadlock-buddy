@@ -343,6 +343,22 @@ export const PlayerSteamProfileSchema = z
 export type PlayerSteamProfile = z.infer<typeof PlayerSteamProfileSchema>;
 
 export const PlayerSteamProfilesResponseSchema = z.array(PlayerSteamProfileSchema);
+export const PlayerSteamSearchResultSchema = z
+  .object({
+    account_id: z.number(),
+    personaname: z.string(),
+    profileurl: z.string(),
+    avatar: z.string(),
+    avatarmedium: z.string(),
+    avatarfull: z.string(),
+  })
+  .passthrough();
+
+export type PlayerSteamSearchResult = z.infer<typeof PlayerSteamSearchResultSchema>;
+
+export const PlayerSteamSearchResponseSchema = z.array(PlayerSteamSearchResultSchema);
+
+export type PlayerSteamSearchResponse = z.infer<typeof PlayerSteamSearchResponseSchema>;
 
 
 export const SteamProfileSchema = z.object({

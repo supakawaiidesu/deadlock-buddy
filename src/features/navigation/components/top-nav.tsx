@@ -1,7 +1,8 @@
 import { Link, useLocation, useNavigate } from '@tanstack/react-router';
-import { FormEvent, useEffect, useMemo, useRef, useState } from 'react';
-import { ArrowRight, Check, Palette, Plus, Search } from 'lucide-react';
+import { useEffect, useMemo, useRef, useState } from 'react';
+import { Check, Palette, Plus } from 'lucide-react';
 import { clsx } from 'clsx';
+import { AccountSearchForm } from '@/features/player-search/components/account-search-form';
 import { getTheme } from '@/features/theme/theme';
 import { useTheme } from '@/features/theme/theme-provider';
 import {
@@ -24,7 +25,6 @@ export function TopNav() {
   const navigate = useNavigate();
   const { themeId, themes, setThemeId } = useTheme();
   const currentTheme = getTheme(themeId);
-  const [value, setValue] = useState('');
   const [isAddMenuOpen, setIsAddMenuOpen] = useState(false);
   const [isThemeMenuOpen, setIsThemeMenuOpen] = useState(false);
   const themeMenuRef = useRef<HTMLDivElement | null>(null);
@@ -83,16 +83,6 @@ export function TopNav() {
     };
   }, [isThemeMenuOpen]);
 
-  function handleSubmit(event: FormEvent<HTMLFormElement>) {
-    event.preventDefault();
-    const trimmed = value.trim();
-    const numericId = Number.parseInt(trimmed, 10);
-    if (!trimmed || Number.isNaN(numericId) || numericId <= 0) {
-      return;
-    }
-    navigate({ to: '/players/$accountId', params: { accountId: String(numericId) } });
-    setValue('');
-  }
 
   const handleToggleAddMenu = () => {
     window.dispatchEvent(new Event(WIDGET_ADD_MENU_TOGGLE_EVENT));
@@ -131,31 +121,17 @@ export function TopNav() {
       </div>
 
       <div className="flex min-w-0 w-full justify-center self-stretch lg:w-auto">
-        <form
-          onSubmit={handleSubmit}
-          className="search-field flex min-w-0 flex-1 self-stretch border-l border-[var(--surface-border-muted)] md:w-[clamp(15rem,24vw,22rem)] md:flex-none"
-        >
-          <label className="flex min-w-0 flex-1 items-center gap-3 px-3 text-[rgb(var(--text-rgb)/0.45)] transition-colors sm:px-4">
-            <span className="sr-only">Search by Deadlock account ID</span>
-            <Search className="h-4 w-4 flex-none" aria-hidden="true" />
-            <input
-              value={value}
-              onChange={(event) => setValue(event.target.value)}
-              placeholder="Account ID..."
-              className="min-w-0 flex-1 border-0 bg-transparent text-xs text-[var(--foreground)] caret-[var(--accent)] outline-none placeholder:text-[rgb(var(--text-rgb)/0.35)] sm:text-sm"
-              inputMode="numeric"
-              autoComplete="off"
-            />
-          </label>
-          <button
-            type="submit"
-            className="panel-header-action"
-            aria-label="Search for player"
-            title="Search for player"
-          >
-            <ArrowRight className="h-4 w-4" aria-hidden="true" />
-          </button>
-        </form>
+        <AccountSearchForm
+          variant="header"
+          placeholder="Search Steam players…"
+          className="flex min-w-0 flex-1 self-stretch border-l border-[var(--surface-border-muted)] md:w-[clamp(15rem,24vw,22rem)] md:flex-none"
+          onResolved={(accountId) => {
+            navigate({
+              to: '/players/$accountId',
+              params: { accountId: String(accountId) },
+            });
+          }}
+        />
 
         {hasWidgetSurface ? (
           <button

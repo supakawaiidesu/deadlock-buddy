@@ -6,7 +6,9 @@ import {
   PlayerMMRResponseSchema,
   PlayerRankSchema,
   PlayerSteamProfilesResponseSchema,
+  PlayerSteamSearchResponseSchema,
   RankDistributionResponseSchema,
+  type PlayerSteamSearchResponse,
 } from './schema';
 
 export async function fetchPlayerHeroStats(accountId: number) {
@@ -78,6 +80,25 @@ export async function fetchPlayerSteamProfiles(accountIds: readonly number[]) {
   });
 
   return PlayerSteamProfilesResponseSchema.parse(result);
+}
+
+export async function fetchPlayerSteamSearch(
+  query: string,
+  signal?: AbortSignal,
+): Promise<PlayerSteamSearchResponse> {
+  const trimmedQuery = query.trim();
+  if (!trimmedQuery) return [];
+
+  const result = await apiRequest<unknown>({
+    path: '/v1/players/steam-search',
+    searchParams: {
+      search_query: trimmedQuery,
+      min_matches_played_last_30d: 2,
+    },
+    init: { signal },
+  });
+
+  return PlayerSteamSearchResponseSchema.parse(result);
 }
 
 export type RankDistributionFilters = {
