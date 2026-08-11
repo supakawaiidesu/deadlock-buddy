@@ -49,7 +49,9 @@ This document captures the current state of the codebase so future work can resu
 - `index.html` – Vite SPA entry point at project root.
 
 ## Environment Variables
-- `VITE_DEADLOCK_API_BASE` – Base URL for Deadlock API (default: `https://api.deadlock-api.com`).
+- `VITE_DEADLOCK_API_BASE` – Aldebaran proxy base for allowlisted Deadlock routes (default: `https://aldebaran-production.up.railway.app`).
+- `VITE_DEADLOCK_API_UPSTREAM` – Official Deadlock API used for match metadata and other non-proxied paths (default: `https://api.deadlock-api.com`).
+- `VITE_STEAM_API_BASE` – Optional Steam identity service; unset disables Steam lookup features.
 
 ## Global Styling & Layout
 - **Theme:** Terminal-inspired dark palette, sharp edges (no border radius), primary accent `#3fc96d`.

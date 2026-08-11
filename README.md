@@ -47,7 +47,9 @@ Open http://localhost:5173 in your browser.
 
 ## Environment Variables
 
-- `VITE_DEADLOCK_API_BASE` - base URL for the Deadlock API (default: https://api.deadlock-api.com)
+- `VITE_DEADLOCK_API_BASE` - Aldebaran proxy base for allowlisted Deadlock routes (default: https://aldebaran-production.up.railway.app)
+- `VITE_DEADLOCK_API_UPSTREAM` - official Deadlock API for match metadata and other non-proxied routes (default: https://api.deadlock-api.com)
+- `VITE_STEAM_API_BASE` - optional Steam identity service base (unset disables Steam lookup features)
 
 ## Docs
 
