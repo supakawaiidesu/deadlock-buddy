@@ -37,24 +37,16 @@ export const PlayerHeroStatsResponseSchema = z.array(PlayerHeroStatSchema);
 
 export type PlayerHeroStatsResponse = z.infer<typeof PlayerHeroStatsResponseSchema>;
 
-export const PlayerMMREntrySchema = z.object({
-  account_id: z.number(),
-  match_id: z.number(),
-  start_time: z.number(),
-  player_score: z.number(),
-  rank: z.number().optional().nullable(),
-  division: z.number().optional().nullable(),
-  division_tier: z.number().optional().nullable(),
+export const BadgeDistributionEntrySchema = z.object({
+  badge_level: z.coerce.number(),
+  total_matches: z.coerce.number(),
+  unique_players: z.coerce.number(),
 });
 
-export type PlayerMMREntry = z.infer<typeof PlayerMMREntrySchema>;
-export type PlayerMMR = PlayerMMREntry;
+export type BadgeDistributionEntry = z.infer<typeof BadgeDistributionEntrySchema>;
 
-export const PlayerMMRResponseSchema = z.array(PlayerMMREntrySchema);
+export const BadgeDistributionResponseSchema = z.array(BadgeDistributionEntrySchema);
 
-export const PlayerMMRHistoryResponseSchema = z.array(PlayerMMREntrySchema);
-
-export type PlayerMMRHistory = z.infer<typeof PlayerMMRHistoryResponseSchema>;
 
 const NumberArraySchema = z
   .union([
@@ -217,14 +209,6 @@ export type ItemStatsEntry = z.infer<typeof ItemStatsEntrySchema>;
 
 export const ItemStatsResponseSchema = z.array(ItemStatsEntrySchema);
 
-export const RankDistributionEntrySchema = z.object({
-  rank: z.coerce.number(),
-  players: z.coerce.number(),
-});
-
-export type RankDistributionEntry = z.infer<typeof RankDistributionEntrySchema>;
-
-export const RankDistributionResponseSchema = z.array(RankDistributionEntrySchema);
 
 export const PlayerRankSchema = z
   .object({

@@ -34,26 +34,27 @@ describe('widget layout engine', () => {
     const result = compactVertical([
       { id: 'top-heroes', x: 0, y: 0, w: 1, h: 11 },
       { id: 'hero-performance', x: 1, y: 0, w: 2, h: 13 },
-      { id: 'profile-signals', x: 0, y: 40, w: 1, h: 13 },
+      { id: 'match-history', x: 0, y: 40, w: 1, h: 13 },
     ]);
 
-    expect(result.find((item) => item.id === 'profile-signals')?.y).toBe(11);
+    expect(result.find((item) => item.id === 'match-history')?.y).toBe(11);
   });
 
   it('returns compacted items in their original input order', () => {
     const result = compactVertical([
-      { id: 'profile-signals', x: 0, y: 40, w: 1, h: 13 },
+      { id: 'match-history', x: 0, y: 40, w: 1, h: 13 },
       { id: 'hero-performance', x: 1, y: 0, w: 2, h: 13 },
       { id: 'top-heroes', x: 0, y: 0, w: 1, h: 11 },
     ]);
 
     expect(result.map((item) => item.id)).toEqual([
-      'profile-signals',
+      'match-history',
       'hero-performance',
       'top-heroes',
     ]);
     expect(result[0]?.y).toBe(11);
   });
+
 
   it('pushes displaced widgets and clamps a move to the grid', () => {
     const result = moveItem(

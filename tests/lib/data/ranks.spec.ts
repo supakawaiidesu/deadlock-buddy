@@ -5,6 +5,8 @@ describe('buildTierLabel', () => {
   it('maps a badge level to its tier and sub-rank', () => {
     expect(buildTierLabel(86)).toEqual({ tierName: 'Oracle', label: 'Oracle 6' });
     expect(buildTierLabel(11)).toEqual({ tierName: 'Initiate', label: 'Initiate 1' });
+    expect(buildTierLabel(31)).toEqual({ tierName: 'Acolyte', label: 'Acolyte 1' });
+    expect(buildTierLabel(71)).toEqual({ tierName: 'Emissary', label: 'Emissary 1' });
     expect(buildTierLabel(116)).toEqual({ tierName: 'Eternus', label: 'Eternus 6' });
   });
 
@@ -26,8 +28,8 @@ describe('resolveRankBadge', () => {
   it('reports unranked accounts, which report every field as zero', () => {
     const result = resolveRankBadge({ badge: 0, rank: 0, subrank: 0 });
 
-    expect(result.label).toBe('Unranked');
-    expect(result.tierName).toBe('Unclassified');
+    expect(result.label).toBe('Obscurus');
+    expect(result.tierName).toBe('Obscurus');
     expect(result.subRank).toBeNull();
   });
 
@@ -41,6 +43,7 @@ describe('resolveRankBadge', () => {
   it('treats null and undefined input as unranked', () => {
     expect(resolveRankBadge(null).label).toBe('Unranked');
     expect(resolveRankBadge(undefined).label).toBe('Unranked');
-    expect(resolveRankBadge({}).label).toBe('Unranked');
+    expect(resolveRankBadge({}).label).toBe('Obscurus');
   });
+
 });

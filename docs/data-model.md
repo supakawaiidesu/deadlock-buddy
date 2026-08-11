@@ -2,15 +2,11 @@
 
 ## Player Endpoints
 
-### `/v1/players/mmr`
-- **Purpose:** Retrieves the latest match-derived score snapshot for one or more account IDs.
-- **Response shape:** Array of objects `{ account_id, match_id, start_time, player_score, rank, division, division_tier }`.
-- **618Lock usage:** Player overview header showing player score, rank, and the latest update timestamp.
+### `/v1/analytics/badge-distribution`
+- **Purpose:** Returns the current ranked badge histogram (players and matches per badge level).
+- **Response shape:** Array of objects `{ badge_level, total_matches, unique_players }`.
+- **618Lock usage:** Dashboard rank distribution histogram.
 
-### `/v1/players/{accountId}/mmr-history`
-- **Purpose:** Returns a chronological list of match score entries for an account.
-- **Response shape:** Array matching the `/players/mmr` entry schema, sorted client-side by `start_time` with derived deltas between entries.
-- **618Lock usage:** Feeds the score momentum line chart, exposing per-match gains and losses.
 
 ### `/v1/players/hero-stats`
 - **Purpose:** Aggregates per-hero performance metrics for a player (matches, win rate, efficiency).
@@ -35,19 +31,19 @@
 
 | Resource                 | Query Key Example                                      | Staleness | Notes                                                  |
 | ------------------------ | ------------------------------------------------------ | --------- | ------------------------------------------------------ |
-| Player overview          | `['player', 123, 'overview']`                          | 5 min     | Contains MMR estimate & leaderboard data.             |
 | Player hero stats        | `['player', 123, 'hero-stats']`                        | 5 min     | Includes derived win rate, KDA, farm metrics.         |
 | Player match history     | `['player', 123, 'match-history']`                     | 5 min     | Shared by the activity grid and match history feed.   |
 | Match metadata pages     | `['player', 123, 'match-metadata', signature]`         | 10 min    | Enriched in 15-match pages and ordered client-side.   |
 | Steam roster names       | `['player', 'steam-names', accountIds]`                | 10 min    | Missing IDs are cached per account; requests batch 100.|
-| Player MMR history       | `['player', 123, 'mmr-history']`                       | 5 min     | Sorted ascending for chart rendering.                 |
+| Dashboard bundle         | `['dashboard']`                                        | 1 min     | Concurrent fetches; badge distribution included.      |
 
 ## Data Transformations
 
 - **Win Rate:** `wins / matches_played` (guard against division by zero).
 - **KDA:** `(kills + assists) / max(1, deaths)`.
 - **Record Summary:** Aggregated `wins`, `losses`, `winRate` across hero stats.
-- **History Deltas:** Provided `delta` field is optional; when absent we derive via diffing consecutive MMR entries.
+- **Badge distribution:** Chart by `badge_level` with player share from `unique_players`.
+
 
 - **Match outcome:** Prefer `winning_team === player.team`; fall back to `match_result === player_team`.
 - **Kill participation:** `(player kills + assists) / team kills`, guarded against zero team kills.

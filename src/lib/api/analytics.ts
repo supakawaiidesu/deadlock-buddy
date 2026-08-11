@@ -1,11 +1,13 @@
 import { apiRequest } from './client';
 import {
+  BadgeDistributionResponseSchema,
   HeroScoreboardResponseSchema,
   HeroStatsResponseSchema,
   ItemStatsResponseSchema,
   type HeroStatsEntry,
   type ItemStatsEntry,
 } from './schema';
+
 
 export type DateRangeFilters = {
   readonly minUnixTimestamp?: number;
@@ -208,3 +210,18 @@ export async function fetchItemPopularityLeaderboard(
 
   return ranked;
 }
+
+export type BadgeDistributionFilters = DateRangeFilters;
+
+export async function fetchBadgeDistribution(filters: BadgeDistributionFilters = {}) {
+  const result = await apiRequest<unknown>({
+    path: '/v1/analytics/badge-distribution',
+    searchParams: {
+      min_unix_timestamp: filters.minUnixTimestamp,
+      max_unix_timestamp: filters.maxUnixTimestamp,
+    },
+  });
+
+  return BadgeDistributionResponseSchema.parse(result);
+}
+

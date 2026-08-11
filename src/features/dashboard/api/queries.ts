@@ -1,17 +1,18 @@
 import { useQuery } from '@tanstack/react-query';
 import { fetchLeaderboard } from '@/lib/api/leaderboard';
 import {
+  fetchBadgeDistribution,
   fetchHeroWinrateLeaderboard,
   fetchHeroPopularityLeaderboard,
   fetchItemWinrateLeaderboard,
   fetchItemPopularityLeaderboard,
 } from '@/lib/api/analytics';
-import { fetchRankDistribution } from '@/lib/api/players';
-import type { HeroScoreboardEntry, LeaderboardEntry, RankDistributionEntry } from '@/lib/api/schema';
+import type { BadgeDistributionEntry, HeroScoreboardEntry, LeaderboardEntry } from '@/lib/api/schema';
 import type { ItemWinrateEntry } from '@/lib/api/analytics';
 import { heroSummaries } from '@/lib/data/heroes';
 import type { DashboardDataBundle } from '@/features/dashboard/dashboard-types';
 import type { HeroLeaderboardEntry } from '@/features/heroes/components/hero-leaderboard-panel';
+
 
 const LEADERBOARD_REGION = 'NAmerica';
 const DEFAULT_DISTRIBUTION_WINDOW_DAYS = 7;
@@ -23,9 +24,10 @@ function buildDashboardData(
   heroPopularityEntries: HeroScoreboardEntry[],
   itemWinrateEntries: ItemWinrateEntry[],
   itemPopularityEntries: ItemWinrateEntry[],
-  rankDistributionEntries: RankDistributionEntry[],
+  rankDistributionEntries: BadgeDistributionEntry[],
   rankDistributionMinUnixTimestamp: number,
 ): DashboardDataBundle {
+
   const heroWinratePanelEntries: HeroLeaderboardEntry[] = heroWinrateEntries.map((entry) => ({
     ...entry,
     winrateRank: entry.rank,
@@ -83,7 +85,9 @@ export function useDashboardData() {
         fetchHeroPopularityLeaderboard(50).catch(() => [] as HeroScoreboardEntry[]),
         fetchItemWinrateLeaderboard(50).catch(() => [] as ItemWinrateEntry[]),
         fetchItemPopularityLeaderboard(50).catch(() => [] as ItemWinrateEntry[]),
-        fetchRankDistribution({ minUnixTimestamp: rankDistributionMinUnixTimestamp }).catch(() => [] as RankDistributionEntry[]),
+        fetchBadgeDistribution({ minUnixTimestamp: rankDistributionMinUnixTimestamp }).catch(
+          () => [] as BadgeDistributionEntry[],
+        ),
       ]);
 
       return buildDashboardData(

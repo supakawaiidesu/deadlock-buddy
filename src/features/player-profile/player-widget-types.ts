@@ -6,9 +6,9 @@ import type {
 
 export type PlayerWidgetType =
   | 'hero-performance'
-  | 'profile-signals'
   | 'match-history'
   | 'top-heroes';
+
 
 export type PlayerWidgetData = {
   accountId: number;

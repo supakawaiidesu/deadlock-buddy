@@ -12,28 +12,33 @@ import {
 } from 'recharts';
 import { Filter } from 'lucide-react';
 import { Panel } from '@/ui/panel';
-import type { RankDistributionEntry } from '@/lib/api/schema';
+import type { BadgeDistributionEntry } from '@/lib/api/schema';
 import { buildTierLabel, TIER_COLORS } from '@/lib/data/ranks';
 
 type RankDistributionPanelProps = {
-  entries: readonly RankDistributionEntry[];
+  entries: readonly BadgeDistributionEntry[];
   minUnixTimestamp?: number;
   headerActions?: ReactNode;
 };
 
+
 type ChartDatum = {
   rank: number;
   players: number;
-  percent: number;
+  /** Share of players at this badge or higher. */
+  topPercent: number;
   tierName: string;
   tierLabel: string;
   color: string;
+  /** Middle bar of a contiguous tier band — sole x-axis label for that tier. */
+  showTierTick: boolean;
 };
 
-function formatPercent(value: number) {
-  if (!Number.isFinite(value) || value <= 0) return '<0.1%';
-  if (value >= 10) return `${value.toFixed(1)}%`;
-  return `${value.toFixed(2)}%`;
+function formatTopPercent(value: number) {
+  if (!Number.isFinite(value) || value <= 0) return 'Top <0.01%';
+  if (value >= 99.95) return 'Top 100%';
+  if (value >= 10) return `Top ${value.toFixed(1)}%`;
+  return `Top ${value.toFixed(2)}%`;
 }
 
 function formatTimeBadge(timestamp?: number) {
@@ -69,16 +74,10 @@ function RankDistributionTooltip(props: TooltipContentProps<number, string>) {
 
   return (
     <div className="rounded-sm border border-[rgb(var(--text-rgb)/0.16)] bg-[var(--overlay-background)] px-3 py-2 text-xs text-[rgb(var(--text-rgb)/0.75)] shadow-lg shadow-[rgb(var(--shadow-rgb)/0.35)] backdrop-blur-sm">
-      <div className="flex items-center justify-between gap-4 text-[rgb(var(--text-rgb)/0.55)]">
-        <span className="uppercase tracking-[0.18em] text-[rgb(var(--text-rgb)/0.6)]">
-          {datum.tierName}
-        </span>
-        <span className="text-[rgb(var(--text-rgb)/0.45)]">#{datum.rank}</span>
-      </div>
-      <div className="mt-1 flex items-center justify-between gap-6 text-[11px]">
+      <div className="flex items-center justify-between gap-6">
         <span className="font-semibold text-[var(--text-strong)]">{datum.tierLabel}</span>
         <span className="font-semibold" style={{ color: datum.color }}>
-          {formatPercent(datum.percent)}
+          {formatTopPercent(datum.topPercent)}
         </span>
       </div>
       <div className="mt-1 text-[10px] uppercase tracking-[0.2em] text-[rgb(var(--text-rgb)/0.45)]">
@@ -86,6 +85,28 @@ function RankDistributionTooltip(props: TooltipContentProps<number, string>) {
       </div>
     </div>
   );
+
+}
+
+/** Mark the middle bar of each contiguous same-tier run for one label per tier. */
+function withTierAxisTicks(data: Omit<ChartDatum, 'showTierTick'>[]): ChartDatum[] {
+  if (data.length === 0) return [];
+
+  const result: ChartDatum[] = data.map((entry) => ({ ...entry, showTierTick: false }));
+  let bandStart = 0;
+
+  for (let index = 1; index <= result.length; index += 1) {
+    const bandEnded =
+      index === result.length || result[index]?.tierName !== result[bandStart]?.tierName;
+    if (!bandEnded) continue;
+
+    const mid = bandStart + Math.floor((index - 1 - bandStart) / 2);
+    const midEntry = result[mid];
+    if (midEntry) midEntry.showTierTick = true;
+    bandStart = index;
+  }
+
+  return result;
 }
 
 export function RankDistributionPanel({
@@ -94,29 +115,43 @@ export function RankDistributionPanel({
   headerActions,
 }: RankDistributionPanelProps) {
   const totalPlayers = useMemo(
-    () => entries.reduce((sum, entry) => sum + (entry.players ?? 0), 0),
+    () => entries.reduce((sum, entry) => sum + (entry.unique_players ?? 0), 0),
     [entries],
   );
 
   const chartData: ChartDatum[] = useMemo(() => {
     if (totalPlayers <= 0) return [];
 
-    return [...entries]
-      .filter((entry) => typeof entry.rank === 'number' && typeof entry.players === 'number')
-      .sort((a, b) => a.rank - b.rank)
+    const mapped = [...entries]
+      .filter(
+        (entry) =>
+          typeof entry.badge_level === 'number' && typeof entry.unique_players === 'number',
+      )
+      .sort((a, b) => a.badge_level - b.badge_level)
       .map((entry) => {
-        const { tierName, label } = buildTierLabel(entry.rank);
-        const percent = totalPlayers > 0 ? (entry.players / totalPlayers) * 100 : 0;
+        const { tierName, label } = buildTierLabel(entry.badge_level);
         return {
-          rank: entry.rank,
-          players: entry.players,
-          percent,
+          rank: entry.badge_level,
+          players: entry.unique_players,
+          topPercent: 0,
           tierName,
           tierLabel: label,
           color: TIER_COLORS[tierName] ?? TIER_COLORS.Unclassified,
         };
       });
+
+    // Cumulative from the high end: top% = players at this badge or higher.
+    let playersAtOrAbove = 0;
+    for (let index = mapped.length - 1; index >= 0; index -= 1) {
+      const entry = mapped[index];
+      if (!entry) continue;
+      playersAtOrAbove += entry.players;
+      entry.topPercent = (playersAtOrAbove / totalPlayers) * 100;
+    }
+
+    return withTierAxisTicks(mapped);
   }, [entries, totalPlayers]);
+
 
   const timeLabel = useMemo(() => formatTimeBadge(minUnixTimestamp), [minUnixTimestamp]);
   const playersLabel = useMemo(
@@ -162,7 +197,7 @@ export function RankDistributionPanel({
             >
               <BarChart
                 data={chartData}
-                margin={{ top: 0, right: 0, bottom: 6, left: 0 }}
+                margin={{ top: 0, right: 0, bottom: 10, left: 0 }}
               >
                 <CartesianGrid
                   vertical={false}
@@ -170,10 +205,28 @@ export function RankDistributionPanel({
                 />
                 <XAxis
                   dataKey="rank"
+                  interval={0}
                   tickLine={false}
                   axisLine={{ stroke: 'rgb(var(--text-rgb)/0.12)' }}
                   stroke="rgb(var(--text-rgb)/0.45)"
-                  tick={{ fontSize: 10 }}
+                  height={28}
+                  tick={({ x, y, payload }) => {
+                    const datum = chartData.find((entry) => entry.rank === payload.value);
+                    if (!datum?.showTierTick) return <g />;
+
+                    return (
+                      <text
+                        x={x}
+                        y={y}
+                        dy={12}
+                        textAnchor="middle"
+                        fill="rgb(var(--text-rgb)/0.55)"
+                        fontSize={10}
+                      >
+                        {datum.tierName}
+                      </text>
+                    );
+                  }}
                 />
                 <YAxis
                   tickLine={false}
