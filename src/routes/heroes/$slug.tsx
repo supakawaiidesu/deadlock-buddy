@@ -5,7 +5,6 @@ import type { HeroAverageStat } from '@/features/heroes/components/hero-average-
 import { HeroDetailHeader } from '@/features/heroes/components/hero-detail-header';
 import { resolveHeroTier } from '@/features/heroes/hero-tier';
 import { useHeroDetail } from '@/features/heroes/api/queries';
-import { Skeleton } from '@/ui/skeleton';
 import { useMemo } from 'react';
 
 export const Route = createFileRoute('/heroes/$slug')({
@@ -30,6 +29,27 @@ function formatWholeNumber(value?: number): string {
   if (typeof value !== 'number' || Number.isNaN(value)) return '\u2014';
   return Math.round(value).toLocaleString();
 }
+const HERO_DETAIL_LOADING_METRICS = [
+  { label: 'Win rate', value: null },
+  { label: 'Pick rate', value: null },
+  { label: 'Tier', value: null },
+  { label: 'Games', value: null },
+] as const;
+
+const HERO_DETAIL_LOADING_STATS: HeroAverageStat[] = [
+  'KDA',
+  'Accuracy',
+  'Player damage',
+  'Damage taken',
+  'Net worth',
+  'Last hits',
+  'Denies',
+  'Max health',
+  'Creep damage',
+  'Neutral damage',
+  'Shots hit',
+  'Shots missed',
+].map((label) => ({ label, value: null }));
 
 function HeroDetailPage() {
   const { slug } = Route.useParams();
@@ -129,8 +149,19 @@ function HeroDetailPage() {
   if (isLoading) {
     return (
       <div className="flex min-h-[calc(100vh-60px)] flex-col gap-[4px] pb-[4px] font-mono text-[13px]">
-        <Skeleton className="h-32 w-full" />
-        <Skeleton className="h-64 w-full" />
+        <HeroDetailHeader
+          heroName={heroSummary.name}
+          heroSlug={heroSummary.slug}
+          iconUrl={getHeroIconUrl(heroSummary.id, { prefer: 'webp' })}
+          metrics={HERO_DETAIL_LOADING_METRICS}
+        />
+
+        <div className="grid gap-[4px] sm:grid-cols-2 lg:grid-cols-3">
+          <HeroAverageStatsPanel
+            title={`${heroSummary.name} Average Stats`}
+            stats={HERO_DETAIL_LOADING_STATS}
+          />
+        </div>
       </div>
     );
   }

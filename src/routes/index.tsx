@@ -2,7 +2,6 @@ import { createFileRoute, Link } from '@tanstack/react-router';
 import { Panel } from '@/ui/panel';
 import { DashboardLayout } from '@/features/dashboard/components/dashboard-layout';
 import { useDashboardData } from '@/features/dashboard/api/queries';
-import { Skeleton } from '@/ui/skeleton';
 
 export const Route = createFileRoute('/')({
   component: DashboardPage,
@@ -13,16 +12,8 @@ const LEADERBOARD_REGION = 'NAmerica';
 function DashboardPage() {
   const { data: dashboardData, isLoading, isError } = useDashboardData();
 
-  if (isLoading) {
-    return (
-      <div className="flex min-h-[calc(100vh-60px)] flex-col gap-[4px] pb-[4px] font-mono text-[13px]">
-        <Skeleton className="h-48 w-full" />
-        <Skeleton className="h-96 w-full" />
-      </div>
-    );
-  }
 
-  if (isError || !dashboardData) {
+  if (!isLoading && (isError || !dashboardData)) {
     return (
       <div className="flex min-h-[calc(100vh-60px)] flex-col items-center justify-center gap-4 py-6 text-center">
         <span className="border border-[var(--danger)] px-3 py-1 text-xs font-semibold uppercase tracking-[0.25em] text-[var(--danger)]">
@@ -99,7 +90,7 @@ function DashboardPage() {
         </Panel>
       </div>
 
-      <DashboardLayout data={dashboardData} />
+      {dashboardData ? <DashboardLayout data={dashboardData} /> : <DashboardLayout isLoading />}
     </div>
   );
 }

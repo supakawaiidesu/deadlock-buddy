@@ -7,6 +7,7 @@ import {
   type CSSProperties,
   type KeyboardEvent as ReactKeyboardEvent,
   type PointerEvent as ReactPointerEvent,
+  type ReactNode,
 } from 'react';
 import {
   DndContext,
@@ -42,13 +43,30 @@ import {
   WIDGET_ADD_MENU_TOGGLE_EVENT,
 } from '@/features/widgets/widget-events';
 
-type WidgetGridProps<TType extends string, TData> = {
+type WidgetGridSharedProps<TType extends string, TData> = {
   registry: WidgetRegistry<TType, TData>;
   defaultLayout: readonly WidgetInstance<TType>[];
-  data: TData;
   storageKey: string;
   emptyStateTitle: string;
+  useGridHeightOnMobile?: boolean;
 };
+
+type WidgetGridProps<TType extends string, TData> = WidgetGridSharedProps<TType, TData> &
+  (
+    | {
+        data: TData;
+        isLoading?: false;
+        renderLoading?: never;
+      }
+    | {
+        data?: never;
+        isLoading: true;
+        renderLoading: (
+          instance: WidgetInstance<TType>,
+          headerActions: ReactNode,
+        ) => ReactNode;
+      }
+  );
 
 type ResizeAxis = 'x' | 'y' | 'xy';
 
@@ -62,57 +80,53 @@ type ResizeState<TType extends string> = {
 
 const ZERO_DELTA = { x: 0, y: 0 };
 
-export function WidgetGrid<TType extends string, TData>({
-  registry,
-  defaultLayout,
-  data,
-  storageKey,
-  emptyStateTitle,
-}: WidgetGridProps<TType, TData>) {
-  const [widgets, setWidgets] = useState<WidgetInstance<TType>[]>(() => [...defaultLayout]);
-  const [hasHydrated, setHasHydrated] = useState(false);
+export function WidgetGrid<TType extends string, TData>(
+  props: WidgetGridProps<TType, TData>,
+) {
+  const {
+    registry,
+    defaultLayout,
+    storageKey,
+    emptyStateTitle,
+    useGridHeightOnMobile = false,
+  } = props;
+  const [widgets, setWidgets] = useState<WidgetInstance<TType>[]>(() => {
+    try {
+      const stored = window.localStorage.getItem(storageKey);
+      if (!stored) return [...defaultLayout];
+
+      const parsed = JSON.parse(stored) as unknown;
+      return (
+        sanitizeWidgetLayout<TType>(
+          parsed,
+          new Set(Object.keys(registry)),
+          (type) => registry[type],
+        ) ?? [...defaultLayout]
+      );
+    } catch (error) {
+      console.warn('Failed to hydrate widget layout', error);
+      return [...defaultLayout];
+    }
+  });
   const [isAddMenuOpen, setIsAddMenuOpen] = useState(false);
   const [preview, setPreview] = useState<WidgetInstance<TType>[] | null>(null);
   const [activeId, setActiveId] = useState<string | null>(null);
   const [dragDelta, setDragDelta] = useState(ZERO_DELTA);
   const [resizeState, setResizeState] = useState<ResizeState<TType> | null>(null);
   const [containerWidth, setContainerWidth] = useState(0);
-  const [isDesktop, setIsDesktop] = useState(false);
+  const [isDesktop, setIsDesktop] = useState(
+    () => window.matchMedia('(min-width: 1024px)').matches,
+  );
   const menuRef = useRef<HTMLDivElement | null>(null);
   const surfaceRef = useRef<HTMLDivElement | null>(null);
-  const validTypes = useMemo(() => new Set(Object.keys(registry)), [registry]);
   const availableWidgets = useMemo(
     () => Object.keys(registry).map((type) => registry[type as TType]),
     [registry],
   );
 
   useEffect(() => {
-    try {
-      const stored = window.localStorage.getItem(storageKey);
-      if (!stored) {
-        setHasHydrated(true);
-        return;
-      }
-      const parsed = JSON.parse(stored) as unknown;
-      const layout = sanitizeWidgetLayout<TType>(
-        parsed,
-        validTypes,
-        (type) => registry[type],
-      );
-      if (layout) {
-        setWidgets(layout);
-      }
-    } catch (error) {
-      console.warn('Failed to hydrate widget layout', error);
-    } finally {
-      setHasHydrated(true);
-    }
-  }, [registry, storageKey, validTypes]);
-
-  useEffect(() => {
-    if (!hasHydrated) return;
     window.localStorage.setItem(storageKey, JSON.stringify(widgets));
-  }, [hasHydrated, storageKey, widgets]);
+  }, [storageKey, widgets]);
 
   useEffect(() => {
     const handleToggle = () => {
@@ -185,7 +199,6 @@ export function WidgetGrid<TType extends string, TData>({
   useEffect(() => {
     const mediaQuery = window.matchMedia('(min-width: 1024px)');
     const handleChange = () => setIsDesktop(mediaQuery.matches);
-    handleChange();
     mediaQuery.addEventListener('change', handleChange);
 
     return () => mediaQuery.removeEventListener('change', handleChange);
@@ -370,11 +383,19 @@ export function WidgetGrid<TType extends string, TData>({
         ? widgets.find((item) => item.id === instance.id) ?? previewRect
         : previewRect;
 
+    const modeProps = props.isLoading
+      ? {
+          isLoading: true as const,
+          renderLoading: props.renderLoading,
+        }
+      : {
+          data: props.data,
+        };
+
     return (
       <WidgetCell
         key={instance.id}
         instance={instance}
-        data={data}
         registry={registry}
         positioned={positioned}
         containerWidth={containerWidth}
@@ -383,11 +404,13 @@ export function WidgetGrid<TType extends string, TData>({
         isDragging={activeId === instance.id}
         dragDelta={activeId === instance.id ? dragDelta : ZERO_DELTA}
         isDesktop={isDesktop}
+        useGridHeightOnMobile={useGridHeightOnMobile}
         onRemove={handleRemove}
         onResizeStart={handleResizeStart}
         onResizeMove={handleResizeMove}
         onResizeEnd={handleResizeEnd}
         onKeyboard={handleKeyboard}
+        {...modeProps}
       />
     );
   };
@@ -470,9 +493,8 @@ export function WidgetGrid<TType extends string, TData>({
   );
 }
 
-type WidgetCellProps<TType extends string, TData> = {
+type WidgetCellSharedProps<TType extends string, TData> = {
   instance: WidgetInstance<TType>;
-  data: TData;
   registry: WidgetRegistry<TType, TData>;
   positioned: boolean;
   containerWidth: number;
@@ -481,6 +503,7 @@ type WidgetCellProps<TType extends string, TData> = {
   isDragging: boolean;
   dragDelta: { x: number; y: number };
   isDesktop: boolean;
+  useGridHeightOnMobile: boolean;
   onRemove: (id: string) => void;
   onResizeStart: (
     id: string,
@@ -495,23 +518,41 @@ type WidgetCellProps<TType extends string, TData> = {
   ) => void;
 };
 
-function WidgetCell<TType extends string, TData>({
-  instance,
-  data,
-  registry,
-  positioned,
-  containerWidth,
-  renderRect,
-  isActive,
-  isDragging,
-  dragDelta,
-  isDesktop,
-  onRemove,
-  onResizeStart,
-  onResizeMove,
-  onResizeEnd,
-  onKeyboard,
-}: WidgetCellProps<TType, TData>) {
+type WidgetCellProps<TType extends string, TData> = WidgetCellSharedProps<TType, TData> &
+  (
+    | {
+        data: TData;
+        isLoading?: false;
+        renderLoading?: never;
+      }
+    | {
+        data?: never;
+        isLoading: true;
+        renderLoading: (
+          instance: WidgetInstance<TType>,
+          headerActions: ReactNode,
+        ) => ReactNode;
+      }
+  );
+
+function WidgetCell<TType extends string, TData>(props: WidgetCellProps<TType, TData>) {
+  const {
+    instance,
+    registry,
+    positioned,
+    containerWidth,
+    renderRect,
+    isActive,
+    isDragging,
+    dragDelta,
+    isDesktop,
+    useGridHeightOnMobile,
+    onRemove,
+    onResizeStart,
+    onResizeMove,
+    onResizeEnd,
+    onKeyboard,
+  } = props;
   const { attributes, listeners, setNodeRef } = useDraggable({
     id: instance.id,
     disabled: !isDesktop,
@@ -531,7 +572,9 @@ function WidgetCell<TType extends string, TData>({
           : 'transform 180ms ease, width 180ms ease, height 180ms ease',
         zIndex: isActive ? 30 : undefined,
       }
-    : undefined;
+    : useGridHeightOnMobile && !positioned
+      ? { height: instance.h * GRID_ROW_HEIGHT + (instance.h - 1) * GRID_GAP }
+      : undefined;
 
   const handlePointerDown = (
     axis: ResizeAxis,
@@ -579,11 +622,13 @@ function WidgetCell<TType extends string, TData>({
     </>
   );
 
-  const content = definition.render({
-    instance,
-    data,
-    headerActions,
-  });
+  const content = props.isLoading
+    ? props.renderLoading(instance, headerActions)
+    : definition.render({
+        instance,
+        data: props.data,
+        headerActions,
+      });
 
   return (
     <div

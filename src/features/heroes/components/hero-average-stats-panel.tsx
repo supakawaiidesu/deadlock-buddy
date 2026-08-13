@@ -1,8 +1,9 @@
 import { Panel } from '@/ui/panel';
+import { Skeleton } from '@/ui/skeleton';
 
 export type HeroAverageStat = {
   label: string;
-  value: string;
+  value: string | null;
   hint?: string;
 };
 
@@ -26,18 +27,31 @@ export function HeroAverageStatsPanel({
       <div className="flex flex-col overflow-hidden rounded-sm border border-[rgb(var(--text-rgb)/0.08)] bg-[var(--inset-background)] divide-y divide-[rgb(var(--text-rgb)/0.08)]">
         {stats.map((stat) => (
           <div key={stat.label} className="flex flex-col gap-1 px-3 py-2">
-            <div className="flex items-baseline gap-2">
-              <span className="text-[10px] font-semibold uppercase tracking-[0.22em] text-[rgb(var(--text-rgb)/0.6)]">
-                {stat.label}
-              </span>
-              <span className="text-sm text-[rgb(var(--text-rgb)/0.4)]">:</span>
-              <span className="text-sm font-semibold text-[var(--accent)]">{stat.value}</span>
-            </div>
-            {stat.hint ? (
-              <span className="text-[10px] uppercase tracking-[0.18em] text-[rgb(var(--text-rgb)/0.4)]">
-                {stat.hint}
-              </span>
-            ) : null}
+            {stat.value === null ? (
+              <div className="flex items-baseline gap-2">
+                <span className="text-[10px] font-semibold uppercase tracking-[0.22em] text-[rgb(var(--text-rgb)/0.6)]">
+                  {stat.label}
+                </span>
+                <Skeleton className="h-4 w-20" />
+              </div>
+            ) : (
+              <>
+                <div className="flex items-baseline gap-2">
+                  <span className="text-[10px] font-semibold uppercase tracking-[0.22em] text-[rgb(var(--text-rgb)/0.6)]">
+                    {stat.label}
+                  </span>
+                  <span className="text-sm text-[rgb(var(--text-rgb)/0.4)]">:</span>
+                  <span className="text-sm font-semibold text-[var(--accent)]">
+                    {stat.value}
+                  </span>
+                </div>
+                {stat.hint ? (
+                  <span className="text-[10px] uppercase tracking-[0.18em] text-[rgb(var(--text-rgb)/0.4)]">
+                    {stat.hint}
+                  </span>
+                ) : null}
+              </>
+            )}
           </div>
         ))}
       </div>

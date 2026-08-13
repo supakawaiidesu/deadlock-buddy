@@ -1,8 +1,9 @@
 import { Panel } from '@/ui/panel';
+import { Skeleton } from '@/ui/skeleton';
 
 export type HeroDetailMetric = {
   label: string;
-  value: string;
+  value: string | null;
   accent?: boolean;
 };
 
@@ -14,8 +15,18 @@ type HeroDetailHeaderProps = {
 };
 
 export function HeroDetailHeader({ heroName, heroSlug, iconUrl, metrics }: HeroDetailHeaderProps) {
+  const isLoading = metrics.some((metric) => metric.value === null);
+
   return (
-    <Panel className="flex flex-col gap-6 md:flex-row md:items-start md:justify-between md:gap-8">
+    <Panel
+      className="flex flex-col gap-6 md:flex-row md:items-start md:justify-between md:gap-8"
+      aria-busy={isLoading}
+    >
+      {isLoading ? (
+        <span className="sr-only" role="status" aria-live="polite">
+          Loading hero details…
+        </span>
+      ) : null}
       <div className="flex flex-wrap items-center gap-4 sm:gap-6 md:max-w-[420px] md:flex-1">
         {iconUrl ? (
           <img
@@ -52,13 +63,17 @@ export function HeroDetailHeader({ heroName, heroSlug, iconUrl, metrics }: HeroD
             <span className="text-[10px] uppercase tracking-[0.2em] text-[rgb(var(--text-rgb)/0.5)]">
               {metric.label}
             </span>
-            <span
-              className={`text-lg font-semibold ${
-                metric.accent ? 'text-[var(--accent)]' : 'text-[var(--text-strong)]'
-              }`}
-            >
-              {metric.value}
-            </span>
+            {metric.value === null ? (
+              <Skeleton className="h-6 w-16" />
+            ) : (
+              <span
+                className={`text-lg font-semibold ${
+                  metric.accent ? 'text-[var(--accent)]' : 'text-[var(--text-strong)]'
+                }`}
+              >
+                {metric.value}
+              </span>
+            )}
           </div>
         ))}
       </div>

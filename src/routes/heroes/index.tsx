@@ -5,7 +5,6 @@ import type { HeroOverviewRow } from '@/features/heroes/components/hero-overview
 import { HeroOverviewTable } from '@/features/heroes/components/hero-overview-table';
 import { resolveHeroTier } from '@/features/heroes/hero-tier';
 import { useHeroOverviewData } from '@/features/heroes/api/queries';
-import { Skeleton } from '@/ui/skeleton';
 import { useMemo } from 'react';
 
 export const Route = createFileRoute('/heroes/')({
@@ -48,14 +47,6 @@ function HeroesPage() {
       .filter((row) => (row.matches ?? 0) > 0);
   }, [data]);
 
-  if (isLoading) {
-    return (
-      <div className="flex min-h-[calc(100vh-60px)] flex-col gap-[4px] pb-[4px] font-mono text-[13px]">
-        <Skeleton className="h-16 w-full" />
-        <Skeleton className="h-96 w-full" />
-      </div>
-    );
-  }
 
   if (isError) {
     return (
@@ -98,7 +89,7 @@ function HeroesPage() {
       </Panel>
 
       <Panel className="flex flex-col !p-0">
-        <HeroOverviewTable rows={rows} />
+        <HeroOverviewTable rows={rows} isLoading={isLoading} />
       </Panel>
     </div>
   );
