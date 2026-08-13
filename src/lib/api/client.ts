@@ -19,7 +19,6 @@ const PROXY_PATH_PATTERNS: readonly RegExp[] = [
   /^\/v1\/leaderboard\/[^/?#]+$/,
   /^\/v1\/analytics\/scoreboards\/heroes$/,
   /^\/v1\/analytics\/game-stats$/,
-  /^\/v1\/analytics\/hero-stats$/,
   /^\/v1\/analytics\/hero-comb-stats$/,
   /^\/v1\/analytics\/hero-counter-stats$/,
   /^\/v1\/analytics\/item-stats$/,
@@ -78,8 +77,8 @@ function resolveBaseUrl(path: string, override?: string): string {
 
 function buildUrl(
   path: string,
-  searchParams?: ApiRequestOptions['searchParams'],
   base: string,
+  searchParams?: ApiRequestOptions['searchParams'],
 ) {
   const url = new URL(path, base.endsWith('/') ? base : `${base}/`);
 
@@ -100,7 +99,7 @@ function buildUrl(
 async function executeRequest(options: ApiRequestOptions) {
   const { init } = options;
   const base = resolveBaseUrl(options.path, options.baseUrl);
-  const response = await fetch(buildUrl(options.path, options.searchParams, base), {
+  const response = await fetch(buildUrl(options.path, base, options.searchParams), {
     headers: {
       Accept: 'application/json',
       ...init?.headers,

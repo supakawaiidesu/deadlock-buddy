@@ -1,27 +1,16 @@
-import { useMemo, useState } from 'react';
-import { Link } from '@tanstack/react-router';
-import type { HeroTier } from '@/features/heroes/hero-tier';
+import { useMemo, useState, type ReactNode } from 'react';
+import type { HeroOverviewRow } from '@/features/heroes/lib/overview';
+import { Panel } from '@/ui/panel';
 import { Skeleton } from '@/ui/skeleton';
-
-export type HeroOverviewRow = {
-  heroId: number;
-  name: string;
-  slug: string;
-  iconUrl: string | null;
-  tier: HeroTier | null;
-  winrate?: number;
-  pickRate?: number;
-  matches?: number;
-  players?: number;
-};
 
 type SortKey = 'winrate' | 'pickRate' | 'matches' | 'players';
 
 type SortDirection = 'asc' | 'desc';
 
-type HeroOverviewTableProps = {
+type HeroOverviewPanelProps = {
   rows: readonly HeroOverviewRow[];
   isLoading?: boolean;
+  headerActions?: ReactNode;
 };
 
 function formatPercent(value?: number): string {
@@ -72,7 +61,11 @@ function HeroOverviewRowSkeleton() {
   );
 }
 
-export function HeroOverviewTable({ rows, isLoading = false }: HeroOverviewTableProps) {
+export function HeroOverviewPanel({
+  rows,
+  isLoading = false,
+  headerActions,
+}: HeroOverviewPanelProps) {
   const [sortState, setSortState] = useState<{ key: SortKey; direction: SortDirection }>({
     key: 'winrate',
     direction: 'desc',
@@ -131,13 +124,24 @@ export function HeroOverviewTable({ rows, isLoading = false }: HeroOverviewTable
   };
 
   return (
-    <div className="overflow-x-auto" aria-busy={isLoading}>
-      {isLoading ? (
-        <span className="sr-only" role="status" aria-live="polite">
-          Loading hero overview…
-        </span>
-      ) : null}
-      <table className="min-w-full border-b border-[rgb(var(--text-rgb)/0.12)] text-left text-[12px]">
+
+    <Panel className="flex h-full min-w-0 flex-col gap-0 !p-0" aria-busy={isLoading}>
+      <div className="panel-header">
+        <h2 className="min-w-0 flex-1 truncate px-4 py-3 text-sm font-semibold uppercase tracking-[0.2em] text-[var(--text-strong)]">
+          Hero overview
+        </h2>
+        <div className="panel-header-actions shrink-0">
+          <span className="panel-header-meta">{isLoading ? 'Loading' : `${rows.length} heroes`}</span>
+          {headerActions}
+        </div>
+      </div>
+      <div className="scroll-quiet min-h-0 min-w-0 flex-1 overflow-auto">
+        {isLoading ? (
+          <span className="sr-only" role="status" aria-live="polite">
+            Loading hero overview…
+          </span>
+        ) : null}
+        <table className="min-w-full border-b border-[rgb(var(--text-rgb)/0.12)] text-left text-[12px]">
         <thead className="text-[rgb(var(--text-rgb)/0.55)]">
           <tr className="uppercase tracking-[0.18em]">
             <th className="px-4 py-3 text-sm font-medium">Rank</th>
@@ -219,13 +223,9 @@ export function HeroOverviewTable({ rows, isLoading = false }: HeroOverviewTable
                             {row.name.slice(0, 1)}
                           </span>
                         )}
-                        <Link
-                          to="/heroes/$slug"
-                          params={{ slug: row.slug }}
-                          className="font-semibold text-[var(--text-strong)] transition hover:text-[var(--accent)]"
-                        >
+                        <strong className="font-semibold text-[var(--text-strong)]">
                           {row.name}
-                        </Link>
+                        </strong>
                       </div>
                     </td>
                     <td className="px-4 py-3">
@@ -250,6 +250,7 @@ export function HeroOverviewTable({ rows, isLoading = false }: HeroOverviewTable
               })}
         </tbody>
       </table>
-    </div>
+      </div>
+    </Panel>
   );
 }

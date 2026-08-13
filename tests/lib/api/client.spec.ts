@@ -15,7 +15,6 @@ describe('deadlock API base routing', () => {
     '/v1/leaderboard/Europe',
     '/v1/analytics/scoreboards/heroes',
     '/v1/analytics/game-stats',
-    '/v1/analytics/hero-stats',
     '/v1/analytics/hero-comb-stats',
     '/v1/analytics/hero-counter-stats',
     '/v1/analytics/item-stats',

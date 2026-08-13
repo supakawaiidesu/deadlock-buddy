@@ -17,7 +17,7 @@ const navLinks = [
   { href: '/heroes', label: 'Heroes' },
   { href: '/meta', label: 'Meta' },
 ];
-const WIDGET_SURFACE_PATTERNS = [/^\/$/, /^\/players\/\d+\/?$/];
+const WIDGET_SURFACE_PATTERNS = [/^\/$/, /^\/heroes\/?$/, /^\/players\/\d+\/?$/];
 
 
 export function TopNav() {

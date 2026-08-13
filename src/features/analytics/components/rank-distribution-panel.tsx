@@ -62,7 +62,7 @@ function formatTimeBadge(timestamp?: number) {
   }
 }
 
-function RankDistributionTooltip(props: TooltipContentProps<number, string>) {
+function RankDistributionTooltip(props: TooltipContentProps) {
   const { active, payload } = props;
 
   if (!active || !payload?.length) {

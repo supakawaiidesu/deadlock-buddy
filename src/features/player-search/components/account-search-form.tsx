@@ -47,7 +47,7 @@ export function AccountSearchForm({
   const lookupMutation = useSteamLookup();
   const searchQueryId = useId();
   const formRef = useRef<HTMLFormElement | null>(null);
-  const debounceTimerRef = useRef<number | null>(null);
+  const debounceTimerRef = useRef<number | undefined>(undefined);
   const [value, setValue] = useState('');
   const [debouncedQuery, setDebouncedQuery] = useState('');
   const [error, setError] = useState<string | null>(null);
@@ -117,9 +117,9 @@ export function AccountSearchForm({
   }, [isFocused]);
 
   const clearDebounceTimer = () => {
-    if (debounceTimerRef.current !== null) {
+    if (debounceTimerRef.current !== undefined) {
       clearTimeout(debounceTimerRef.current);
-      debounceTimerRef.current = null;
+      debounceTimerRef.current = undefined;
     }
   };
 
@@ -135,8 +135,8 @@ export function AccountSearchForm({
     if (error) setError(null);
 
     if (nextQuery) {
-      debounceTimerRef.current = setTimeout(() => {
-        debounceTimerRef.current = null;
+      debounceTimerRef.current = window.setTimeout(() => {
+        debounceTimerRef.current = undefined;
         setDebouncedQuery(nextQuery);
       }, PLAYER_SEARCH_DEBOUNCE_MS);
     }

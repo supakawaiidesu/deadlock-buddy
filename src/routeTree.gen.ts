@@ -10,19 +10,13 @@
 
 import { Route as rootRouteImport } from './routes/__root'
 import { Route as IndexRouteImport } from './routes/index'
-import { Route as PlayersIndexRouteImport } from './routes/players/index'
 import { Route as HeroesIndexRouteImport } from './routes/heroes/index'
+import { Route as PlayersIndexRouteImport } from './routes/players/index'
 import { Route as PlayersAccountIdRouteImport } from './routes/players/$accountId'
-import { Route as HeroesSlugRouteImport } from './routes/heroes/$slug'
 
 const IndexRoute = IndexRouteImport.update({
   id: '/',
   path: '/',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const PlayersIndexRoute = PlayersIndexRouteImport.update({
-  id: '/players/',
-  path: '/players/',
   getParentRoute: () => rootRouteImport,
 } as any)
 const HeroesIndexRoute = HeroesIndexRouteImport.update({
@@ -30,27 +24,25 @@ const HeroesIndexRoute = HeroesIndexRouteImport.update({
   path: '/heroes/',
   getParentRoute: () => rootRouteImport,
 } as any)
+const PlayersIndexRoute = PlayersIndexRouteImport.update({
+  id: '/players/',
+  path: '/players/',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const PlayersAccountIdRoute = PlayersAccountIdRouteImport.update({
   id: '/players/$accountId',
   path: '/players/$accountId',
   getParentRoute: () => rootRouteImport,
 } as any)
-const HeroesSlugRoute = HeroesSlugRouteImport.update({
-  id: '/heroes/$slug',
-  path: '/heroes/$slug',
-  getParentRoute: () => rootRouteImport,
-} as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
-  '/heroes/$slug': typeof HeroesSlugRoute
   '/players/$accountId': typeof PlayersAccountIdRoute
   '/heroes/': typeof HeroesIndexRoute
   '/players/': typeof PlayersIndexRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
-  '/heroes/$slug': typeof HeroesSlugRoute
   '/players/$accountId': typeof PlayersAccountIdRoute
   '/heroes': typeof HeroesIndexRoute
   '/players': typeof PlayersIndexRoute
@@ -58,33 +50,20 @@ export interface FileRoutesByTo {
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
-  '/heroes/$slug': typeof HeroesSlugRoute
   '/players/$accountId': typeof PlayersAccountIdRoute
   '/heroes/': typeof HeroesIndexRoute
   '/players/': typeof PlayersIndexRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
-  fullPaths:
-    | '/'
-    | '/heroes/$slug'
-    | '/players/$accountId'
-    | '/heroes/'
-    | '/players/'
+  fullPaths: '/' | '/players/$accountId' | '/heroes/' | '/players/'
   fileRoutesByTo: FileRoutesByTo
-  to: '/' | '/heroes/$slug' | '/players/$accountId' | '/heroes' | '/players'
-  id:
-    | '__root__'
-    | '/'
-    | '/heroes/$slug'
-    | '/players/$accountId'
-    | '/heroes/'
-    | '/players/'
+  to: '/' | '/players/$accountId' | '/heroes' | '/players'
+  id: '__root__' | '/' | '/players/$accountId' | '/heroes/' | '/players/'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
-  HeroesSlugRoute: typeof HeroesSlugRoute
   PlayersAccountIdRoute: typeof PlayersAccountIdRoute
   HeroesIndexRoute: typeof HeroesIndexRoute
   PlayersIndexRoute: typeof PlayersIndexRoute
@@ -99,18 +78,18 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof IndexRouteImport
       parentRoute: typeof rootRouteImport
     }
-    '/players/': {
-      id: '/players/'
-      path: '/players'
-      fullPath: '/players/'
-      preLoaderRoute: typeof PlayersIndexRouteImport
-      parentRoute: typeof rootRouteImport
-    }
     '/heroes/': {
       id: '/heroes/'
       path: '/heroes'
       fullPath: '/heroes/'
       preLoaderRoute: typeof HeroesIndexRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/players/': {
+      id: '/players/'
+      path: '/players'
+      fullPath: '/players/'
+      preLoaderRoute: typeof PlayersIndexRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/players/$accountId': {
@@ -120,19 +99,11 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof PlayersAccountIdRouteImport
       parentRoute: typeof rootRouteImport
     }
-    '/heroes/$slug': {
-      id: '/heroes/$slug'
-      path: '/heroes/$slug'
-      fullPath: '/heroes/$slug'
-      preLoaderRoute: typeof HeroesSlugRouteImport
-      parentRoute: typeof rootRouteImport
-    }
   }
 }
 
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
-  HeroesSlugRoute: HeroesSlugRoute,
   PlayersAccountIdRoute: PlayersAccountIdRoute,
   HeroesIndexRoute: HeroesIndexRoute,
   PlayersIndexRoute: PlayersIndexRoute,

@@ -14,8 +14,8 @@ describe('widget layout sanitization', () => {
     expect(sanitizeWidgetLayout({}, validTypes, sizeFor)).toBeNull();
   });
 
-  it('falls back for an empty layout', () => {
-    expect(sanitizeWidgetLayout([], validTypes, sizeFor)).toBeNull();
+  it('keeps an explicitly empty layout', () => {
+    expect(sanitizeWidgetLayout([], validTypes, sizeFor)).toEqual([]);
   });
 
   it('rejects layouts containing only unknown widget types', () => {

@@ -16,6 +16,7 @@ export function sanitizeWidgetLayout<TType extends string>(
   ) => { defaultW: number; defaultH: number; minW: number; minH: number },
 ): WidgetInstance<TType>[] | null {
   if (!Array.isArray(raw)) return null;
+  if (raw.length === 0) return [];
 
   const cleaned: WidgetInstance<TType>[] = [];
   const seenIds = new Set<string>();
