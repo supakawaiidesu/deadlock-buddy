@@ -214,59 +214,79 @@ export function TopNav() {
           <div
             key={tab.id}
             className={clsx(
-              'relative h-full min-w-0 flex-none border-r border-[var(--surface-border-muted)]',
+              'relative h-full min-w-0 max-w-48 flex-none border-r border-[var(--surface-border-muted)]',
               isActive &&
                 'bg-[var(--accent-subtle)] text-[var(--accent)] shadow-[inset_0_-2px_0_var(--accent)]',
             )}
           >
-            {isRenaming ? (
-              <input
-                value={renaming.value}
-                aria-label={`Rename ${tab.title}`}
-                data-custom-page-rename=""
-                className="min-w-24 max-w-48 bg-[var(--accent-subtle)] py-0 pl-3 pr-9 text-[10px] uppercase tracking-[0.18em] text-[var(--text-strong)] outline-2 -outline-offset-2 outline-[var(--accent)]"
-                onChange={(event) =>
-                  setRenaming({ id: tab.id, value: event.target.value })
-                }
-                onBlur={() => {
-                  if (cancelRenameRef.current) {
-                    cancelRenameRef.current = false;
-                    return;
-                  }
-                  commitRename();
-                }}
-                onKeyDown={(event) => {
-                  if (event.key === 'Enter') {
-                    event.preventDefault();
-                    event.currentTarget.blur();
-                  } else if (event.key === 'Escape') {
-                    event.preventDefault();
-                    cancelRenameRef.current = true;
-                    setRenaming(null);
-                  }
-                }}
-              />
-            ) : (
-              <Link
-                {...navigation}
-                activeOptions={{ includeHash: false }}
-                aria-current={isActive ? 'page' : undefined}
-                title={tab.title}
-                className="panel-header-interactive panel-header-meta h-full min-w-0 max-w-48 flex-none overflow-hidden !pl-3 !pr-9"
-                onDoubleClick={(event) => {
+            <Link
+              {...navigation}
+              activeOptions={{ includeHash: false }}
+              aria-current={isActive ? 'page' : undefined}
+              aria-hidden={isRenaming || undefined}
+              tabIndex={isRenaming ? -1 : undefined}
+              title={tab.title}
+              className={clsx(
+                'panel-header-interactive panel-header-meta h-full min-w-0 max-w-48 flex-none overflow-hidden !pl-3 !pr-9',
+                isRenaming && 'pointer-events-none',
+              )}
+              onDoubleClick={(event) => {
+                event.preventDefault();
+                startRename(tab);
+              }}
+              onKeyDown={(event) => {
+                if (event.key === 'F2') {
                   event.preventDefault();
                   startRename(tab);
-                }}
-                onKeyDown={(event) => {
-                  if (event.key === 'F2') {
-                    event.preventDefault();
-                    startRename(tab);
-                  }
-                }}
-              >
-                <span className="truncate">{tab.title}</span>
-              </Link>
-            )}
+                }
+              }}
+            >
+              <span className={clsx('truncate', isRenaming && 'invisible')}>
+                {tab.title}
+              </span>
+            </Link>
+            {isRenaming ? (
+              <div className="pointer-events-none absolute left-3 right-9 top-1/2 flex min-w-0 -translate-y-1/2 justify-center text-[10px] uppercase tracking-[0.18em] text-[var(--text-strong)]">
+                <span className="relative inline-grid min-w-0 max-w-full items-center leading-[normal]">
+                  <span
+                    aria-hidden="true"
+                    className="invisible col-start-1 row-start-1 max-w-full overflow-hidden whitespace-pre"
+                  >
+                    {renaming.value || ' '}
+                  </span>
+                  <input
+                    value={renaming.value}
+                    aria-label={`Rename ${tab.title}`}
+                    data-custom-page-rename=""
+                    className="pointer-events-auto col-start-1 row-start-1 min-w-0 w-full appearance-none border-0 bg-transparent bg-none p-0 font-inherit leading-[normal] text-inherit uppercase tracking-[inherit] shadow-none outline-none"
+                    onChange={(event) =>
+                      setRenaming({ id: tab.id, value: event.target.value })
+                    }
+                    onBlur={() => {
+                      if (cancelRenameRef.current) {
+                        cancelRenameRef.current = false;
+                        return;
+                      }
+                      commitRename();
+                    }}
+                    onKeyDown={(event) => {
+                      if (event.key === 'Enter') {
+                        event.preventDefault();
+                        event.currentTarget.blur();
+                      } else if (event.key === 'Escape') {
+                        event.preventDefault();
+                        cancelRenameRef.current = true;
+                        setRenaming(null);
+                      }
+                    }}
+                  />
+                  <span
+                    aria-hidden="true"
+                    className="pointer-events-none absolute inset-x-0 top-full mt-0.5 h-px bg-[var(--accent)]"
+                  />
+                </span>
+              </div>
+            ) : null}
             <button
               type="button"
               aria-label={`Close ${tab.title}`}
