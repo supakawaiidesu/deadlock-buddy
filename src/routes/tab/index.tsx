@@ -13,7 +13,7 @@ export const Route = createFileRoute('/tab/')({
 function SharedTabImportRoute() {
   const locationHash = useLocation({ select: (location) => location.hash });
   const navigate = useNavigate();
-  const { importSharedPage } = useCustomPages();
+  const { importSharedPages } = useCustomPages();
   const decoded = useMemo(
     () => decodeCustomPageHash(locationHash),
     [locationHash],
@@ -23,9 +23,9 @@ function SharedTabImportRoute() {
   useEffect(() => {
     if (!decoded.ok || importedHashRef.current === locationHash) return;
     importedHashRef.current = locationHash;
-    const page = importSharedPage(decoded.value);
-    void navigate(buildCustomPageNavigation(page.tabNumber, true));
-  }, [decoded, importSharedPage, locationHash, navigate]);
+    const pages = importSharedPages(decoded.value);
+    void navigate(buildCustomPageNavigation(pages[0].tabNumber, true));
+  }, [decoded, importSharedPages, locationHash, navigate]);
 
   if (!decoded.ok) {
     return (
@@ -37,7 +37,7 @@ function SharedTabImportRoute() {
 
   return (
     <div className="flex min-h-full items-center justify-center px-6 py-16 text-center text-sm text-[rgb(var(--text-rgb)/0.65)]">
-      Importing shared custom tab…
+      Importing selected custom tabs…
     </div>
   );
 }

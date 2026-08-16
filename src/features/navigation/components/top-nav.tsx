@@ -43,14 +43,18 @@ function isCustomRouteActive(tabNumber: number, pathname: string) {
 export function TopNav() {
   const pathname = useLocation({ select: (location) => location.pathname });
   const navigate = useNavigate();
-  const { tabs, resolvePage, createPage, renamePage, removePage } = useCustomPages();
+  const { tabs, createPage, renamePage, removePage, resolvePages } = useCustomPages();
   const { themeId, themes, setThemeId } = useTheme();
   const currentTheme = getTheme(themeId);
   const [isAddMenuOpen, setIsAddMenuOpen] = useState(false);
   const [isThemeMenuOpen, setIsThemeMenuOpen] = useState(false);
+  const [isShareMenuOpen, setIsShareMenuOpen] = useState(false);
+  const [selectedPageIds, setSelectedPageIds] = useState<Set<string>>(() => new Set());
+  const [shareError, setShareError] = useState<string | null>(null);
   const [renaming, setRenaming] = useState<{ id: string; value: string } | null>(null);
   const [isShareCopied, setIsShareCopied] = useState(false);
   const themeMenuRef = useRef<HTMLDivElement | null>(null);
+  const shareMenuRef = useRef<HTMLDivElement | null>(null);
   const cancelRenameRef = useRef(false);
   const closingPageIdsRef = useRef(new Set<string>());
   const shareFeedbackTimeoutRef = useRef<number | null>(null);
@@ -108,6 +112,30 @@ export function TopNav() {
   }, [isThemeMenuOpen]);
 
   useEffect(() => {
+    if (!isShareMenuOpen) return undefined;
+    const handleKeyDown = (event: KeyboardEvent) => {
+      if (event.key === 'Escape') setIsShareMenuOpen(false);
+    };
+    const handlePointerDown = (event: PointerEvent) => {
+      const target = event.target as Node | null;
+      if (target && !shareMenuRef.current?.contains(target)) setIsShareMenuOpen(false);
+    };
+    window.addEventListener('keydown', handleKeyDown);
+    window.addEventListener('pointerdown', handlePointerDown);
+    return () => {
+      window.removeEventListener('keydown', handleKeyDown);
+      window.removeEventListener('pointerdown', handlePointerDown);
+    };
+  }, [isShareMenuOpen]);
+
+  useEffect(() => {
+    setSelectedPageIds((selected) => {
+      const existingIds = new Set(tabs.map((tab) => tab.id));
+      return new Set(Array.from(selected).filter((id) => existingIds.has(id)));
+    });
+  }, [tabs]);
+
+  useEffect(() => {
     isShareMountedRef.current = true;
     return () => {
       isShareMountedRef.current = false;
@@ -126,34 +154,48 @@ export function TopNav() {
     setRenaming({ id: tab.id, value: tab.title });
   };
 
+  const toggleShareMenu = () => {
+    setIsThemeMenuOpen(false);
+    setShareError(null);
+    setIsShareMenuOpen((open) => {
+      if (!open) {
+        setSelectedPageIds(new Set(
+          activeCustomPage ? [activeCustomPage.id] : tabs.map((tab) => tab.id),
+        ));
+      }
+      return !open;
+    });
+  };
 
-  const shareActiveCustomPage = async () => {
-    if (!activeCustomPage) return;
-    const resolution = resolvePage(String(activeCustomPage.tabNumber));
-    if (resolution.status !== 'local') return;
+  const shareSelectedPages = async () => {
+    const pages = resolvePages(Array.from(selectedPageIds));
+    if (pages.length === 0) return;
 
-    const shareUrl = buildCustomPageShareUrl(resolution.page, window.location.href);
+    let shareUrl: string;
+    try {
+      shareUrl = buildCustomPageShareUrl(pages, window.location.href);
+    } catch {
+      setShareError('Selected tabs are too large to share.');
+      return;
+    }
     if (shareFeedbackTimeoutRef.current !== null) {
       window.clearTimeout(shareFeedbackTimeoutRef.current);
       shareFeedbackTimeoutRef.current = null;
     }
     setIsShareCopied(false);
-
     try {
       if (!navigator.clipboard?.writeText) throw new Error('Clipboard API unavailable');
       await navigator.clipboard.writeText(shareUrl);
-      if (!isShareMountedRef.current) return;
-      if (shareFeedbackTimeoutRef.current !== null) {
-        window.clearTimeout(shareFeedbackTimeoutRef.current);
-      }
-      setIsShareCopied(true);
-      shareFeedbackTimeoutRef.current = window.setTimeout(() => {
-        shareFeedbackTimeoutRef.current = null;
-        setIsShareCopied(false);
-      }, 2_000);
     } catch {
-      window.prompt('Copy this custom page link:', shareUrl);
+      window.prompt('Copy these custom tab links:', shareUrl);
     }
+    if (!isShareMountedRef.current) return;
+    setIsShareMenuOpen(false);
+    setIsShareCopied(true);
+    shareFeedbackTimeoutRef.current = window.setTimeout(() => {
+      shareFeedbackTimeoutRef.current = null;
+      setIsShareCopied(false);
+    }, 2_000);
   };
   const commitRename = () => {
     if (!renaming) return;
@@ -378,10 +420,13 @@ export function TopNav() {
           <span className="panel-header-meta hidden border-l border-[var(--surface-border-muted)] lg:flex">
             Beta
           </span>
-          <div ref={themeMenuRef} className="relative self-stretch">
+          <div ref={themeMenuRef} className="relative flex self-stretch">
             <button
               type="button"
-              onClick={() => setIsThemeMenuOpen((open) => !open)}
+              onClick={() => {
+                setIsShareMenuOpen(false);
+                setIsThemeMenuOpen((open) => !open);
+              }}
               aria-expanded={isThemeMenuOpen}
               aria-haspopup="menu"
               aria-label={`Theme: ${currentTheme.label}. Open theme menu`}
@@ -450,20 +495,97 @@ export function TopNav() {
               </div>
             ) : null}
           </div>
-          {activeCustomPage ? (
-            <button
-              type="button"
-              onClick={() => void shareActiveCustomPage()}
-              aria-label={isShareCopied ? 'Custom tab link copied' : 'Share custom tab'}
-              title={isShareCopied ? 'Custom tab link copied' : 'Share custom tab'}
-              className="panel-header-action"
-            >
-              {isShareCopied ? (
-                <Check className="h-4 w-4" aria-hidden="true" />
-              ) : (
-                <Share2 className="h-4 w-4" aria-hidden="true" />
-              )}
-            </button>
+          {tabs.length > 0 ? (
+            <div ref={shareMenuRef} className="relative flex self-stretch">
+              <button
+                type="button"
+                onClick={toggleShareMenu}
+                aria-expanded={isShareMenuOpen}
+                aria-haspopup="menu"
+                aria-label={isShareCopied ? 'Custom tab links copied' : 'Share custom tabs'}
+                title={isShareCopied ? 'Custom tab links copied' : 'Share custom tabs'}
+                className={clsx(
+                  'panel-header-action h-full',
+                  isShareMenuOpen && 'bg-[var(--accent-muted)] !text-[var(--accent)]',
+                )}
+              >
+                {isShareCopied ? (
+                  <Check className="h-4 w-4" aria-hidden="true" />
+                ) : (
+                  <Share2 className="h-4 w-4" aria-hidden="true" />
+                )}
+              </button>
+              {isShareMenuOpen ? (
+                <div
+                  role="menu"
+                  aria-label="Share custom tabs"
+                  className="absolute right-0 top-[calc(100%+4px)] z-[70] w-72 overflow-hidden rounded-sm border border-[rgb(var(--text-rgb)/0.16)] bg-[var(--overlay-background)] shadow-lg shadow-[rgb(var(--shadow-rgb)/0.35)] backdrop-blur-sm"
+                >
+                  <span className="block border-b border-[var(--surface-border-muted)] px-3 py-2.5 text-[10px] uppercase tracking-[0.22em] text-[rgb(var(--text-rgb)/0.5)]">
+                    Select tabs
+                  </span>
+                  <div className="scroll-quiet max-h-72 overflow-y-auto">
+                    {tabs.map((tab) => {
+                      const isSelected = selectedPageIds.has(tab.id);
+                      return (
+                        <button
+                          key={tab.id}
+                          type="button"
+                          role="menuitemcheckbox"
+                          aria-checked={isSelected}
+                          className={clsx(
+                            'panel-header-interactive flex min-h-11 w-full items-stretch border-b border-[var(--surface-border-muted)] text-left text-[11px] uppercase tracking-[0.16em] transition',
+                            isSelected
+                              ? 'bg-[var(--accent-subtle)] text-[var(--accent)]'
+                              : 'text-[rgb(var(--text-rgb)/0.75)]',
+                          )}
+                          onClick={() => {
+                            setShareError(null);
+                            setSelectedPageIds((selected) => {
+                              const next = new Set(selected);
+                              if (next.has(tab.id)) next.delete(tab.id);
+                              else next.add(tab.id);
+                              return next;
+                            });
+                          }}
+                        >
+                          <span
+                            aria-hidden="true"
+                            className={clsx(
+                              'flex w-11 flex-none items-center justify-center self-stretch border-r border-[var(--surface-border-muted)]',
+                              isSelected
+                                ? 'bg-[var(--accent-muted)] text-[var(--accent)]'
+                                : 'text-transparent',
+                            )}
+                          >
+                            <Check className="h-3.5 w-3.5" />
+                          </span>
+                          <span className="flex min-w-0 items-center px-3 py-2.5">
+                            <span className="truncate">{tab.title}</span>
+                          </span>
+                        </button>
+                      );
+                    })}
+                  </div>
+                  {shareError ? (
+                    <p
+                      role="alert"
+                      className="border-b border-[var(--surface-border-muted)] px-3 py-2.5 text-[11px] text-[var(--danger)]"
+                    >
+                      {shareError}
+                    </p>
+                  ) : null}
+                  <button
+                    type="button"
+                    disabled={selectedPageIds.size === 0}
+                    onClick={() => void shareSelectedPages()}
+                    className="panel-header-interactive flex min-h-11 w-full items-center justify-center bg-[var(--accent-muted)] px-3 py-3 text-[10px] font-semibold uppercase tracking-[0.18em] text-[var(--accent)] hover:!bg-[var(--accent)] hover:!text-[var(--accent-contrast)] disabled:cursor-not-allowed disabled:opacity-40"
+                  >
+                    Share selected tabs
+                  </button>
+                </div>
+              ) : null}
+            </div>
           ) : null}
         </div>
       </div>

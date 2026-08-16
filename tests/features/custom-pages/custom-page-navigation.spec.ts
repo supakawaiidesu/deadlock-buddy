@@ -4,8 +4,7 @@ import {
   buildCustomPageShareUrl,
   createEmptyCustomPageStore,
   decodeCustomPageHash,
-  encodeCustomPageHash,
-  importSharedCustomPage,
+  importSharedCustomPages,
   resolveCustomPage,
   type CustomPageStore,
   type CustomPageTab,
@@ -15,141 +14,85 @@ const localPage: CustomPageTab = {
   id: 'page-1',
   tabNumber: 1,
   title: 'Local',
-  widgets: [
-    { id: 'local-widget', type: 'telemetry-snapshot', x: 0, y: 0, w: 1, h: 9 },
-  ],
+  widgets: [{ id: 'local-widget', type: 'telemetry-snapshot', x: 0, y: 0, w: 1, h: 9 }],
 };
-const store: CustomPageStore = {
-  version: 1,
-  nextTabNumber: 2,
-  tabs: [localPage],
-};
+const store: CustomPageStore = { version: 1, nextTabNumber: 2, tabs: [localPage] };
+const selectedPages: CustomPageTab[] = [
+  { id: 'page-3', tabNumber: 3, title: 'Third', widgets: [] },
+  {
+    id: 'page-1', tabNumber: 1, title: 'First',
+    widgets: [{ id: 'shared-widget', type: 'rank-distribution', x: 0, y: 0, w: 2, h: 10 }],
+  },
+];
 
 describe('custom page navigation', () => {
   it('resolves local tabs only by their local monotonic number', () => {
-    expect(resolveCustomPage('1', store)).toEqual({
-      status: 'local',
-      page: localPage,
-    });
+    expect(resolveCustomPage('1', store)).toEqual({ status: 'local', page: localPage });
     expect(resolveCustomPage('2', store)).toEqual({ status: 'missing' });
     expect(resolveCustomPage('page-1', store)).toEqual({ status: 'invalid' });
     expect(resolveCustomPage('01', store)).toEqual({ status: 'invalid' });
   });
 
-  it('builds the same short destination for distinct committed layouts', () => {
-    const secondPage: CustomPageTab = {
-      ...localPage,
-      widgets: [
-        { id: 'other', type: 'hero-winrate', x: 0, y: 0, w: 1, h: 13 },
-      ],
-    };
-    const first = buildCustomPageNavigation(localPage.tabNumber, true);
-    const second = buildCustomPageNavigation(secondPage.tabNumber, true);
-
-    expect(first).toEqual({
-      to: '/tab/$tabNumber',
-      params: { tabNumber: '1' },
-      hash: '',
-      replace: true,
-      resetScroll: false,
-      hashScrollIntoView: false,
+  it('builds short push and replace destinations', () => {
+    expect(buildCustomPageNavigation(1, true)).toEqual({
+      to: '/tab/$tabNumber', params: { tabNumber: '1' }, hash: '', replace: true,
+      resetScroll: false, hashScrollIntoView: false,
     });
-    expect(second).toEqual(first);
+    expect(buildCustomPageNavigation(1, false).replace).toBe(false);
   });
 
-  it('uses push navigation for a new local tab', () => {
-    expect(buildCustomPageNavigation(localPage.tabNumber, false).replace).toBe(false);
-  });
-
-  it('imports every valid share as the recipient’s next local tab', () => {
-    const hash = encodeCustomPageHash({
-      version: 1,
-      title: 'Shared',
-      widgets: [
-        { id: 'shared-widget', type: 'rank-distribution', x: 0, y: 0, w: 2, h: 10 },
-      ],
-    });
-    const decoded = decodeCustomPageHash(hash);
-    if (!decoded.ok) throw new Error('Expected valid shared page hash');
-
-    const imported = importSharedCustomPage(store, decoded.value);
-
-    expect(imported.page).toMatchObject({
-      tabNumber: 2,
-      title: 'Shared',
-      widgets: [{ id: 'shared-widget', type: 'rank-distribution' }],
-    });
-    expect(imported.page.id).not.toBe(localPage.id);
-    expect(imported.store.nextTabNumber).toBe(3);
-    expect(imported.store.tabs[0]).toEqual(localPage);
-  });
-
-  it('keeps a valid shared empty layout when importing', () => {
-    const decoded = decodeCustomPageHash(
-      encodeCustomPageHash({ version: 1, title: 'Empty', widgets: [] }),
-    );
-    if (!decoded.ok) throw new Error('Expected valid shared page hash');
-
-    expect(importSharedCustomPage(store, decoded.value).page).toMatchObject({
-      tabNumber: 2,
-      title: 'Empty',
-      widgets: [],
-    });
-  });
-
-  it('rejects malformed and unsupported shared hashes', () => {
-    expect(decodeCustomPageHash('v1.bad*')).toEqual({ ok: false });
-    expect(decodeCustomPageHash('v2.abc')).toEqual({ ok: false });
-  });
-
-  it('builds a decodable share URL on the identity-free import route', () => {
-    const page: CustomPageTab = {
-      id: 'page-1',
-      tabNumber: 1,
-      title: '戦績 😀',
-      widgets: [
-        { id: 'shared-widget', type: 'rank-distribution', x: 0, y: 0, w: 2, h: 10 },
-      ],
-    };
-
-    const shareUrl = buildCustomPageShareUrl(
-      page,
-      'https://example.test/tab/1',
-    );
-    const parsed = new URL(shareUrl);
+  it('encodes a selected subset in the supplied tab-bar order', () => {
+    const parsed = new URL(buildCustomPageShareUrl(selectedPages, 'https://example.test/tab/3'));
     const decoded = decodeCustomPageHash(parsed.hash.slice(1));
 
     expect(parsed.pathname).toBe('/tab');
-    expect(parsed.hash).toMatch(/^#v1\./);
-    expect(decoded).toMatchObject({
+    expect(decoded).toEqual({
       ok: true,
-      value: { version: 1, title: page.title, widgets: page.widgets },
+      value: {
+        version: 1,
+        pages: selectedPages.map(({ title, widgets }) => ({ title, widgets })),
+      },
     });
   });
 
+  it('appends the ordered subset and lands on the first imported page', () => {
+    const parsed = new URL(buildCustomPageShareUrl(selectedPages, 'https://example.test/tab/3'));
+    const decoded = decodeCustomPageHash(parsed.hash.slice(1));
+    if (!decoded.ok) throw new Error('Expected valid shared pages hash');
+
+    const imported = importSharedCustomPages(store, decoded.value);
+
+    expect(imported.store.tabs.slice(1).map((page) => page.title)).toEqual(['Third', 'First']);
+    expect(imported.pages.map((page) => page.tabNumber)).toEqual([2, 3]);
+    expect(imported.pages.every((page) => !selectedPages.some((sender) => sender.id === page.id))).toBe(true);
+    expect(imported.store.nextTabNumber).toBe(4);
+    expect(buildCustomPageNavigation(imported.pages[0].tabNumber, true).params).toEqual({ tabNumber: '2' });
+  });
+
   it('preserves a deployment prefix and query while replacing an old fragment', () => {
-    const shareUrl = buildCustomPageShareUrl(
-      localPage,
-      'https://example.test/deploy/tab/1?view=grid#old-fragment',
-    );
-    const parsed = new URL(shareUrl);
+    const parsed = new URL(buildCustomPageShareUrl(
+      selectedPages,
+      'https://example.test/deploy/tab/3?view=grid#old-fragment',
+    ));
 
     expect(`${parsed.pathname}${parsed.search}`).toBe('/deploy/tab?view=grid');
     expect(parsed.hash).toMatch(/^#v1\./);
     expect(parsed.hash).not.toContain('old-fragment');
   });
 
-  it('starts imports at Tab 1 for a recipient with empty storage', () => {
-    const decoded = decodeCustomPageHash(
-      encodeCustomPageHash({ version: 1, title: 'Sender title', widgets: [] }),
-    );
-    if (!decoded.ok) throw new Error('Expected valid shared page hash');
+  it('starts a batch at Tab 1 for a recipient with empty storage', () => {
+    const parsed = new URL(buildCustomPageShareUrl(selectedPages, 'https://example.test/tab/3'));
+    const decoded = decodeCustomPageHash(parsed.hash.slice(1));
+    if (!decoded.ok) throw new Error('Expected valid shared pages hash');
 
-    const imported = importSharedCustomPage(createEmptyCustomPageStore(), decoded.value);
+    const imported = importSharedCustomPages(createEmptyCustomPageStore(), decoded.value);
 
-    expect(imported.page.tabNumber).toBe(1);
-    expect(buildCustomPageNavigation(imported.page.tabNumber, true).params).toEqual({
-      tabNumber: '1',
-    });
+    expect(imported.pages.map((page) => page.tabNumber)).toEqual([1, 2]);
+    expect(buildCustomPageNavigation(imported.pages[0].tabNumber, true).params).toEqual({ tabNumber: '1' });
+  });
+
+  it('rejects malformed and unsupported shared hashes', () => {
+    expect(decodeCustomPageHash('v1.bad*')).toEqual({ ok: false });
+    expect(decodeCustomPageHash('v2.abc')).toEqual({ ok: false });
   });
 });

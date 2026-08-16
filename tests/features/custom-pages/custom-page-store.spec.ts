@@ -8,7 +8,7 @@ import {
   removeCustomPage,
   renameCustomPage,
   sanitizeCustomPageStore,
-  importSharedCustomPage,
+  importSharedCustomPages,
   updateCustomPageLayout,
   writeCustomPageStore,
 } from '@/features/custom-pages/custom-page-state';
@@ -129,31 +129,34 @@ describe('custom page store', () => {
     expect(restored.tabs[0].widgets).toEqual(widgets);
   });
 
-  it('creates and imports empty or shared layouts with a monotonic tab number', () => {
+  it('imports an ordered batch atomically with fresh IDs and consecutive numbers', () => {
     const first = createCustomPage(createEmptyCustomPageStore(), { id: 'one' });
-    const second = createCustomPage(first.store, { id: 'two' });
-    const imported = importSharedCustomPage(second.store, {
+    const before = structuredClone(first.store);
+    const imported = importSharedCustomPages(first.store, {
       version: 1,
-      title: 'Shared page',
-      widgets: sharedWidgets,
+      pages: [
+        { title: 'Shared page', widgets: sharedWidgets },
+        { title: 'Empty page', widgets: [] },
+      ],
     });
-    const closed = removeCustomPage(imported.store, 'one');
-    const third = createCustomPage(closed, { id: 'three' });
 
-    expect(first.page).toEqual({
-      id: 'one',
-      tabNumber: 1,
-      title: 'Tab 1',
-      widgets: [],
-    });
-    expect(second.page).toMatchObject({ tabNumber: 2, title: 'Tab 2' });
-    expect(imported.page).toMatchObject({
-      tabNumber: 3,
-      title: 'Shared page',
-      widgets: sharedWidgets,
-    });
-    expect(closed.tabs.map((tab) => tab.title)).toEqual(['Tab 2', 'Shared page']);
-    expect(third.page).toMatchObject({ tabNumber: 4, title: 'Tab 4' });
+    expect(first.store).toEqual(before);
+    expect(imported.pages.map(({ tabNumber, title, widgets }) => ({
+      tabNumber,
+      title,
+      widgets,
+    }))).toEqual([
+      { tabNumber: 2, title: 'Shared page', widgets: sharedWidgets },
+      { tabNumber: 3, title: 'Empty page', widgets: [] },
+    ]);
+    expect(new Set(imported.pages.map((page) => page.id)).size).toBe(2);
+    expect(imported.pages.every((page) => page.id !== first.page.id)).toBe(true);
+    expect(imported.store.tabs.map((page) => page.title)).toEqual([
+      'Tab 1',
+      'Shared page',
+      'Empty page',
+    ]);
+    expect(imported.store.nextTabNumber).toBe(first.store.nextTabNumber + 2);
   });
 
   it('keeps surviving names and the next local name after closing Tab 1', () => {

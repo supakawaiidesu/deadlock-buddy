@@ -10,13 +10,13 @@ import {
 import type { DashboardPanelInstance } from '@/features/dashboard/dashboard-types';
 import {
   createCustomPage,
-  importSharedCustomPage,
+  importSharedCustomPages,
   readCustomPageStore,
   removeCustomPage,
   renameCustomPage,
   resolveCustomPage,
   updateCustomPageLayout,
-  type SharedCustomPageV1,
+  type SharedCustomPagesV1,
   writeCustomPageStore,
   type CustomPageStore,
   type CustomPageResolution,
@@ -27,7 +27,8 @@ export type CustomPagesContextValue = {
   tabs: readonly CustomPageTab[];
   resolvePage: (tabNumberParam: string) => CustomPageResolution;
   createPage: () => CustomPageTab;
-  importSharedPage: (page: SharedCustomPageV1) => CustomPageTab;
+  importSharedPages: (shared: SharedCustomPagesV1) => CustomPageTab[];
+  resolvePages: (pageIds: readonly string[]) => CustomPageTab[];
   renamePage: (pageId: string, title: string) => CustomPageTab | undefined;
   updatePageLayout: (pageId: string, widgets: DashboardPanelInstance[]) => void;
   removePage: (pageId: string) => void;
@@ -56,11 +57,18 @@ export function CustomPagesProvider({ children }: { children: ReactNode }) {
     return created.page;
   }, [commitStore]);
 
-  const importSharedPage = useCallback((page: SharedCustomPageV1) => {
-    const imported = importSharedCustomPage(storeRef.current, page);
+  const importSharedPages = useCallback((shared: SharedCustomPagesV1) => {
+    const imported = importSharedCustomPages(storeRef.current, shared);
     commitStore(imported.store);
-    return imported.page;
+    return imported.pages;
   }, [commitStore]);
+
+  const resolvePages = useCallback((pageIds: readonly string[]) => {
+    const requestedIds = new Set(pageIds);
+    return storeRef.current.tabs
+      .filter((tab) => requestedIds.has(tab.id))
+      .map((tab) => ({ ...tab, widgets: tab.widgets.map((widget) => ({ ...widget })) }));
+  }, []);
 
   const renamePage = useCallback((pageId: string, title: string) => {
     if (!storeRef.current.tabs.some((tab) => tab.id === pageId)) return undefined;
@@ -88,13 +96,15 @@ export function CustomPagesProvider({ children }: { children: ReactNode }) {
     tabs: store.tabs,
     resolvePage,
     createPage,
-    importSharedPage,
+    importSharedPages,
+    resolvePages,
     renamePage,
     updatePageLayout,
     removePage,
   }), [
     createPage,
-    importSharedPage,
+    importSharedPages,
+    resolvePages,
     removePage,
     renamePage,
     resolvePage,
