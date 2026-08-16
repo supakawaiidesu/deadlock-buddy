@@ -39,8 +39,14 @@ function expectAppliedTheme(root: FakeRoot, themeId: ThemeId) {
 }
 
 describe('theme engine', () => {
-  it('registers the five themes in menu order with complete token sets', () => {
+  it('registers the eleven themes in menu order with complete token sets', () => {
     expect(THEMES.map((theme) => theme.id)).toEqual([
+      'deadlock',
+      'deep-teal',
+      'cold-slate',
+      'occult',
+      'true-black',
+      'fog',
       'dark',
       'oled',
       'light',
@@ -52,7 +58,7 @@ describe('theme engine', () => {
     }
   });
 
-  it('resolves valid IDs and falls back to OLED for invalid values', () => {
+  it('resolves valid IDs and falls back to Deadlock for invalid values', () => {
     for (const theme of THEMES) {
       expect(resolveThemeId(theme.id)).toBe(theme.id);
     }
@@ -69,7 +75,7 @@ describe('theme engine', () => {
     expectAppliedTheme(root, 'catppuccin');
   });
 
-  it('initializes from storage and applies OLED for invalid or blocked storage', () => {
+  it('initializes from storage and applies Deadlock for invalid or blocked storage', () => {
     const storedRoot = createFakeRoot();
     const storedTheme = { getItem: vi.fn(() => 'light') };
 

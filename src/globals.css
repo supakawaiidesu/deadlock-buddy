@@ -3,29 +3,29 @@
 :root {
   color-scheme: var(--color-scheme);
   --color-scheme: dark;
-  --background: #040405;
-  --foreground: #f2f4f2;
-  --surface: #08080a;
-  --surface-muted: #0b0c0f;
-  --surface-raised: #101015;
-  --panel-background: rgba(10,10,12,0.94);
-  --overlay-background: rgba(8,12,11,0.97);
-  --overlay-soft-background: rgba(8,12,11,0.95);
-  --inset-background: rgba(8,8,10,0.90);
-  --text-strong: #ffffff;
-  --text-rgb: 245 247 245;
-  --neutral-rgb: 255 255 255;
-  --shadow-rgb: 0 0 0;
-  --accent: #3fc96d;
-  --accent-rgb: 63 201 109;
-  --accent-contrast: #000000;
+  --background: #0d1214;
+  --foreground: #e4ded2;
+  --surface: #141b1d;
+  --surface-muted: #192427;
+  --surface-raised: #1f3a4a;
+  --panel-background: rgba(20,27,29,0.96);
+  --overlay-background: rgba(10,16,18,0.98);
+  --overlay-soft-background: rgba(20,27,29,0.96);
+  --inset-background: rgba(31,58,74,0.48);
+  --text-strong: #fbedd7;
+  --text-rgb: 228 222 210;
+  --neutral-rgb: 251 237 215;
+  --shadow-rgb: 5 8 9;
+  --accent: #4e9a78;
+  --accent-rgb: 78 154 120;
+  --accent-contrast: #0d1214;
   --surface-border: rgb(var(--accent-rgb) / 0.24);
   --surface-border-muted: rgb(var(--neutral-rgb) / 0.08);
   --accent-muted: rgb(var(--accent-rgb) / 0.16);
   --accent-subtle: rgb(var(--accent-rgb) / 0.05);
-  --danger: #f87171;
-  --info: #38bdf8;
-  --success: #4ade80;
+  --danger: #d26e67;
+  --info: #72a6bf;
+  --success: #6db58e;
   --grid-line: rgb(var(--neutral-rgb) / 0.04);
 }
 

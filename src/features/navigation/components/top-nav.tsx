@@ -97,7 +97,7 @@ export function TopNav() {
           className="panel-header-interactive panel-header-meta flex-none border-r border-[var(--surface-border-muted)] !px-4 font-semibold !tracking-[0.24em]"
         >
           <span className="text-[var(--text-strong)]">618</span>
-          <span className="text-[var(--accent)]">Lock</span>
+          <span className="text-[var(--text-strong)]">Lock</span>
         </Link>
 
         <nav
