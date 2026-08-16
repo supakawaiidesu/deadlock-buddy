@@ -15,7 +15,7 @@ function DashboardPage() {
 
   if (!isLoading && (isError || !dashboardData)) {
     return (
-      <div className="flex min-h-[calc(100vh-60px)] flex-col items-center justify-center gap-4 py-6 text-center">
+      <div className="flex min-h-full flex-col items-center justify-center gap-4 py-6 text-center">
         <span className="border border-[var(--danger)] px-3 py-1 text-xs font-semibold uppercase tracking-[0.25em] text-[var(--danger)]">
           Error
         </span>
@@ -28,7 +28,7 @@ function DashboardPage() {
   }
 
   return (
-    <div className="flex min-h-[calc(100vh-60px)] flex-col gap-[4px] pb-[4px] font-mono text-[13px]">
+    <div className="flex min-h-full flex-col gap-[4px] pb-[4px] font-mono text-[13px]">
       <div className="grid gap-[4px] lg:grid-cols-[minmax(0,1.4fr)_minmax(0,1fr)]">
         <Panel className="flex flex-col gap-4">
           <div className="flex items-center justify-between text-[11px] uppercase tracking-[0.28em] text-[rgb(var(--text-rgb)/0.55)]">
@@ -78,12 +78,6 @@ function DashboardPage() {
               <span>MMR leaderboards</span>
               <span className="text-[rgb(var(--text-rgb)/0.45)]">
                 /leaderboards
-              </span>
-            </li>
-            <li className="flex items-center justify-between px-4 py-3 text-xs text-[rgb(var(--text-rgb)/0.65)]">
-              <span>Meta breakdown</span>
-              <span className="text-[rgb(var(--text-rgb)/0.45)]">
-                /meta
               </span>
             </li>
           </ul>

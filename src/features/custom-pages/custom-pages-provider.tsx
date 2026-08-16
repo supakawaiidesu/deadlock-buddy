@@ -1,0 +1,118 @@
+import {
+  createContext,
+  useCallback,
+  useContext,
+  useMemo,
+  useRef,
+  useState,
+  type ReactNode,
+} from 'react';
+import type { DashboardPanelInstance } from '@/features/dashboard/dashboard-types';
+import {
+  createCustomPage,
+  importSharedCustomPage,
+  readCustomPageStore,
+  removeCustomPage,
+  renameCustomPage,
+  resolveCustomPage,
+  updateCustomPageLayout,
+  type SharedCustomPageV1,
+  writeCustomPageStore,
+  type CustomPageStore,
+  type CustomPageResolution,
+  type CustomPageTab,
+} from '@/features/custom-pages/custom-page-state';
+
+export type CustomPagesContextValue = {
+  tabs: readonly CustomPageTab[];
+  resolvePage: (tabNumberParam: string) => CustomPageResolution;
+  createPage: () => CustomPageTab;
+  importSharedPage: (page: SharedCustomPageV1) => CustomPageTab;
+  renamePage: (pageId: string, title: string) => CustomPageTab | undefined;
+  updatePageLayout: (pageId: string, widgets: DashboardPanelInstance[]) => void;
+  removePage: (pageId: string) => void;
+};
+
+const CustomPagesContext = createContext<CustomPagesContextValue | null>(null);
+
+export function CustomPagesProvider({ children }: { children: ReactNode }) {
+  const [store, setStore] = useState(() => readCustomPageStore(window.localStorage));
+  const storeRef = useRef<CustomPageStore>(store);
+
+  const commitStore = useCallback((next: CustomPageStore) => {
+    storeRef.current = next;
+    writeCustomPageStore(window.localStorage, next);
+    setStore(next);
+  }, []);
+
+  const resolvePage = useCallback(
+    (tabNumberParam: string) => resolveCustomPage(tabNumberParam, storeRef.current),
+    [],
+  );
+
+  const createPage = useCallback(() => {
+    const created = createCustomPage(storeRef.current);
+    commitStore(created.store);
+    return created.page;
+  }, [commitStore]);
+
+  const importSharedPage = useCallback((page: SharedCustomPageV1) => {
+    const imported = importSharedCustomPage(storeRef.current, page);
+    commitStore(imported.store);
+    return imported.page;
+  }, [commitStore]);
+
+  const renamePage = useCallback((pageId: string, title: string) => {
+    if (!storeRef.current.tabs.some((tab) => tab.id === pageId)) return undefined;
+    const next = renameCustomPage(storeRef.current, pageId, title);
+    commitStore(next);
+    return next.tabs.find((tab) => tab.id === pageId);
+  }, [commitStore]);
+
+  const updatePageLayout = useCallback((
+    pageId: string,
+    widgets: DashboardPanelInstance[],
+  ) => {
+    if (!storeRef.current.tabs.some((tab) => tab.id === pageId)) return;
+    const next = updateCustomPageLayout(storeRef.current, pageId, widgets);
+    storeRef.current = next;
+    writeCustomPageStore(window.localStorage, next);
+  }, []);
+
+  const removePage = useCallback((pageId: string) => {
+    if (!storeRef.current.tabs.some((tab) => tab.id === pageId)) return;
+    commitStore(removeCustomPage(storeRef.current, pageId));
+  }, [commitStore]);
+
+  const value = useMemo<CustomPagesContextValue>(() => ({
+    tabs: store.tabs,
+    resolvePage,
+    createPage,
+    importSharedPage,
+    renamePage,
+    updatePageLayout,
+    removePage,
+  }), [
+    createPage,
+    importSharedPage,
+    removePage,
+    renamePage,
+    resolvePage,
+    store.tabs,
+    updatePageLayout,
+  ]);
+
+  return (
+    <CustomPagesContext.Provider value={value}>
+      {children}
+    </CustomPagesContext.Provider>
+  );
+}
+
+export function useCustomPages(): CustomPagesContextValue {
+  const context = useContext(CustomPagesContext);
+  if (!context) {
+    throw new Error('useCustomPages must be used within CustomPagesProvider');
+  }
+  return context;
+}

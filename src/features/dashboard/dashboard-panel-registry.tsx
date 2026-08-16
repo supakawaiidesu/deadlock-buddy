@@ -2,6 +2,7 @@ import type {
   DashboardPanelInstance,
   DashboardPanelRegistry,
 } from '@/features/dashboard/dashboard-types';
+import { dashboardPanelManifest } from '@/features/dashboard/dashboard-panel-manifest';
 import { RankDistributionPanel } from '@/features/analytics/components/rank-distribution-panel';
 import { HeroLeaderboardPanel } from '@/features/heroes/components/hero-leaderboard-panel';
 import { ItemLeaderboardPanel } from '@/features/items/components/item-leaderboard-panel';
@@ -11,12 +12,7 @@ import { TelemetrySnapshotPanel } from '@/features/dashboard/components/telemetr
 export const dashboardPanelRegistry: DashboardPanelRegistry = {
   'telemetry-snapshot': {
     type: 'telemetry-snapshot',
-    title: 'Telemetry snapshot',
-    description: 'Latest aggregate stats pulled from the Deadlock API.',
-    defaultW: 1,
-    defaultH: 9,
-    minW: 1,
-    minH: 9,
+    ...dashboardPanelManifest['telemetry-snapshot'],
     render: ({ data, headerActions }) => (
       <TelemetrySnapshotPanel
         leaderboardSampleSize={data.leaderboardEntries.length}
@@ -29,12 +25,7 @@ export const dashboardPanelRegistry: DashboardPanelRegistry = {
   },
   'rank-distribution': {
     type: 'rank-distribution',
-    title: 'Rank distribution histogram',
-    description: 'MMR rank distribution across the sampled timeframe.',
-    defaultW: 2,
-    defaultH: 13,
-    minW: 2,
-    minH: 10,
+    ...dashboardPanelManifest['rank-distribution'],
     render: ({ data, headerActions }) => (
       <RankDistributionPanel
         entries={data.rankDistributionEntries}
@@ -45,12 +36,7 @@ export const dashboardPanelRegistry: DashboardPanelRegistry = {
   },
   'na-leaderboard': {
     type: 'na-leaderboard',
-    title: 'NA leaderboard highlight',
-    description: 'Top accounts pulled from the NA queue.',
-    defaultW: 1,
-    defaultH: 13,
-    minW: 1,
-    minH: 7,
+    ...dashboardPanelManifest['na-leaderboard'],
     render: ({ data, headerActions }) => (
       <NaLeaderboardPanel
         entries={data.leaderboardEntries}
@@ -60,12 +46,7 @@ export const dashboardPanelRegistry: DashboardPanelRegistry = {
   },
   'hero-popularity': {
     type: 'hero-popularity',
-    title: 'Hero popularity ranking',
-    description: 'Most-played heroes across the tracked sample.',
-    defaultW: 1,
-    defaultH: 13,
-    minW: 1,
-    minH: 7,
+    ...dashboardPanelManifest['hero-popularity'],
     render: ({ instance, data, headerActions }) => (
       <HeroLeaderboardPanel
         title="Hero popularity ranking"
@@ -79,12 +60,7 @@ export const dashboardPanelRegistry: DashboardPanelRegistry = {
   },
   'hero-winrate': {
     type: 'hero-winrate',
-    title: 'Hero winrate ranking',
-    description: 'Highest-performing heroes in the current patch.',
-    defaultW: 1,
-    defaultH: 13,
-    minW: 1,
-    minH: 7,
+    ...dashboardPanelManifest['hero-winrate'],
     render: ({ instance, data, headerActions }) => (
       <HeroLeaderboardPanel
         title="Hero winrate ranking"
@@ -98,12 +74,7 @@ export const dashboardPanelRegistry: DashboardPanelRegistry = {
   },
   'item-popularity': {
     type: 'item-popularity',
-    title: 'Item popularity ranking',
-    description: 'Most purchased items in the tracked sample.',
-    defaultW: 1,
-    defaultH: 13,
-    minW: 1,
-    minH: 7,
+    ...dashboardPanelManifest['item-popularity'],
     render: ({ instance, data, headerActions }) => (
       <ItemLeaderboardPanel
         title="Item popularity ranking"
@@ -117,12 +88,7 @@ export const dashboardPanelRegistry: DashboardPanelRegistry = {
   },
   'item-winrate': {
     type: 'item-winrate',
-    title: 'Item winrate ranking',
-    description: 'Items correlated with the highest win rates.',
-    defaultW: 1,
-    defaultH: 13,
-    minW: 1,
-    minH: 7,
+    ...dashboardPanelManifest['item-winrate'],
     render: ({ instance, data, headerActions }) => (
       <ItemLeaderboardPanel
         title="Item winrate ranking"

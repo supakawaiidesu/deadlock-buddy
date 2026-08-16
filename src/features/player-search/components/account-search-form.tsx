@@ -238,11 +238,11 @@ export function AccountSearchForm({
   const overlayPositionClassName =
     variant === 'panel'
       ? 'absolute left-0 right-0 top-[calc(100%+4px)] z-[80]'
-      : 'fixed left-[4px] right-[4px] top-[56px] z-[80] md:absolute md:left-0 md:right-0 md:top-[calc(100%+4px)]';
+      : 'fixed left-[4px] right-[4px] top-[108px] z-[80] lg:absolute lg:left-0 lg:right-0 lg:top-[calc(100%+4px)]';
   const overlayMaxHeightClassName =
     variant === 'panel'
       ? 'max-h-[min(28rem,calc(50dvh-1rem))]'
-      : 'max-h-[calc(100dvh-60px)]';
+      : 'max-h-[calc(100dvh-112px)] lg:max-h-[calc(100dvh-60px)]';
 
   return (
     <form

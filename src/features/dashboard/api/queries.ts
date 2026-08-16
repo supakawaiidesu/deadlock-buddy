@@ -65,7 +65,7 @@ function buildDashboardData(
   };
 }
 
-export function useDashboardData() {
+export function useDashboardData(options: { enabled?: boolean } = {}) {
   return useQuery({
     queryKey: ['dashboard'],
     queryFn: async (): Promise<DashboardDataBundle> => {
@@ -101,5 +101,6 @@ export function useDashboardData() {
       );
     },
     staleTime: STALE_TIME,
+    enabled: options.enabled ?? true,
   });
 }

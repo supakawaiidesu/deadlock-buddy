@@ -13,6 +13,8 @@ import { Route as IndexRouteImport } from './routes/index'
 import { Route as HeroesIndexRouteImport } from './routes/heroes/index'
 import { Route as PlayersIndexRouteImport } from './routes/players/index'
 import { Route as PlayersAccountIdRouteImport } from './routes/players/$accountId'
+import { Route as TabIndexRouteImport } from './routes/tab/index'
+import { Route as TabTabNumberRouteImport } from './routes/tab/$tabNumber'
 
 const IndexRoute = IndexRouteImport.update({
   id: '/',
@@ -34,39 +36,76 @@ const PlayersAccountIdRoute = PlayersAccountIdRouteImport.update({
   path: '/players/$accountId',
   getParentRoute: () => rootRouteImport,
 } as any)
+const TabIndexRoute = TabIndexRouteImport.update({
+  id: '/tab/',
+  path: '/tab/',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const TabTabNumberRoute = TabTabNumberRouteImport.update({
+  id: '/tab/$tabNumber',
+  path: '/tab/$tabNumber',
+  getParentRoute: () => rootRouteImport,
+} as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/players/$accountId': typeof PlayersAccountIdRoute
+  '/tab/$tabNumber': typeof TabTabNumberRoute
   '/heroes/': typeof HeroesIndexRoute
   '/players/': typeof PlayersIndexRoute
+  '/tab/': typeof TabIndexRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/players/$accountId': typeof PlayersAccountIdRoute
+  '/tab/$tabNumber': typeof TabTabNumberRoute
   '/heroes': typeof HeroesIndexRoute
   '/players': typeof PlayersIndexRoute
+  '/tab': typeof TabIndexRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
   '/players/$accountId': typeof PlayersAccountIdRoute
+  '/tab/$tabNumber': typeof TabTabNumberRoute
   '/heroes/': typeof HeroesIndexRoute
   '/players/': typeof PlayersIndexRoute
+  '/tab/': typeof TabIndexRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
-  fullPaths: '/' | '/players/$accountId' | '/heroes/' | '/players/'
+  fullPaths:
+    | '/'
+    | '/players/$accountId'
+    | '/tab/$tabNumber'
+    | '/heroes/'
+    | '/players/'
+    | '/tab/'
   fileRoutesByTo: FileRoutesByTo
-  to: '/' | '/players/$accountId' | '/heroes' | '/players'
-  id: '__root__' | '/' | '/players/$accountId' | '/heroes/' | '/players/'
+  to:
+    | '/'
+    | '/players/$accountId'
+    | '/tab/$tabNumber'
+    | '/heroes'
+    | '/players'
+    | '/tab'
+  id:
+    | '__root__'
+    | '/'
+    | '/players/$accountId'
+    | '/tab/$tabNumber'
+    | '/heroes/'
+    | '/players/'
+    | '/tab/'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
   PlayersAccountIdRoute: typeof PlayersAccountIdRoute
+  TabTabNumberRoute: typeof TabTabNumberRoute
   HeroesIndexRoute: typeof HeroesIndexRoute
   PlayersIndexRoute: typeof PlayersIndexRoute
+  TabIndexRoute: typeof TabIndexRoute
 }
 
 declare module '@tanstack/react-router' {
@@ -99,14 +138,30 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof PlayersAccountIdRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/tab/': {
+      id: '/tab/'
+      path: '/tab'
+      fullPath: '/tab/'
+      preLoaderRoute: typeof TabIndexRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/tab/$tabNumber': {
+      id: '/tab/$tabNumber'
+      path: '/tab/$tabNumber'
+      fullPath: '/tab/$tabNumber'
+      preLoaderRoute: typeof TabTabNumberRouteImport
+      parentRoute: typeof rootRouteImport
+    }
   }
 }
 
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   PlayersAccountIdRoute: PlayersAccountIdRoute,
+  TabTabNumberRoute: TabTabNumberRoute,
   HeroesIndexRoute: HeroesIndexRoute,
   PlayersIndexRoute: PlayersIndexRoute,
+  TabIndexRoute: TabIndexRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)

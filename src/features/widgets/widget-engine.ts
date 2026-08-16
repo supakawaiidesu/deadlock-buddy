@@ -71,7 +71,12 @@ export function compactVertical<T extends GridItem>(
     }
   }
 
-  return items.map((item) => byId.get(item.id) as T);
+  return items.map((item) => {
+    const next = byId.get(item.id) as T;
+    return next.x === item.x && next.y === item.y && next.w === item.w && next.h === item.h
+      ? item
+      : next;
+  });
 }
 
 function pushDisplaced<T extends GridItem>(items: T[], anchorId: string): void {
@@ -125,8 +130,9 @@ export function moveItem<T extends GridItem>(
   if (index === -1) return [...items];
 
   const next = items.map((item, itemIndex) => {
-    if (itemIndex !== index) return { ...item } as T;
-    return { ...item, ...clampRect({ ...item, ...to }, minW, minH) } as T;
+    if (itemIndex !== index) return item;
+    const moved = { ...item, ...clampRect({ ...item, ...to }, minW, minH) } as T;
+    return moved.x === item.x && moved.y === item.y ? item : moved;
   });
 
   pushDisplaced(next, id);
@@ -159,8 +165,14 @@ export function resizeItem<T extends GridItem>(
   if (index === -1) return [...items];
 
   const next = items.map((item, itemIndex) => {
-    if (itemIndex !== index) return { ...item } as T;
-    return { ...item, ...clampResizeRect(item, size, minW, minH) } as T;
+    if (itemIndex !== index) return item;
+    const resized = { ...item, ...clampResizeRect(item, size, minW, minH) } as T;
+    return resized.x === item.x &&
+      resized.y === item.y &&
+      resized.w === item.w &&
+      resized.h === item.h
+      ? item
+      : resized;
   });
 
   pushDisplaced(next, id);

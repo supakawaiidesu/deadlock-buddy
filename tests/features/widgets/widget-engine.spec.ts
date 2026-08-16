@@ -103,6 +103,33 @@ describe('widget layout engine', () => {
     ).toMatchObject({ x: 2, w: 1 });
   });
 
+  it('preserves object identity for widgets whose geometry does not change', () => {
+    const anchor = { id: 'anchor', x: 0, y: 0, w: 1, h: 2 };
+    const untouched = { id: 'untouched', x: 2, y: 0, w: 1, h: 2 };
+
+    const moved = moveItem([anchor, untouched], 'anchor', { x: 1, y: 0 }, 1, 1);
+    const resized = resizeItem(
+      [anchor, untouched],
+      'anchor',
+      { w: 1, h: 3 },
+      1,
+      1,
+    );
+
+    expect(moved[1]).toBe(untouched);
+    expect(resized[1]).toBe(untouched);
+  });
+
+  it('preserves object identity when compaction leaves geometry unchanged', () => {
+    const first = { id: 'first', x: 0, y: 0, w: 1, h: 2 };
+    const second = { id: 'second', x: 1, y: 0, w: 1, h: 2 };
+
+    const compacted = compactVertical([first, second]);
+
+    expect(compacted[0]).toBe(first);
+    expect(compacted[1]).toBe(second);
+  });
+
   it('finds the first interior gap before scanning below the layout', () => {
     expect(
       findFreeSlot(

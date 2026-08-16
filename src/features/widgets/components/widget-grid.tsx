@@ -43,13 +43,26 @@ import {
   WIDGET_ADD_MENU_TOGGLE_EVENT,
 } from '@/features/widgets/widget-events';
 
+type WidgetGridLayoutOwner<TType extends string> =
+  | {
+      storageKey: string;
+      defaultLayout: readonly WidgetInstance<TType>[];
+      initialLayout?: never;
+      onLayoutCommit?: never;
+    }
+  | {
+      initialLayout: readonly WidgetInstance<TType>[];
+      onLayoutCommit: (next: WidgetInstance<TType>[]) => void;
+      storageKey?: never;
+      defaultLayout?: never;
+    };
+
 type WidgetGridSharedProps<TType extends string, TData> = {
   registry: WidgetRegistry<TType, TData>;
-  defaultLayout: readonly WidgetInstance<TType>[];
-  storageKey: string;
   emptyStateTitle: string;
+  emptyStateHint?: string | null;
   useGridHeightOnMobile?: boolean;
-};
+} & WidgetGridLayoutOwner<TType>;
 
 type WidgetGridProps<TType extends string, TData> = WidgetGridSharedProps<TType, TData> &
   (
@@ -78,22 +91,21 @@ type ResizeState<TType extends string> = {
   startRect: WidgetInstance<TType>;
 };
 
-const ZERO_DELTA = { x: 0, y: 0 };
 
 export function WidgetGrid<TType extends string, TData>(
   props: WidgetGridProps<TType, TData>,
 ) {
   const {
     registry,
-    defaultLayout,
-    storageKey,
     emptyStateTitle,
+    emptyStateHint = 'Use “Add widget” to bring metrics back.',
     useGridHeightOnMobile = false,
   } = props;
   const [widgets, setWidgets] = useState<WidgetInstance<TType>[]>(() => {
+    if (props.initialLayout !== undefined) return [...props.initialLayout];
     try {
-      const stored = window.localStorage.getItem(storageKey);
-      if (!stored) return [...defaultLayout];
+      const stored = window.localStorage.getItem(props.storageKey);
+      if (!stored) return [...props.defaultLayout];
 
       const parsed = JSON.parse(stored) as unknown;
       return (
@@ -101,17 +113,16 @@ export function WidgetGrid<TType extends string, TData>(
           parsed,
           new Set(Object.keys(registry)),
           (type) => registry[type],
-        ) ?? [...defaultLayout]
+        ) ?? [...props.defaultLayout]
       );
     } catch (error) {
       console.warn('Failed to hydrate widget layout', error);
-      return [...defaultLayout];
+      return [...props.defaultLayout];
     }
   });
   const [isAddMenuOpen, setIsAddMenuOpen] = useState(false);
   const [preview, setPreview] = useState<WidgetInstance<TType>[] | null>(null);
   const [activeId, setActiveId] = useState<string | null>(null);
-  const [dragDelta, setDragDelta] = useState(ZERO_DELTA);
   const [resizeState, setResizeState] = useState<ResizeState<TType> | null>(null);
   const [containerWidth, setContainerWidth] = useState(0);
   const [isDesktop, setIsDesktop] = useState(
@@ -119,14 +130,33 @@ export function WidgetGrid<TType extends string, TData>(
   );
   const menuRef = useRef<HTMLDivElement | null>(null);
   const surfaceRef = useRef<HTMLDivElement | null>(null);
+  const hasPersistedLayoutRef = useRef(false);
+  const resizeCommittedRef = useRef(false);
+  const snappedDragRef = useRef<{ id: string; dx: number; dy: number } | null>(null);
   const availableWidgets = useMemo(
     () => Object.keys(registry).map((type) => registry[type as TType]),
     [registry],
   );
 
   useEffect(() => {
-    window.localStorage.setItem(storageKey, JSON.stringify(widgets));
-  }, [storageKey, widgets]);
+    if (!hasPersistedLayoutRef.current) {
+      hasPersistedLayoutRef.current = true;
+      return;
+    }
+    if (props.storageKey !== undefined) {
+      try {
+        window.localStorage.setItem(props.storageKey, JSON.stringify(widgets));
+      } catch (error) {
+        console.warn('Failed to persist widget layout', error);
+      }
+    } else {
+      props.onLayoutCommit(widgets);
+    }
+  }, [props.onLayoutCommit, props.storageKey, widgets]);
+
+  const commitLayout = (next: WidgetInstance<TType>[]) => {
+    setWidgets(next);
+  };
 
   useEffect(() => {
     const handleToggle = () => {
@@ -212,15 +242,14 @@ export function WidgetGrid<TType extends string, TData>(
   const handleDragStart = ({ active }: DragStartEvent) => {
     const id = String(active.id);
     if (!widgets.some((widget) => widget.id === id)) return;
+    snappedDragRef.current = { id, dx: 0, dy: 0 };
     setActiveId(id);
-    setDragDelta(ZERO_DELTA);
     setPreview(widgets);
   };
 
   const handleDragMove = ({ active, delta }: DragMoveEvent) => {
     const id = String(active.id);
     const origin = widgets.find((widget) => widget.id === id);
-    setDragDelta(delta);
     if (!origin || containerWidth <= 0) return;
 
     const definition = registry[origin.type];
@@ -229,6 +258,9 @@ export function WidgetGrid<TType extends string, TData>(
 
     const dx = Math.round(delta.x / columnPitch);
     const dy = Math.round(delta.y / (GRID_ROW_HEIGHT + GRID_GAP));
+    const snapped = snappedDragRef.current;
+    if (snapped?.id === id && snapped.dx === dx && snapped.dy === dy) return;
+    snappedDragRef.current = { id, dx, dy };
     setPreview(
       moveItem(
         widgets,
@@ -241,34 +273,30 @@ export function WidgetGrid<TType extends string, TData>(
   };
 
   const finishInteraction = (commit: boolean) => {
-    if (commit && preview) {
-      setWidgets(preview);
-    }
+    if (commit && preview) commitLayout(preview);
+    snappedDragRef.current = null;
     setPreview(null);
     setActiveId(null);
-    setDragDelta(ZERO_DELTA);
   };
 
   const handleDragEnd = () => finishInteraction(true);
   const handleDragCancel = () => finishInteraction(false);
 
   const handleRemove = (id: string) => {
-    setWidgets((current) => compactVertical(current.filter((widget) => widget.id !== id)));
+    commitLayout(compactVertical(widgets.filter((widget) => widget.id !== id)));
   };
 
   const handleAddWidget = (type: TType) => {
     const definition = registry[type];
-    setWidgets((current) => {
-      const slot = findFreeSlot(current, definition.defaultW, definition.defaultH);
-      const next = {
-        id: createWidgetInstanceId(type),
-        type,
-        ...slot,
-        w: definition.defaultW,
-        h: definition.defaultH,
-      };
-      return compactVertical([...current, next]);
-    });
+    const slot = findFreeSlot(widgets, definition.defaultW, definition.defaultH);
+    const next = {
+      id: createWidgetInstanceId(type),
+      type,
+      ...slot,
+      w: definition.defaultW,
+      h: definition.defaultH,
+    };
+    commitLayout(compactVertical([...widgets, next]));
     setIsAddMenuOpen(false);
   };
 
@@ -279,6 +307,7 @@ export function WidgetGrid<TType extends string, TData>(
   ) => {
     const startRect = widgets.find((widget) => widget.id === id);
     if (!isDesktop || !startRect) return;
+    resizeCommittedRef.current = false;
 
     setResizeState({
       id,
@@ -288,7 +317,6 @@ export function WidgetGrid<TType extends string, TData>(
       startRect: { ...startRect },
     });
     setPreview(widgets);
-    setDragDelta(ZERO_DELTA);
   };
 
   const handleResizeMove = (id: string, event: ReactPointerEvent<HTMLButtonElement>) => {
@@ -306,12 +334,16 @@ export function WidgetGrid<TType extends string, TData>(
     const dh = resizeState.axis.includes('y')
       ? Math.round((event.clientY - resizeState.startY) / (GRID_ROW_HEIGHT + GRID_GAP))
       : 0;
+    const width = resizeState.startRect.w + dw;
+    const height = resizeState.startRect.h + dh;
+    const currentPreview = preview?.find((widget) => widget.id === id);
+    if (currentPreview?.w === width && currentPreview.h === height) return;
 
     setPreview(
       resizeItem(
         widgets,
         id,
-        { w: resizeState.startRect.w + dw, h: resizeState.startRect.h + dh },
+        { w: width, h: height },
         definition.minW,
         definition.minH,
       ),
@@ -319,10 +351,15 @@ export function WidgetGrid<TType extends string, TData>(
   };
 
   const handleResizeEnd = (id: string) => {
-    if (!resizeState || resizeState.id !== id) return;
-    if (preview) {
-      setWidgets(preview);
+    if (
+      resizeCommittedRef.current ||
+      !resizeState ||
+      resizeState.id !== id
+    ) {
+      return;
     }
+    resizeCommittedRef.current = true;
+    if (preview) commitLayout(preview);
     setPreview(null);
     setResizeState(null);
   };
@@ -362,7 +399,7 @@ export function WidgetGrid<TType extends string, TData>(
         );
 
     event.preventDefault();
-    setWidgets(next);
+    commitLayout(next);
   };
 
   const displayed = preview ?? widgets;
@@ -376,12 +413,18 @@ export function WidgetGrid<TType extends string, TData>(
   );
   const showEmptyState = widgets.length === 0;
 
+  const committedWidgetsById = new Map(
+    widgets.map((widget) => [widget.id, widget] as const),
+  );
+  const displayedWidgetsById = new Map(
+    displayed.map((widget) => [widget.id, widget] as const),
+  );
+
   const renderCell = (instance: WidgetInstance<TType>, positioned: boolean) => {
-    const previewRect = displayed.find((item) => item.id === instance.id) ?? instance;
+    const committedInstance = committedWidgetsById.get(instance.id) ?? instance;
+    const previewRect = displayedWidgetsById.get(instance.id) ?? instance;
     const originRect =
-      activeId === instance.id
-        ? widgets.find((item) => item.id === instance.id) ?? previewRect
-        : previewRect;
+      activeId === instance.id ? committedInstance : previewRect;
 
     const modeProps = props.isLoading
       ? {
@@ -389,20 +432,19 @@ export function WidgetGrid<TType extends string, TData>(
           renderLoading: props.renderLoading,
         }
       : {
-          data: props.data,
+          data: props.data as TData,
         };
 
     return (
-      <WidgetCell
+      <WidgetCell<TType, TData>
         key={instance.id}
-        instance={instance}
+        instance={committedInstance}
         registry={registry}
         positioned={positioned}
         containerWidth={containerWidth}
         renderRect={originRect}
         isActive={activeId === instance.id || resizeState?.id === instance.id}
         isDragging={activeId === instance.id}
-        dragDelta={activeId === instance.id ? dragDelta : ZERO_DELTA}
         isDesktop={isDesktop}
         useGridHeightOnMobile={useGridHeightOnMobile}
         onRemove={handleRemove}
@@ -420,9 +462,11 @@ export function WidgetGrid<TType extends string, TData>(
       {showEmptyState ? (
         <div className="flex flex-col items-center justify-center rounded-sm border border-[rgb(var(--text-rgb)/0.12)] bg-[rgb(var(--text-rgb)/0.03)] px-6 py-16 text-center text-[13px] text-[rgb(var(--text-rgb)/0.6)]">
           <p>{emptyStateTitle}</p>
-          <p className="mt-2 text-[11px] uppercase tracking-[0.18em] text-[rgb(var(--text-rgb)/0.45)]">
-            Use &ldquo;Add widget&rdquo; to bring metrics back.
-          </p>
+          {emptyStateHint ? (
+            <p className="mt-2 text-[11px] uppercase tracking-[0.18em] text-[rgb(var(--text-rgb)/0.45)]">
+              {emptyStateHint}
+            </p>
+          ) : null}
         </div>
       ) : (
         <DndContext
@@ -469,7 +513,7 @@ export function WidgetGrid<TType extends string, TData>(
       {isAddMenuOpen ? (
         <div
           ref={menuRef}
-          className="fixed right-8 top-[76px] z-[60] w-56 rounded-sm border border-[rgb(var(--text-rgb)/0.16)] bg-[var(--overlay-background)] p-2 shadow-lg shadow-[rgb(var(--shadow-rgb)/0.35)] backdrop-blur-sm"
+          className="fixed right-8 top-[124px] z-[60] w-56 rounded-sm border border-[rgb(var(--text-rgb)/0.16)] bg-[var(--overlay-background)] p-2 shadow-lg shadow-[rgb(var(--shadow-rgb)/0.35)] backdrop-blur-sm lg:top-[76px]"
         >
           <span className="mb-2 block text-[10px] uppercase tracking-[0.22em] text-[rgb(var(--text-rgb)/0.5)]">
             Panel types
@@ -501,7 +545,6 @@ type WidgetCellSharedProps<TType extends string, TData> = {
   renderRect: WidgetInstance<TType>;
   isActive: boolean;
   isDragging: boolean;
-  dragDelta: { x: number; y: number };
   isDesktop: boolean;
   useGridHeightOnMobile: boolean;
   onRemove: (id: string) => void;
@@ -544,7 +587,6 @@ function WidgetCell<TType extends string, TData>(props: WidgetCellProps<TType, T
     renderRect,
     isActive,
     isDragging,
-    dragDelta,
     isDesktop,
     useGridHeightOnMobile,
     onRemove,
@@ -553,12 +595,14 @@ function WidgetCell<TType extends string, TData>(props: WidgetCellProps<TType, T
     onResizeEnd,
     onKeyboard,
   } = props;
-  const { attributes, listeners, setNodeRef } = useDraggable({
+  const { attributes, listeners, setNodeRef, transform } = useDraggable({
     id: instance.id,
     disabled: !isDesktop,
   });
   const definition = registry[instance.type];
   const pixelRect = positioned ? rectToPixels(renderRect, containerWidth) : null;
+  const dragX = isDragging ? (transform?.x ?? 0) : 0;
+  const dragY = isDragging ? (transform?.y ?? 0) : 0;
   const style: CSSProperties | undefined = pixelRect
     ? {
         position: 'absolute',
@@ -566,7 +610,7 @@ function WidgetCell<TType extends string, TData>(props: WidgetCellProps<TType, T
         top: 0,
         width: pixelRect.width,
         height: pixelRect.height,
-        transform: `translate3d(${pixelRect.left + dragDelta.x}px, ${pixelRect.top + dragDelta.y}px, 0)`,
+        transform: `translate3d(${pixelRect.left + dragX}px, ${pixelRect.top + dragY}px, 0)`,
         transition: isActive
           ? 'none'
           : 'transform 180ms ease, width 180ms ease, height 180ms ease',
@@ -585,50 +629,59 @@ function WidgetCell<TType extends string, TData>(props: WidgetCellProps<TType, T
     onResizeStart(instance.id, axis, event);
   };
 
-  const headerActions = (
-    <>
-      <button
-        type="button"
-        {...(isDesktop ? attributes : {})}
-        {...(isDesktop ? listeners : {})}
-        onKeyDown={(event) => onKeyboard(instance, event)}
-        disabled={!isDesktop}
-        className={clsx(
-          'panel-header-action touch-none cursor-grab',
-          isDragging ? 'cursor-grabbing bg-[var(--accent-muted)] text-[var(--accent)]' : '',
-        )}
-        aria-label="Move panel (arrow keys move, shift+arrow resizes)"
-        title="Move panel (arrow keys move, shift+arrow resizes)"
-        aria-keyshortcuts="ArrowUp ArrowDown ArrowLeft ArrowRight"
-      >
-        <svg width="12" height="12" viewBox="0 0 12 12" fill="none" aria-hidden="true">
-          <circle cx="3" cy="3" r="0.8" fill="currentColor" />
-          <circle cx="9" cy="3" r="0.8" fill="currentColor" />
-          <circle cx="3" cy="6" r="0.8" fill="currentColor" />
-          <circle cx="9" cy="6" r="0.8" fill="currentColor" />
-          <circle cx="3" cy="9" r="0.8" fill="currentColor" />
-          <circle cx="9" cy="9" r="0.8" fill="currentColor" />
-        </svg>
-      </button>
-      <button
-        type="button"
-        onClick={() => onRemove(instance.id)}
-        className="panel-header-action relative z-10"
-        aria-label="Hide panel"
-        title="Hide panel"
-      >
-        <X className="h-4 w-4" aria-hidden="true" />
-      </button>
-    </>
+  const headerActions = useMemo(
+    () => (
+      <>
+        <button
+          type="button"
+          {...(isDesktop ? attributes : {})}
+          {...(isDesktop ? listeners : {})}
+          onKeyDown={(event) => onKeyboard(instance, event)}
+          disabled={!isDesktop}
+          className={clsx(
+            'panel-header-action touch-none cursor-grab',
+            isDragging
+              ? 'cursor-grabbing bg-[var(--accent-muted)] text-[var(--accent)]'
+              : '',
+          )}
+          aria-label="Move panel (arrow keys move, shift+arrow resizes)"
+          title="Move panel (arrow keys move, shift+arrow resizes)"
+          aria-keyshortcuts="ArrowUp ArrowDown ArrowLeft ArrowRight"
+        >
+          <svg width="12" height="12" viewBox="0 0 12 12" fill="none" aria-hidden="true">
+            <circle cx="3" cy="3" r="0.8" fill="currentColor" />
+            <circle cx="9" cy="3" r="0.8" fill="currentColor" />
+            <circle cx="3" cy="6" r="0.8" fill="currentColor" />
+            <circle cx="9" cy="6" r="0.8" fill="currentColor" />
+            <circle cx="3" cy="9" r="0.8" fill="currentColor" />
+            <circle cx="9" cy="9" r="0.8" fill="currentColor" />
+          </svg>
+        </button>
+        <button
+          type="button"
+          onClick={() => onRemove(instance.id)}
+          className="panel-header-action relative z-10"
+          aria-label="Hide panel"
+          title="Hide panel"
+        >
+          <X className="h-4 w-4" aria-hidden="true" />
+        </button>
+      </>
+    ),
+    [attributes, instance, isDesktop, isDragging, listeners, onKeyboard, onRemove],
   );
 
-  const content = props.isLoading
-    ? props.renderLoading(instance, headerActions)
-    : definition.render({
-        instance,
-        data: props.data,
-        headerActions,
-      });
+  const content = useMemo(
+    () =>
+      props.isLoading
+        ? props.renderLoading(instance, headerActions)
+        : definition.render({
+            instance,
+            data: props.data,
+            headerActions,
+          }),
+    [definition, headerActions, instance, props.data, props.isLoading, props.renderLoading],
+  );
 
   return (
     <div

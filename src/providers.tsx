@@ -6,6 +6,7 @@ import { QueryClient, QueryClientConfig } from '@tanstack/react-query';
 import { useMemo, useState, type ReactNode } from 'react';
 import { createSyncStoragePersister } from '@tanstack/query-sync-storage-persister';
 import { ThemeProvider } from '@/features/theme/theme-provider';
+import { CustomPagesProvider } from '@/features/custom-pages/custom-pages-provider';
 
 const QUERY_CONFIG: QueryClientConfig = {
   defaultOptions: {
@@ -53,9 +54,11 @@ export function AppProviders({ children }: { children: ReactNode }) {
 
   return (
     <ThemeProvider>
-      <PersistQueryClientProvider client={queryClient} persistOptions={persistOptions}>
-        {children}
-      </PersistQueryClientProvider>
+      <CustomPagesProvider>
+        <PersistQueryClientProvider client={queryClient} persistOptions={persistOptions}>
+          {children}
+        </PersistQueryClientProvider>
+      </CustomPagesProvider>
     </ThemeProvider>
   );
 }

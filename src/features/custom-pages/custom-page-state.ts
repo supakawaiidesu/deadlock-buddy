@@ -1,0 +1,490 @@
+import { dashboardPanelManifest } from '@/features/dashboard/dashboard-panel-manifest';
+import type {
+  DashboardPanelInstance,
+  DashboardPanelType,
+} from '@/features/dashboard/dashboard-types';
+import { sanitizeWidgetLayout } from '@/features/widgets/widget-layout';
+
+export const CUSTOM_PAGES_STORAGE_KEY = 'deadlock-buddy-custom-pages.v1';
+export const CUSTOM_PAGE_HASH_VERSION = 1;
+export const MAX_CUSTOM_PAGE_TITLE_LENGTH = 40;
+
+const MAX_CUSTOM_PAGE_WIDGETS = 64;
+const MAX_CUSTOM_PAGE_WIDGET_ID_LENGTH = 128;
+const MAX_CUSTOM_PAGE_WIDGET_HEIGHT = 1000;
+const MAX_CUSTOM_PAGE_HASH_BODY_LENGTH = 43_691;
+const MAX_CUSTOM_PAGE_JSON_BYTES = 32 * 1024;
+const CUSTOM_PAGE_ID_PATTERN = /^[A-Za-z0-9_-]{1,128}$/;
+const GENERATED_TAB_TITLE_PATTERN = /^Tab (\d+)$/;
+const CUSTOM_PAGE_TAB_NUMBER_PATTERN = /^[1-9]\d*$/;
+const dashboardPanelTypes = new Set(Object.keys(dashboardPanelManifest));
+
+export type CustomPageTab = {
+  id: string;
+  tabNumber: number;
+  title: string;
+  widgets: DashboardPanelInstance[];
+};
+
+export type CustomPageStore = {
+  version: 1;
+  nextTabNumber: number;
+  tabs: CustomPageTab[];
+};
+
+export type SharedCustomPageV1 = {
+  version: 1;
+  title: string;
+  widgets: DashboardPanelInstance[];
+};
+
+export type CustomPageNavigation = {
+  to: '/tab/$tabNumber';
+  params: { tabNumber: string };
+  hash: '';
+  replace: boolean;
+  resetScroll: false;
+  hashScrollIntoView: false;
+};
+
+export type CustomPageHashDecodeResult =
+  | { ok: true; value: SharedCustomPageV1 }
+  | { ok: false };
+
+export type CustomPageResolution =
+  | { status: 'local'; page: CustomPageTab }
+  | { status: 'missing' }
+  | { status: 'invalid' };
+
+export function createEmptyCustomPageStore(): CustomPageStore {
+  return { version: 1, nextTabNumber: 1, tabs: [] };
+}
+
+function sizeForDashboardPanel(type: DashboardPanelType) {
+  return dashboardPanelManifest[type];
+}
+
+function rebuildWidget(widget: DashboardPanelInstance): DashboardPanelInstance {
+  return {
+    id: widget.id,
+    type: widget.type,
+    x: widget.x,
+    y: widget.y,
+    w: widget.w,
+    h: widget.h,
+  };
+}
+
+function sanitizeStoredWidgets(raw: unknown): DashboardPanelInstance[] | null {
+  if (!Array.isArray(raw) || raw.length > MAX_CUSTOM_PAGE_WIDGETS) return null;
+  if (raw.length === 0) return [];
+
+  const candidates = raw.filter((item) => {
+    if (!item || typeof item !== 'object') return false;
+    const candidate = item as Record<string, unknown>;
+    if (
+      typeof candidate.id !== 'string' ||
+      candidate.id.length === 0 ||
+      candidate.id.length > MAX_CUSTOM_PAGE_WIDGET_ID_LENGTH ||
+      typeof candidate.type !== 'string' ||
+      !dashboardPanelTypes.has(candidate.type)
+    ) {
+      return false;
+    }
+    return true;
+  });
+
+  if (candidates.length === 0) return null;
+  return sanitizeWidgetLayout<DashboardPanelType>(
+    candidates,
+    dashboardPanelTypes,
+    sizeForDashboardPanel,
+  );
+}
+
+function sanitizeSharedWidgets(raw: unknown): DashboardPanelInstance[] | null {
+  if (!Array.isArray(raw) || raw.length > MAX_CUSTOM_PAGE_WIDGETS) return null;
+  if (raw.length === 0) return [];
+
+  const candidates = raw.filter((item) => {
+    if (!item || typeof item !== 'object') return false;
+    const candidate = item as Record<string, unknown>;
+    if (
+      typeof candidate.id !== 'string' ||
+      candidate.id.length === 0 ||
+      candidate.id.length > MAX_CUSTOM_PAGE_WIDGET_ID_LENGTH ||
+      typeof candidate.type !== 'string' ||
+      !dashboardPanelTypes.has(candidate.type)
+    ) {
+      return false;
+    }
+
+    const geometry = [candidate.x, candidate.y, candidate.w, candidate.h];
+    return (
+      geometry.every((value) => typeof value === 'number' && Number.isFinite(value)) &&
+      (candidate.h as number) <= MAX_CUSTOM_PAGE_WIDGET_HEIGHT
+    );
+  });
+
+  if (candidates.length === 0) return null;
+  return sanitizeWidgetLayout<DashboardPanelType>(
+    candidates,
+    dashboardPanelTypes,
+    sizeForDashboardPanel,
+  );
+}
+function clonePage(page: CustomPageTab): CustomPageTab {
+  return {
+    id: page.id,
+    tabNumber: page.tabNumber,
+    title: page.title,
+    widgets: page.widgets.map(rebuildWidget),
+  };
+}
+
+function generatedTabNumber(title: string): number | null {
+  const match = GENERATED_TAB_TITLE_PATTERN.exec(title);
+  if (!match) return null;
+  const value = Number(match[1]);
+  return Number.isSafeInteger(value) && value >= 1 ? value : null;
+}
+
+function nextAvailableTabNumber(seen: ReadonlySet<number>): number {
+  let value = 1;
+  while (seen.has(value)) value += 1;
+  return value;
+}
+
+export function sanitizeCustomPageStore(raw: unknown): CustomPageStore {
+  if (!raw || typeof raw !== 'object') return createEmptyCustomPageStore();
+
+  const candidate = raw as Record<string, unknown>;
+  if (candidate.version !== 1 || !Array.isArray(candidate.tabs)) {
+    return createEmptyCustomPageStore();
+  }
+
+  const tabs: CustomPageTab[] = [];
+  const seenIds = new Set<string>();
+  const seenTabNumbers = new Set<number>();
+
+  for (const rawTab of candidate.tabs) {
+    if (!rawTab || typeof rawTab !== 'object') continue;
+    const tab = rawTab as Record<string, unknown>;
+    if (
+      typeof tab.id !== 'string' ||
+      !isValidCustomPageId(tab.id) ||
+      seenIds.has(tab.id) ||
+      typeof tab.title !== 'string'
+    ) {
+      continue;
+    }
+
+    const title = tab.title.trim();
+    if (!title || Array.from(title).length > MAX_CUSTOM_PAGE_TITLE_LENGTH) continue;
+    const widgets = sanitizeStoredWidgets(tab.widgets);
+    if (widgets === null) continue;
+
+    const storedTabNumber =
+      typeof tab.tabNumber === 'number' &&
+      Number.isSafeInteger(tab.tabNumber) &&
+      tab.tabNumber >= 1
+        ? tab.tabNumber
+        : null;
+    const preferredTabNumber = storedTabNumber ?? generatedTabNumber(title);
+    const tabNumber =
+      preferredTabNumber !== null && !seenTabNumbers.has(preferredTabNumber)
+        ? preferredTabNumber
+        : nextAvailableTabNumber(seenTabNumbers);
+
+    seenIds.add(tab.id);
+    seenTabNumbers.add(tabNumber);
+    tabs.push({
+      id: tab.id,
+      tabNumber,
+      title,
+      widgets: widgets.map(rebuildWidget),
+    });
+  }
+
+  const storedNextTabNumber =
+    typeof candidate.nextTabNumber === 'number' &&
+    Number.isSafeInteger(candidate.nextTabNumber) &&
+    candidate.nextTabNumber >= 1
+      ? candidate.nextTabNumber
+      : 1;
+  const highestTabNumber = tabs.reduce(
+    (highest, tab) => Math.max(highest, tab.tabNumber),
+    0,
+  );
+  const nextTabNumber = Math.max(storedNextTabNumber, highestTabNumber + 1);
+
+  return { version: 1, nextTabNumber, tabs };
+}
+
+export function readCustomPageStore(
+  storage: Pick<Storage, 'getItem'>,
+): CustomPageStore {
+  try {
+    const stored = storage.getItem(CUSTOM_PAGES_STORAGE_KEY);
+    if (stored === null) return createEmptyCustomPageStore();
+    return sanitizeCustomPageStore(JSON.parse(stored));
+  } catch {
+    return createEmptyCustomPageStore();
+  }
+}
+
+export function writeCustomPageStore(
+  storage: Pick<Storage, 'setItem'>,
+  store: CustomPageStore,
+): void {
+  try {
+    storage.setItem(
+      CUSTOM_PAGES_STORAGE_KEY,
+      JSON.stringify(sanitizeCustomPageStore(store)),
+    );
+  } catch {
+    // Storage can be unavailable or full; provider state remains authoritative in-session.
+  }
+}
+
+export function createCustomPageId(): string {
+  return crypto.randomUUID();
+}
+
+export function isValidCustomPageId(value: string): boolean {
+  return CUSTOM_PAGE_ID_PATTERN.test(value);
+}
+
+export function normalizeCustomPageTitle(value: string, fallback: string): string {
+  const normalized = Array.from(value.trim())
+    .slice(0, MAX_CUSTOM_PAGE_TITLE_LENGTH)
+    .join('');
+  return normalized || fallback;
+}
+
+function normalizeInputWidgets(
+  widgets: readonly DashboardPanelInstance[] | undefined,
+): DashboardPanelInstance[] {
+  if (!widgets) return [];
+  const sanitized = sanitizeSharedWidgets(widgets);
+  return (sanitized ?? []).map(rebuildWidget);
+}
+
+export function createCustomPage(
+  store: CustomPageStore,
+  input: {
+    id?: string;
+    title?: string;
+    widgets?: DashboardPanelInstance[];
+  } = {},
+): { store: CustomPageStore; page: CustomPageTab } {
+  const id = input.id && isValidCustomPageId(input.id) ? input.id : createCustomPageId();
+  const tabNumber = store.nextTabNumber;
+  const fallbackTitle = `Tab ${tabNumber}`;
+  const page: CustomPageTab = {
+    id,
+    tabNumber,
+    title:
+      input.title === undefined
+        ? fallbackTitle
+        : normalizeCustomPageTitle(input.title, fallbackTitle),
+    widgets: normalizeInputWidgets(input.widgets),
+  };
+  return {
+    store: {
+      version: 1,
+      nextTabNumber: tabNumber + 1,
+      tabs: [...store.tabs.map(clonePage), page],
+    },
+    page,
+  };
+}
+
+export function importSharedCustomPage(
+  store: CustomPageStore,
+  sharedPage: SharedCustomPageV1,
+): { store: CustomPageStore; page: CustomPageTab } {
+  return createCustomPage(store, {
+    title: sharedPage.title,
+    widgets: sharedPage.widgets,
+  });
+}
+
+export function renameCustomPage(
+  store: CustomPageStore,
+  pageId: string,
+  title: string,
+): CustomPageStore {
+  return {
+    version: 1,
+    nextTabNumber: store.nextTabNumber,
+    tabs: store.tabs.map((tab) =>
+      tab.id === pageId
+        ? { ...clonePage(tab), title: normalizeCustomPageTitle(title, tab.title) }
+        : clonePage(tab),
+    ),
+  };
+}
+
+export function updateCustomPageLayout(
+  store: CustomPageStore,
+  pageId: string,
+  widgets: DashboardPanelInstance[],
+): CustomPageStore {
+  const nextWidgets = normalizeInputWidgets(widgets);
+  return {
+    version: 1,
+    nextTabNumber: store.nextTabNumber,
+    tabs: store.tabs.map((tab) =>
+      tab.id === pageId ? { ...clonePage(tab), widgets: nextWidgets } : clonePage(tab),
+    ),
+  };
+}
+
+export function removeCustomPage(
+  store: CustomPageStore,
+  pageId: string,
+): CustomPageStore {
+  return {
+    version: 1,
+    nextTabNumber: store.nextTabNumber,
+    tabs: store.tabs.filter((tab) => tab.id !== pageId).map(clonePage),
+  };
+}
+
+export function getCustomPageCloseDestination(
+  tabs: readonly CustomPageTab[],
+  pageId: string,
+): CustomPageTab | null {
+  const index = tabs.findIndex((tab) => tab.id === pageId);
+  if (index === -1) return null;
+  return tabs[index + 1] ?? tabs[index - 1] ?? null;
+}
+
+function encodeBase64Url(bytes: Uint8Array): string {
+  let binary = '';
+  for (const byte of bytes) binary += String.fromCharCode(byte);
+  return btoa(binary).replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/u, '');
+}
+
+function decodeBase64Url(value: string): Uint8Array | null {
+  if (!value || !/^[A-Za-z0-9_-]+$/.test(value) || value.length % 4 === 1) return null;
+  const padding = '='.repeat((4 - (value.length % 4)) % 4);
+  try {
+    const binary = atob(value.replace(/-/g, '+').replace(/_/g, '/') + padding);
+    return Uint8Array.from(binary, (character) => character.charCodeAt(0));
+  } catch {
+    return null;
+  }
+}
+
+function canonicalSharedPage(value: SharedCustomPageV1): SharedCustomPageV1 {
+  const title = normalizeCustomPageTitle(value.title, '');
+  const widgets = sanitizeSharedWidgets(value.widgets) ?? [];
+  return {
+    version: 1,
+    title,
+    widgets: widgets.map(rebuildWidget),
+  };
+}
+
+export function encodeCustomPageHash(value: SharedCustomPageV1): string {
+  const canonical = canonicalSharedPage(value);
+  const json = JSON.stringify({
+    version: canonical.version,
+    title: canonical.title,
+    widgets: canonical.widgets.map(rebuildWidget),
+  });
+  return `v${CUSTOM_PAGE_HASH_VERSION}.${encodeBase64Url(new TextEncoder().encode(json))}`;
+}
+
+export function decodeCustomPageHash(hash: string): CustomPageHashDecodeResult {
+  const prefix = `v${CUSTOM_PAGE_HASH_VERSION}.`;
+  if (!hash.startsWith(prefix)) return { ok: false };
+
+  const body = hash.slice(prefix.length);
+  if (body.length > MAX_CUSTOM_PAGE_HASH_BODY_LENGTH) return { ok: false };
+  const bytes = decodeBase64Url(body);
+  if (!bytes || bytes.byteLength > MAX_CUSTOM_PAGE_JSON_BYTES) return { ok: false };
+
+  let raw: unknown;
+  try {
+    raw = JSON.parse(new TextDecoder('utf-8', { fatal: true }).decode(bytes));
+  } catch {
+    return { ok: false };
+  }
+  if (!raw || typeof raw !== 'object' || Array.isArray(raw)) return { ok: false };
+
+  const candidate = raw as Record<string, unknown>;
+  if (
+    candidate.version !== CUSTOM_PAGE_HASH_VERSION ||
+    typeof candidate.title !== 'string' ||
+    !Array.isArray(candidate.widgets)
+  ) {
+    return { ok: false };
+  }
+
+  const trimmedTitle = candidate.title.trim();
+  if (
+    trimmedTitle.length === 0 ||
+    Array.from(trimmedTitle).length > MAX_CUSTOM_PAGE_TITLE_LENGTH
+  ) {
+    return { ok: false };
+  }
+
+  const widgets = sanitizeSharedWidgets(candidate.widgets);
+  if (
+    widgets === null ||
+    widgets.some((widget) => widget.h > MAX_CUSTOM_PAGE_WIDGET_HEIGHT)
+  ) return { ok: false };
+  const value: SharedCustomPageV1 = {
+    version: 1,
+    title: trimmedTitle,
+    widgets: widgets.map(rebuildWidget),
+  };
+  return { ok: true, value };
+}
+
+export function resolveCustomPage(
+  tabNumberParam: string,
+  store: CustomPageStore,
+): CustomPageResolution {
+  if (!CUSTOM_PAGE_TAB_NUMBER_PATTERN.test(tabNumberParam)) {
+    return { status: 'invalid' };
+  }
+
+  const tabNumber = Number(tabNumberParam);
+  if (!Number.isSafeInteger(tabNumber)) return { status: 'invalid' };
+  const localPage = store.tabs.find((tab) => tab.tabNumber === tabNumber);
+  return localPage
+    ? { status: 'local', page: clonePage(localPage) }
+    : { status: 'missing' };
+}
+
+export function buildCustomPageNavigation(
+  tabNumber: number,
+  replace: boolean,
+): CustomPageNavigation {
+  return {
+    to: '/tab/$tabNumber',
+    params: { tabNumber: String(tabNumber) },
+    hash: '',
+    replace,
+    resetScroll: false,
+    hashScrollIntoView: false,
+  };
+}
+
+export function buildCustomPageShareUrl(
+  page: CustomPageTab,
+  currentUrl: string,
+): string {
+  const url = new URL(currentUrl);
+  url.pathname = url.pathname.replace(/\/tab\/\d+\/?$/u, '/tab');
+  url.hash = encodeCustomPageHash({
+    version: 1,
+    title: page.title,
+    widgets: page.widgets,
+  });
+  return url.toString();
+}

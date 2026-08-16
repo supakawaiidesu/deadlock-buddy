@@ -25,7 +25,7 @@ function HeroesPage() {
 
   if (isError) {
     return (
-      <div className="flex min-h-[calc(100vh-60px)] flex-col items-center justify-center gap-4 py-6 text-center">
+      <div className="flex min-h-full flex-col items-center justify-center gap-4 py-6 text-center">
         <span className="border border-[var(--danger)] px-3 py-1 text-xs font-semibold uppercase tracking-[0.25em] text-[var(--danger)]">
           Error
         </span>
@@ -35,7 +35,7 @@ function HeroesPage() {
   }
 
   return (
-    <div className="flex min-h-[calc(100vh-60px)] flex-col gap-[4px] pb-[4px] font-mono text-[13px]">
+    <div className="flex min-h-full flex-col gap-[4px] pb-[4px] font-mono text-[13px]">
       {data ? (
         <HeroesWidgetLayout data={widgetData} />
       ) : (

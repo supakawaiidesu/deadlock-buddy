@@ -1,4 +1,7 @@
-import type { DashboardDataBundle } from '@/features/dashboard/dashboard-types';
+import type {
+  DashboardDataBundle,
+  DashboardPanelInstance,
+} from '@/features/dashboard/dashboard-types';
 import { DashboardLoadingPanel } from '@/features/dashboard/components/dashboard-loading-panel';
 import {
   dashboardPanelRegistry,
@@ -6,7 +9,7 @@ import {
 } from '@/features/dashboard/dashboard-panel-registry';
 import { WidgetGrid } from '@/features/widgets/components/widget-grid';
 
-type DashboardLayoutProps =
+type DashboardLayoutDataProps =
   | {
       data: DashboardDataBundle;
       isLoading?: false;
@@ -15,6 +18,22 @@ type DashboardLayoutProps =
       data?: never;
       isLoading: true;
     };
+
+type DashboardLayoutOwnerProps =
+  | {
+      initialLayout?: never;
+      onLayoutCommit?: never;
+      emptyStateTitle?: never;
+      emptyStateHint?: never;
+    }
+  | {
+      initialLayout: readonly DashboardPanelInstance[];
+      onLayoutCommit: (next: DashboardPanelInstance[]) => void;
+      emptyStateTitle: string;
+      emptyStateHint?: string | null;
+    };
+
+type DashboardLayoutProps = DashboardLayoutDataProps & DashboardLayoutOwnerProps;
 
 const STORAGE_KEY = 'deadlock-buddy-dashboard-layout.v1';
 
@@ -35,13 +54,21 @@ export function DashboardLayout(props: DashboardLayoutProps) {
       }
     : { data: props.data };
 
+  const ownerProps =
+    props.initialLayout === undefined
+      ? { defaultLayout: defaultDashboardLayout, storageKey: STORAGE_KEY }
+      : {
+          initialLayout: props.initialLayout,
+          onLayoutCommit: props.onLayoutCommit,
+        };
+
   return (
     <WidgetGrid
       registry={dashboardPanelRegistry}
-      defaultLayout={defaultDashboardLayout}
-      storageKey={STORAGE_KEY}
-      emptyStateTitle="Nothing on the dashboard yet."
+      emptyStateTitle={props.emptyStateTitle ?? 'Nothing on the dashboard yet.'}
+      emptyStateHint={props.emptyStateHint}
       useGridHeightOnMobile
+      {...ownerProps}
       {...modeProps}
     />
   );
