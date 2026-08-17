@@ -4,17 +4,14 @@ import type {
   DashboardPanelType,
 } from '@/features/dashboard/dashboard-types';
 import { sanitizeWidgetLayout } from '@/features/widgets/widget-layout';
+import type { ShareDocumentV2, ShareProfileV2 } from '@/lib/api/schema';
 
 export const CUSTOM_PAGES_STORAGE_KEY = 'deadlock-buddy-custom-pages.v1';
-export const CUSTOM_PAGE_HASH_VERSION = 1;
 export const MAX_CUSTOM_PAGE_TITLE_LENGTH = 40;
 
 const MAX_CUSTOM_PAGE_WIDGETS = 64;
 const MAX_CUSTOM_PAGE_WIDGET_ID_LENGTH = 128;
 const MAX_CUSTOM_PAGE_WIDGET_HEIGHT = 1000;
-const MAX_CUSTOM_PAGE_HASH_BODY_LENGTH = 43_691;
-const MAX_CUSTOM_PAGE_JSON_BYTES = 32 * 1024;
-const MAX_SHARED_CUSTOM_PAGES = 64;
 const CUSTOM_PAGE_ID_PATTERN = /^[A-Za-z0-9_-]{1,128}$/;
 const GENERATED_TAB_TITLE_PATTERN = /^Tab (\d+)$/;
 const CUSTOM_PAGE_TAB_NUMBER_PATTERN = /^[1-9]\d*$/;
@@ -33,15 +30,6 @@ export type CustomPageStore = {
   tabs: CustomPageTab[];
 };
 
-export type SharedCustomPage = {
-  title: string;
-  widgets: DashboardPanelInstance[];
-};
-
-export type SharedCustomPagesV1 = {
-  version: 1;
-  pages: SharedCustomPage[];
-};
 
 export type CustomPageNavigation = {
   to: '/tab/$tabNumber';
@@ -52,9 +40,6 @@ export type CustomPageNavigation = {
   hashScrollIntoView: false;
 };
 
-export type CustomPageHashDecodeResult =
-  | { ok: true; value: SharedCustomPagesV1 }
-  | { ok: false };
 
 export type CustomPageResolution =
   | { status: 'local'; page: CustomPageTab }
@@ -307,7 +292,7 @@ export function createCustomPage(
 
 export function importSharedCustomPages(
   store: CustomPageStore,
-  shared: SharedCustomPagesV1,
+  shared: ShareProfileV2,
 ): { store: CustomPageStore; pages: CustomPageTab[] } {
   const pages = shared.pages.map((sharedPage, index): CustomPageTab => {
     const tabNumber = store.nextTabNumber + index;
@@ -325,6 +310,29 @@ export function importSharedCustomPages(
       tabs: [...store.tabs.map(clonePage), ...pages],
     },
     pages,
+  };
+}
+
+export function buildCustomPageShareDocument(
+  name: string,
+  pages: readonly CustomPageTab[],
+): ShareDocumentV2 {
+  return {
+    name,
+    profile: {
+      version: 2,
+      pages: pages.map((page) => ({
+        title: page.title,
+        widgets: page.widgets.map((widget) => ({
+          id: widget.id,
+          type: widget.type,
+          x: widget.x,
+          y: widget.y,
+          w: widget.w,
+          h: widget.h,
+        })),
+      })),
+    },
   };
 }
 
@@ -379,91 +387,6 @@ export function getCustomPageCloseDestination(
   return tabs[index + 1] ?? tabs[index - 1] ?? null;
 }
 
-function encodeBase64Url(bytes: Uint8Array): string {
-  let binary = '';
-  for (const byte of bytes) binary += String.fromCharCode(byte);
-  return btoa(binary).replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/u, '');
-}
-
-function decodeBase64Url(value: string): Uint8Array | null {
-  if (!value || !/^[A-Za-z0-9_-]+$/.test(value) || value.length % 4 === 1) return null;
-  const padding = '='.repeat((4 - (value.length % 4)) % 4);
-  try {
-    const binary = atob(value.replace(/-/g, '+').replace(/_/g, '/') + padding);
-    return Uint8Array.from(binary, (character) => character.charCodeAt(0));
-  } catch {
-    return null;
-  }
-}
-
-function canonicalSharedPage(value: SharedCustomPage): SharedCustomPage {
-  const title = normalizeCustomPageTitle(value.title, '');
-  const widgets = sanitizeSharedWidgets(value.widgets) ?? [];
-  return { title, widgets: widgets.map(rebuildWidget) };
-}
-
-export function encodeCustomPageHash(value: SharedCustomPagesV1): string {
-  const json = JSON.stringify({
-    version: 1,
-    pages: value.pages.map(canonicalSharedPage),
-  });
-  const bytes = new TextEncoder().encode(json);
-  if (bytes.byteLength > MAX_CUSTOM_PAGE_JSON_BYTES) {
-    throw new Error('Shared custom pages exceed the maximum encoded size');
-  }
-  const body = encodeBase64Url(bytes);
-  if (body.length > MAX_CUSTOM_PAGE_HASH_BODY_LENGTH) {
-    throw new Error('Shared custom pages exceed the maximum hash size');
-  }
-  return `v${CUSTOM_PAGE_HASH_VERSION}.${body}`;
-}
-
-export function decodeCustomPageHash(hash: string): CustomPageHashDecodeResult {
-  const prefix = `v${CUSTOM_PAGE_HASH_VERSION}.`;
-  if (!hash.startsWith(prefix)) return { ok: false };
-
-  const body = hash.slice(prefix.length);
-  if (body.length > MAX_CUSTOM_PAGE_HASH_BODY_LENGTH) return { ok: false };
-  const bytes = decodeBase64Url(body);
-  if (!bytes || bytes.byteLength > MAX_CUSTOM_PAGE_JSON_BYTES) return { ok: false };
-
-  let raw: unknown;
-  try {
-    raw = JSON.parse(new TextDecoder('utf-8', { fatal: true }).decode(bytes));
-  } catch {
-    return { ok: false };
-  }
-  if (!raw || typeof raw !== 'object' || Array.isArray(raw)) return { ok: false };
-
-  const candidate = raw as Record<string, unknown>;
-  if (
-    candidate.version !== CUSTOM_PAGE_HASH_VERSION ||
-    !Array.isArray(candidate.pages) ||
-    candidate.pages.length === 0 ||
-    candidate.pages.length > MAX_SHARED_CUSTOM_PAGES
-  ) return { ok: false };
-
-  const pages: SharedCustomPage[] = [];
-  for (const rawPage of candidate.pages) {
-    if (!rawPage || typeof rawPage !== 'object' || Array.isArray(rawPage)) {
-      return { ok: false };
-    }
-    const page = rawPage as Record<string, unknown>;
-    if (typeof page.title !== 'string' || !Array.isArray(page.widgets)) {
-      return { ok: false };
-    }
-    const title = page.title.trim();
-    if (!title || Array.from(title).length > MAX_CUSTOM_PAGE_TITLE_LENGTH) {
-      return { ok: false };
-    }
-    const widgets = sanitizeSharedWidgets(page.widgets);
-    if (widgets === null || widgets.some((widget) => widget.h > MAX_CUSTOM_PAGE_WIDGET_HEIGHT)) {
-      return { ok: false };
-    }
-    pages.push({ title, widgets: widgets.map(rebuildWidget) });
-  }
-  return { ok: true, value: { version: 1, pages } };
-}
 
 export function resolveCustomPage(
   tabNumberParam: string,
@@ -495,18 +418,3 @@ export function buildCustomPageNavigation(
   };
 }
 
-export function buildCustomPageShareUrl(
-  pages: readonly CustomPageTab[],
-  currentUrl: string,
-): string {
-  const url = new URL(currentUrl);
-  url.pathname = url.pathname.replace(/\/tab(?:\/\d+)?\/?$/u, '/tab');
-  url.hash = encodeCustomPageHash({
-    version: 1,
-    pages: pages.map((page) => ({
-      title: page.title,
-      widgets: page.widgets,
-    })),
-  });
-  return url.toString();
-}

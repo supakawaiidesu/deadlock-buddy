@@ -13,7 +13,7 @@ import { Route as IndexRouteImport } from './routes/index'
 import { Route as HeroesIndexRouteImport } from './routes/heroes/index'
 import { Route as PlayersIndexRouteImport } from './routes/players/index'
 import { Route as PlayersAccountIdRouteImport } from './routes/players/$accountId'
-import { Route as TabIndexRouteImport } from './routes/tab/index'
+import { Route as SShareSlugRouteImport } from './routes/s/$shareSlug'
 import { Route as TabTabNumberRouteImport } from './routes/tab/$tabNumber'
 
 const IndexRoute = IndexRouteImport.update({
@@ -36,9 +36,9 @@ const PlayersAccountIdRoute = PlayersAccountIdRouteImport.update({
   path: '/players/$accountId',
   getParentRoute: () => rootRouteImport,
 } as any)
-const TabIndexRoute = TabIndexRouteImport.update({
-  id: '/tab/',
-  path: '/tab/',
+const SShareSlugRoute = SShareSlugRouteImport.update({
+  id: '/s/$shareSlug',
+  path: '/s/$shareSlug',
   getParentRoute: () => rootRouteImport,
 } as any)
 const TabTabNumberRoute = TabTabNumberRouteImport.update({
@@ -50,62 +50,62 @@ const TabTabNumberRoute = TabTabNumberRouteImport.update({
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/players/$accountId': typeof PlayersAccountIdRoute
+  '/s/$shareSlug': typeof SShareSlugRoute
   '/tab/$tabNumber': typeof TabTabNumberRoute
   '/heroes/': typeof HeroesIndexRoute
   '/players/': typeof PlayersIndexRoute
-  '/tab/': typeof TabIndexRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/players/$accountId': typeof PlayersAccountIdRoute
+  '/s/$shareSlug': typeof SShareSlugRoute
   '/tab/$tabNumber': typeof TabTabNumberRoute
   '/heroes': typeof HeroesIndexRoute
   '/players': typeof PlayersIndexRoute
-  '/tab': typeof TabIndexRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
   '/players/$accountId': typeof PlayersAccountIdRoute
+  '/s/$shareSlug': typeof SShareSlugRoute
   '/tab/$tabNumber': typeof TabTabNumberRoute
   '/heroes/': typeof HeroesIndexRoute
   '/players/': typeof PlayersIndexRoute
-  '/tab/': typeof TabIndexRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
   fullPaths:
     | '/'
     | '/players/$accountId'
+    | '/s/$shareSlug'
     | '/tab/$tabNumber'
     | '/heroes/'
     | '/players/'
-    | '/tab/'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
     | '/players/$accountId'
+    | '/s/$shareSlug'
     | '/tab/$tabNumber'
     | '/heroes'
     | '/players'
-    | '/tab'
   id:
     | '__root__'
     | '/'
     | '/players/$accountId'
+    | '/s/$shareSlug'
     | '/tab/$tabNumber'
     | '/heroes/'
     | '/players/'
-    | '/tab/'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
   PlayersAccountIdRoute: typeof PlayersAccountIdRoute
+  SShareSlugRoute: typeof SShareSlugRoute
   TabTabNumberRoute: typeof TabTabNumberRoute
   HeroesIndexRoute: typeof HeroesIndexRoute
   PlayersIndexRoute: typeof PlayersIndexRoute
-  TabIndexRoute: typeof TabIndexRoute
 }
 
 declare module '@tanstack/react-router' {
@@ -138,11 +138,11 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof PlayersAccountIdRouteImport
       parentRoute: typeof rootRouteImport
     }
-    '/tab/': {
-      id: '/tab/'
-      path: '/tab'
-      fullPath: '/tab/'
-      preLoaderRoute: typeof TabIndexRouteImport
+    '/s/$shareSlug': {
+      id: '/s/$shareSlug'
+      path: '/s/$shareSlug'
+      fullPath: '/s/$shareSlug'
+      preLoaderRoute: typeof SShareSlugRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/tab/$tabNumber': {
@@ -158,10 +158,10 @@ declare module '@tanstack/react-router' {
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   PlayersAccountIdRoute: PlayersAccountIdRoute,
+  SShareSlugRoute: SShareSlugRoute,
   TabTabNumberRoute: TabTabNumberRoute,
   HeroesIndexRoute: HeroesIndexRoute,
   PlayersIndexRoute: PlayersIndexRoute,
-  TabIndexRoute: TabIndexRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)

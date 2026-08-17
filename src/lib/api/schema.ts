@@ -351,3 +351,107 @@ export type SteamLookupResponse = z.infer<typeof SteamLookupResponseSchema>;
 export const SteamProfilesResponseSchema = z.object({
   profiles: z.array(SteamProfileSchema),
 });
+
+const codePointLength = (value: string) => Array.from(value).length;
+
+export const ShareIdSchema = z.string().regex(/^[1-9A-HJ-NP-Za-km-z]{21,44}$/);
+
+export const ShareNameSchema = z
+  .string()
+  .refine((value) => value === value.trim().replace(/\s+/gu, ' '))
+  .refine((value) => {
+    const length = codePointLength(value);
+    return length >= 1 && length <= 80;
+  });
+
+const ShareWidgetTypeSchema = z.enum([
+  'telemetry-snapshot',
+  'rank-distribution',
+  'na-leaderboard',
+  'hero-popularity',
+  'hero-winrate',
+  'item-popularity',
+  'item-winrate',
+]);
+
+const ShareWidgetSchema = z
+  .object({
+    id: z.string().min(1).max(128).regex(/^[A-Za-z0-9_-]+$/),
+    type: ShareWidgetTypeSchema,
+    x: z.number().int().min(0).max(10_000),
+    y: z.number().int().min(0).max(10_000),
+    w: z.number().int().min(1).max(12),
+    h: z.number().int().min(1).max(1_000),
+  })
+  .strict();
+
+const SharePageSchema = z
+  .object({
+    title: z
+      .string()
+      .refine((value) => value === value.trim())
+      .refine((value) => {
+        const length = codePointLength(value);
+        return length >= 1 && length <= 40;
+      }),
+    widgets: z.array(ShareWidgetSchema).max(64),
+  })
+  .strict()
+  .refine((page) => new Set(page.widgets.map((widget) => widget.id)).size === page.widgets.length);
+
+export const ShareProfileV2Schema = z
+  .object({
+    version: z.literal(2),
+    pages: z.array(SharePageSchema).min(1).max(64),
+  })
+  .strict();
+
+export const ShareDocumentV2Schema = z
+  .object({
+    name: ShareNameSchema,
+    profile: ShareProfileV2Schema,
+  })
+  .strict();
+
+const ShareSlugSchema = z.string().min(1).refine((slug) => !/[/?#]/u.test(slug));
+
+const ShareBytesSchema = z
+  .object({
+    raw: z.number().int().nonnegative(),
+    compressed: z.number().int().nonnegative(),
+  })
+  .strict();
+
+const ShareResourceSchema = z
+  .object({
+    id: ShareIdSchema,
+    name: ShareNameSchema,
+    slug: ShareSlugSchema,
+    path: z.string(),
+    bytes: ShareBytesSchema,
+  })
+  .strict();
+
+function hasCanonicalSharePath(value: { id: string; slug: string; path: string }): boolean {
+  return value.path === `/s/${value.slug}-${value.id}`;
+}
+
+export const CreateShareResponseSchema = ShareResourceSchema.extend({
+  created: z.boolean(),
+})
+  .strict()
+  .refine(hasCanonicalSharePath);
+
+export const GetShareResponseSchema = ShareResourceSchema.extend({
+  profile: ShareProfileV2Schema,
+  createdAt: z.iso.datetime(),
+})
+  .strict()
+  .refine(hasCanonicalSharePath);
+
+export type ShareId = z.infer<typeof ShareIdSchema>;
+export type ShareName = z.infer<typeof ShareNameSchema>;
+export type ShareProfileV2 = z.infer<typeof ShareProfileV2Schema>;
+export type ShareDocumentV2 = z.infer<typeof ShareDocumentV2Schema>;
+export type CreateShareResponse = z.infer<typeof CreateShareResponseSchema>;
+export type GetShareResponse = z.infer<typeof GetShareResponseSchema>;

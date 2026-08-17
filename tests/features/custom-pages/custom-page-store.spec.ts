@@ -13,6 +13,7 @@ import {
   writeCustomPageStore,
 } from '@/features/custom-pages/custom-page-state';
 import type { DashboardPanelInstance } from '@/features/dashboard/dashboard-types';
+import { ShareProfileV2Schema } from '@/lib/api/schema';
 const sharedWidgets: DashboardPanelInstance[] = [
   { id: 'rank', type: 'rank-distribution', x: 1, y: 0, w: 2, h: 10 },
 ];
@@ -133,7 +134,7 @@ describe('custom page store', () => {
     const first = createCustomPage(createEmptyCustomPageStore(), { id: 'one' });
     const before = structuredClone(first.store);
     const imported = importSharedCustomPages(first.store, {
-      version: 1,
+      version: 2,
       pages: [
         { title: 'Shared page', widgets: sharedWidgets },
         { title: 'Empty page', widgets: [] },
@@ -157,6 +158,46 @@ describe('custom page store', () => {
       'Empty page',
     ]);
     expect(imported.store.nextTabNumber).toBe(first.store.nextTabNumber + 2);
+  });
+
+  it('clamps backend-valid wide widgets and vertically compacts collisions before storage', () => {
+    const profile = ShareProfileV2Schema.parse({
+      version: 2,
+      pages: [{
+        title: 'Colliding layout',
+        widgets: [
+          { id: 'wide', type: 'telemetry-snapshot', x: 9, y: 0, w: 12, h: 1 },
+          { id: 'overlap', type: 'hero-popularity', x: 0, y: 0, w: 12, h: 1 },
+        ],
+      }],
+    });
+
+    const imported = importSharedCustomPages(createEmptyCustomPageStore(), profile);
+
+    expect(imported.pages[0].widgets).toEqual([
+      { id: 'wide', type: 'telemetry-snapshot', x: 0, y: 0, w: 3, h: 9 },
+      { id: 'overlap', type: 'hero-popularity', x: 0, y: 9, w: 3, h: 7 },
+    ]);
+    expect(imported.store.tabs[0].widgets).toEqual(imported.pages[0].widgets);
+  });
+
+  it('rejects an invalid API profile before import without changing the existing store', () => {
+    const existing = createCustomPage(createEmptyCustomPageStore(), { id: 'existing' });
+    const before = JSON.stringify(existing.store);
+    const validation = ShareProfileV2Schema.safeParse({
+      version: 2,
+      pages: [{
+        title: 'Duplicate widget IDs',
+        widgets: [
+          { id: 'duplicate', type: 'hero-popularity', x: 0, y: 0, w: 1, h: 13 },
+          { id: 'duplicate', type: 'hero-winrate', x: 1, y: 0, w: 1, h: 13 },
+        ],
+      }],
+    });
+
+    expect(validation.success).toBe(false);
+    if (validation.success) importSharedCustomPages(existing.store, validation.data);
+    expect(JSON.stringify(existing.store)).toBe(before);
   });
 
   it('keeps surviving names and the next local name after closing Tab 1', () => {

@@ -8,6 +8,7 @@ import {
   type ReactNode,
 } from 'react';
 import type { DashboardPanelInstance } from '@/features/dashboard/dashboard-types';
+import type { ShareProfileV2 } from '@/lib/api/schema';
 import {
   createCustomPage,
   importSharedCustomPages,
@@ -16,7 +17,6 @@ import {
   renameCustomPage,
   resolveCustomPage,
   updateCustomPageLayout,
-  type SharedCustomPagesV1,
   writeCustomPageStore,
   type CustomPageStore,
   type CustomPageResolution,
@@ -27,7 +27,7 @@ export type CustomPagesContextValue = {
   tabs: readonly CustomPageTab[];
   resolvePage: (tabNumberParam: string) => CustomPageResolution;
   createPage: () => CustomPageTab;
-  importSharedPages: (shared: SharedCustomPagesV1) => CustomPageTab[];
+  importSharedPages: (shared: ShareProfileV2) => CustomPageTab[];
   resolvePages: (pageIds: readonly string[]) => CustomPageTab[];
   renamePage: (pageId: string, title: string) => CustomPageTab | undefined;
   updatePageLayout: (pageId: string, widgets: DashboardPanelInstance[]) => void;
@@ -57,7 +57,7 @@ export function CustomPagesProvider({ children }: { children: ReactNode }) {
     return created.page;
   }, [commitStore]);
 
-  const importSharedPages = useCallback((shared: SharedCustomPagesV1) => {
+  const importSharedPages = useCallback((shared: ShareProfileV2) => {
     const imported = importSharedCustomPages(storeRef.current, shared);
     commitStore(imported.store);
     return imported.pages;

@@ -1,15 +1,16 @@
 import { Link, useLocation, useNavigate } from '@tanstack/react-router';
 import { useEffect, useRef, useState, type ReactNode } from 'react';
-import { Check, Palette, Plus, Share2, X } from 'lucide-react';
+import { Check, LoaderCircle, Palette, Plus, Share2, X } from 'lucide-react';
 import { clsx } from 'clsx';
 import { AccountSearchForm } from '@/features/player-search/components/account-search-form';
 import { useCustomPages } from '@/features/custom-pages/custom-pages-provider';
 import {
   buildCustomPageNavigation,
-  buildCustomPageShareUrl,
+  buildCustomPageShareDocument,
   getCustomPageCloseDestination,
   type CustomPageTab,
 } from '@/features/custom-pages/custom-page-state';
+import { useCreateShare } from '@/features/custom-pages/api/queries';
 import { getTheme } from '@/features/theme/theme';
 import { useTheme } from '@/features/theme/theme-provider';
 import {
@@ -17,6 +18,9 @@ import {
   WIDGET_ADD_MENU_STATE_EVENT,
   WIDGET_ADD_MENU_TOGGLE_EVENT,
 } from '@/features/widgets/widget-events';
+import { ApiError } from '@/lib/api/client';
+import { buildPublicShareUrl, normalizeShareName } from '@/lib/api/shares';
+import { ZodError } from 'zod';
 
 const navLinks = [
   { href: '/players' as const, label: 'Players' },
@@ -44,12 +48,14 @@ export function TopNav() {
   const pathname = useLocation({ select: (location) => location.pathname });
   const navigate = useNavigate();
   const { tabs, createPage, renamePage, removePage, resolvePages } = useCustomPages();
+  const createShareMutation = useCreateShare();
   const { themeId, themes, setThemeId } = useTheme();
   const currentTheme = getTheme(themeId);
   const [isAddMenuOpen, setIsAddMenuOpen] = useState(false);
   const [isThemeMenuOpen, setIsThemeMenuOpen] = useState(false);
   const [isShareMenuOpen, setIsShareMenuOpen] = useState(false);
   const [selectedPageIds, setSelectedPageIds] = useState<Set<string>>(() => new Set());
+  const [shareName, setShareName] = useState('');
   const [shareError, setShareError] = useState<string | null>(null);
   const [renaming, setRenaming] = useState<{ id: string; value: string } | null>(null);
   const [isShareCopied, setIsShareCopied] = useState(false);
@@ -159,35 +165,64 @@ export function TopNav() {
     setShareError(null);
     setIsShareMenuOpen((open) => {
       if (!open) {
-        setSelectedPageIds(new Set(
-          activeCustomPage ? [activeCustomPage.id] : tabs.map((tab) => tab.id),
-        ));
+        const initiallySelectedTabs = activeCustomPage ? [activeCustomPage] : tabs;
+        setSelectedPageIds(new Set(initiallySelectedTabs.map((tab) => tab.id)));
+        setShareName(initiallySelectedTabs[0]?.title ?? '');
+        createShareMutation.reset();
       }
       return !open;
     });
   };
 
   const shareSelectedPages = async () => {
+    if (createShareMutation.isPending) return;
+
+    const normalizedName = normalizeShareName(shareName);
+    if (normalizedName.length === 0) {
+      setShareError('Enter a share name.');
+      return;
+    }
+    if (Array.from(normalizedName).length > 80) {
+      setShareError('Share name must be 80 characters or fewer.');
+      return;
+    }
+
     const pages = resolvePages(Array.from(selectedPageIds));
     if (pages.length === 0) return;
+    setShareError(null);
+    setIsShareCopied(false);
 
     let shareUrl: string;
     try {
-      shareUrl = buildCustomPageShareUrl(pages, window.location.href);
-    } catch {
-      setShareError('Selected tabs are too large to share.');
+      const result = await createShareMutation.mutateAsync(
+        buildCustomPageShareDocument(normalizedName, pages),
+      );
+      shareUrl = buildPublicShareUrl(result.path, window.location.origin);
+    } catch (error) {
+      if (!isShareMountedRef.current) return;
+      if (error instanceof ZodError) {
+        setShareError('Selected tabs contain unsupported layout data.');
+      } else if (error instanceof ApiError && error.status === 400) {
+        setShareError('The selected tabs could not be shared.');
+      } else if (error instanceof ApiError && error.status === 413) {
+        setShareError('Selected tabs are too large to share.');
+      } else if (error instanceof ApiError && error.status === 429) {
+        setShareError('Too many shares. Try again shortly.');
+      } else {
+        setShareError('Unable to create a share right now. Try again.');
+      }
       return;
     }
+
     if (shareFeedbackTimeoutRef.current !== null) {
       window.clearTimeout(shareFeedbackTimeoutRef.current);
       shareFeedbackTimeoutRef.current = null;
     }
-    setIsShareCopied(false);
     try {
       if (!navigator.clipboard?.writeText) throw new Error('Clipboard API unavailable');
       await navigator.clipboard.writeText(shareUrl);
     } catch {
-      window.prompt('Copy these custom tab links:', shareUrl);
+      window.prompt('Copy this custom tab link:', shareUrl);
     }
     if (!isShareMountedRef.current) return;
     setIsShareMenuOpen(false);
@@ -521,6 +556,21 @@ export function TopNav() {
                   aria-label="Share custom tabs"
                   className="absolute right-0 top-[calc(100%+4px)] z-[70] w-72 overflow-hidden rounded-sm border border-[rgb(var(--text-rgb)/0.16)] bg-[var(--overlay-background)] shadow-lg shadow-[rgb(var(--shadow-rgb)/0.35)] backdrop-blur-sm"
                 >
+                  <label className="block border-b border-[var(--surface-border-muted)] px-3 py-2.5">
+                    <span className="mb-2 block text-[10px] uppercase tracking-[0.22em] text-[rgb(var(--text-rgb)/0.5)]">
+                      Share name
+                    </span>
+                    <input
+                      type="text"
+                      value={shareName}
+                      disabled={createShareMutation.isPending}
+                      onChange={(event) => {
+                        setShareName(event.target.value);
+                        setShareError(null);
+                      }}
+                      className="h-9 w-full rounded-sm border border-[var(--surface-border-muted)] bg-[var(--background)] px-2.5 text-sm text-[var(--text-strong)] outline-none transition focus:border-[var(--accent)] disabled:cursor-not-allowed disabled:opacity-60"
+                    />
+                  </label>
                   <span className="block border-b border-[var(--surface-border-muted)] px-3 py-2.5 text-[10px] uppercase tracking-[0.22em] text-[rgb(var(--text-rgb)/0.5)]">
                     Select tabs
                   </span>
@@ -533,6 +583,7 @@ export function TopNav() {
                           type="button"
                           role="menuitemcheckbox"
                           aria-checked={isSelected}
+                          disabled={createShareMutation.isPending}
                           className={clsx(
                             'panel-header-interactive flex min-h-11 w-full items-stretch border-b border-[var(--surface-border-muted)] text-left text-[11px] uppercase tracking-[0.16em] transition',
                             isSelected
@@ -577,11 +628,18 @@ export function TopNav() {
                   ) : null}
                   <button
                     type="button"
-                    disabled={selectedPageIds.size === 0}
+                    disabled={selectedPageIds.size === 0 || createShareMutation.isPending}
                     onClick={() => void shareSelectedPages()}
                     className="panel-header-interactive flex min-h-11 w-full items-center justify-center bg-[var(--accent-muted)] px-3 py-3 text-[10px] font-semibold uppercase tracking-[0.18em] text-[var(--accent)] hover:!bg-[var(--accent)] hover:!text-[var(--accent-contrast)] disabled:cursor-not-allowed disabled:opacity-40"
                   >
-                    Share selected tabs
+                    {createShareMutation.isPending ? (
+                      <>
+                        <LoaderCircle className="mr-2 h-3.5 w-3.5 animate-spin" aria-hidden="true" />
+                        Creating share…
+                      </>
+                    ) : (
+                      'Share selected tabs'
+                    )}
                   </button>
                 </div>
               ) : null}
