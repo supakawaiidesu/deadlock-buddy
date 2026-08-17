@@ -5,7 +5,7 @@ import type {
 } from '@/features/widgets/widget-types';
 import type { HeroLeaderboardEntry } from '@/features/heroes/components/hero-leaderboard-panel';
 import type { ItemWinrateEntry } from '@/lib/api/analytics';
-import type { BadgeDistributionEntry, LeaderboardEntry } from '@/lib/api/schema';
+import type { BadgeDistributionEntry, LeaderboardEntry, PopularShare } from '@/lib/api/schema';
 
 export type DashboardPanelType =
   | 'telemetry-snapshot'
@@ -14,7 +14,8 @@ export type DashboardPanelType =
   | 'hero-popularity'
   | 'hero-winrate'
   | 'item-popularity'
-  | 'item-winrate';
+  | 'item-winrate'
+  | 'popular-layouts';
 
 export type DashboardPanelInstance = WidgetInstance<DashboardPanelType>;
 
@@ -25,6 +26,7 @@ export type DashboardDataBundle = {
   itemWinrateEntries: ItemWinrateEntry[];
   itemPopularityEntries: ItemWinrateEntry[];
   rankDistributionEntries: BadgeDistributionEntry[];
+  popularShares: PopularShare[];
   rankDistributionMinUnixTimestamp?: number;
   heroCount: number;
   highestBadge: number;

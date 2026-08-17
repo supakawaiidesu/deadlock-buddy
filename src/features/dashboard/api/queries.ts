@@ -7,11 +7,12 @@ import {
   fetchItemWinrateLeaderboard,
   fetchItemPopularityLeaderboard,
 } from '@/lib/api/analytics';
-import type { BadgeDistributionEntry, HeroScoreboardEntry, LeaderboardEntry } from '@/lib/api/schema';
+import type { BadgeDistributionEntry, HeroScoreboardEntry, LeaderboardEntry, PopularShare } from '@/lib/api/schema';
 import type { ItemWinrateEntry } from '@/lib/api/analytics';
 import { heroSummaries } from '@/lib/data/heroes';
 import type { DashboardDataBundle } from '@/features/dashboard/dashboard-types';
 import type { HeroLeaderboardEntry } from '@/features/heroes/components/hero-leaderboard-panel';
+import { fetchPopularShares } from '@/lib/api/shares';
 
 
 const LEADERBOARD_REGION = 'NAmerica';
@@ -25,6 +26,7 @@ function buildDashboardData(
   itemWinrateEntries: ItemWinrateEntry[],
   itemPopularityEntries: ItemWinrateEntry[],
   rankDistributionEntries: BadgeDistributionEntry[],
+  popularShares: PopularShare[],
   rankDistributionMinUnixTimestamp: number,
 ): DashboardDataBundle {
 
@@ -58,6 +60,7 @@ function buildDashboardData(
     heroPopularityEntries: heroPopularityPanelEntries,
     itemWinrateEntries,
     itemPopularityEntries,
+    popularShares,
     rankDistributionEntries,
     rankDistributionMinUnixTimestamp,
     heroCount,
@@ -79,6 +82,7 @@ export function useDashboardData(options: { enabled?: boolean } = {}) {
         itemWinrate,
         itemPopularity,
         rankDistribution,
+        popularSharesResponse,
       ] = await Promise.all([
         fetchLeaderboard(LEADERBOARD_REGION).then((data) => data.slice(0, 50)).catch(() => [] as LeaderboardEntry[]),
         fetchHeroWinrateLeaderboard().catch(() => [] as HeroScoreboardEntry[]),
@@ -88,6 +92,7 @@ export function useDashboardData(options: { enabled?: boolean } = {}) {
         fetchBadgeDistribution({ minUnixTimestamp: rankDistributionMinUnixTimestamp }).catch(
           () => [] as BadgeDistributionEntry[],
         ),
+        fetchPopularShares(20).catch(() => ({ shares: [] as PopularShare[] })),
       ]);
 
       return buildDashboardData(
@@ -97,6 +102,7 @@ export function useDashboardData(options: { enabled?: boolean } = {}) {
         itemWinrate,
         itemPopularity,
         rankDistribution,
+        popularSharesResponse.shares,
         rankDistributionMinUnixTimestamp,
       );
     },

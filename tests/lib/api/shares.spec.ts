@@ -4,6 +4,7 @@ import { ApiError } from '@/lib/api/client';
 import {
   CreateShareResponseSchema,
   GetShareResponseSchema,
+  PopularSharesResponseSchema,
   ShareDocumentV2Schema,
   ShareProfileV2Schema,
   type ShareDocumentV2,
@@ -13,6 +14,7 @@ import {
   buildPublicShareUrl,
   createShare,
   fetchShare,
+  fetchPopularShares,
   isRetryableShareError,
   normalizeShareName,
   parseSharePath,
@@ -52,6 +54,17 @@ const validGetResponse = {
   profile: validDocument.profile,
   bytes: { raw: 182, compressed: 143 },
   createdAt: '2026-08-17T04:01:43.007Z',
+};
+const validPopularResponse = {
+  shares: [{
+    id: SHARE_ID,
+    name: 'Hero Stats',
+    slug: 'hero-stats',
+    path: SHARE_PATH,
+    views: 12,
+    createdAt: '2026-08-16T12:00:00.000Z',
+    bytes: { raw: 108, compressed: 95 },
+  }],
 };
 
 function jsonResponse(body: unknown, status = 200): Response {
@@ -142,6 +155,31 @@ describe('Share path transport', () => {
     const [url, init] = fetchMock.mock.calls[0] as [string, RequestInit];
     expect(url).toBe(`${SHARE_API_BASE_URL}/v1/shares/${SHARE_ID}`);
     expect(init.signal).toBe(controller.signal);
+  });
+
+  it('gets the popular leaderboard with a positive limit and forwards cancellation', async () => {
+    fetchMock.mockResolvedValue(jsonResponse(validPopularResponse));
+    const controller = new AbortController();
+
+    await expect(fetchPopularShares(20, controller.signal)).resolves.toEqual(validPopularResponse);
+
+    const [url, init] = fetchMock.mock.calls[0] as [string, RequestInit];
+    expect(url).toBe(`${SHARE_API_BASE_URL}/v1/shares/popular?limit=20`);
+    expect(init.signal).toBe(controller.signal);
+    await expect(fetchPopularShares(0)).rejects.toBeInstanceOf(RangeError);
+    expect(fetchMock).toHaveBeenCalledTimes(1);
+  });
+
+  it('rejects malformed popular leaderboard entries', async () => {
+    fetchMock.mockResolvedValue(jsonResponse({
+      shares: [{ ...validPopularResponse.shares[0], views: -1 }],
+    }));
+
+    await expect(fetchPopularShares()).rejects.toBeInstanceOf(ZodError);
+    expect(PopularSharesResponseSchema.safeParse({
+      ...validPopularResponse,
+      extra: true,
+    }).success).toBe(false);
   });
 
   it('rejects mismatched response IDs and canonical paths', async () => {

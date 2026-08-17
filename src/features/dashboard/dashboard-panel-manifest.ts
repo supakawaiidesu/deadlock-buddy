@@ -65,4 +65,12 @@ export const dashboardPanelManifest = {
     minW: 1,
     minH: 7,
   },
+  'popular-layouts': {
+    title: 'Popular layouts',
+    description: 'Most-viewed community layouts shared through 618Lock.',
+    defaultW: 1,
+    defaultH: 13,
+    minW: 1,
+    minH: 7,
+  },
 } satisfies Record<DashboardPanelType, DashboardPanelManifestEntry>;

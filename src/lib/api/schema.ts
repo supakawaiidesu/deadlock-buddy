@@ -372,6 +372,7 @@ const ShareWidgetTypeSchema = z.enum([
   'hero-winrate',
   'item-popularity',
   'item-winrate',
+  'popular-layouts',
 ]);
 
 const ShareWidgetSchema = z
@@ -449,9 +450,24 @@ export const GetShareResponseSchema = ShareResourceSchema.extend({
   .strict()
   .refine(hasCanonicalSharePath);
 
+export const PopularShareSchema = ShareResourceSchema.extend({
+  views: z.number().int().nonnegative(),
+  createdAt: z.iso.datetime(),
+})
+  .strict()
+  .refine(hasCanonicalSharePath);
+
+export const PopularSharesResponseSchema = z
+  .object({
+    shares: z.array(PopularShareSchema),
+  })
+  .strict();
+
 export type ShareId = z.infer<typeof ShareIdSchema>;
 export type ShareName = z.infer<typeof ShareNameSchema>;
 export type ShareProfileV2 = z.infer<typeof ShareProfileV2Schema>;
 export type ShareDocumentV2 = z.infer<typeof ShareDocumentV2Schema>;
 export type CreateShareResponse = z.infer<typeof CreateShareResponseSchema>;
 export type GetShareResponse = z.infer<typeof GetShareResponseSchema>;
+export type PopularShare = z.infer<typeof PopularShareSchema>;
+export type PopularSharesResponse = z.infer<typeof PopularSharesResponseSchema>;

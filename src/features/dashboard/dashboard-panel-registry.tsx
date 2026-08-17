@@ -8,6 +8,7 @@ import { HeroLeaderboardPanel } from '@/features/heroes/components/hero-leaderbo
 import { ItemLeaderboardPanel } from '@/features/items/components/item-leaderboard-panel';
 import { NaLeaderboardPanel } from '@/features/dashboard/components/na-leaderboard-panel';
 import { TelemetrySnapshotPanel } from '@/features/dashboard/components/telemetry-snapshot-panel';
+import { PopularLayoutsPanel } from '@/features/dashboard/components/popular-layouts-panel';
 
 export const dashboardPanelRegistry: DashboardPanelRegistry = {
   'telemetry-snapshot': {
@@ -100,6 +101,16 @@ export const dashboardPanelRegistry: DashboardPanelRegistry = {
       />
     ),
   },
+  'popular-layouts': {
+    type: 'popular-layouts',
+    ...dashboardPanelManifest['popular-layouts'],
+    render: ({ data, headerActions }) => (
+      <PopularLayoutsPanel
+        entries={data.popularShares}
+        headerActions={headerActions}
+      />
+    ),
+  },
 };
 
 export const defaultDashboardLayout: DashboardPanelInstance[] = [
@@ -110,4 +121,5 @@ export const defaultDashboardLayout: DashboardPanelInstance[] = [
   { id: 'panel-hero-winrate', type: 'hero-winrate', x: 2, y: 13, w: 1, h: 13 },
   { id: 'panel-item-popularity', type: 'item-popularity', x: 0, y: 22, w: 1, h: 13 },
   { id: 'panel-item-winrate', type: 'item-winrate', x: 1, y: 26, w: 1, h: 13 },
+  { id: 'panel-popular-layouts', type: 'popular-layouts', x: 2, y: 26, w: 1, h: 13 },
 ];

@@ -3,10 +3,12 @@ import { ApiError, apiRequest } from './client';
 import {
   CreateShareResponseSchema,
   GetShareResponseSchema,
+  PopularSharesResponseSchema,
   ShareDocumentV2Schema,
   ShareIdSchema,
   type CreateShareResponse,
   type GetShareResponse,
+  type PopularSharesResponse,
   type ShareDocumentV2,
 } from './schema';
 
@@ -86,4 +88,22 @@ export async function fetchShare(id: string, signal?: AbortSignal): Promise<GetS
     ]);
   }
   return response;
+}
+
+export async function fetchPopularShares(
+  limit = 20,
+  signal?: AbortSignal,
+): Promise<PopularSharesResponse> {
+  if (!Number.isInteger(limit) || limit < 1) {
+    throw new RangeError('Popular shares limit must be a positive integer');
+  }
+
+  return PopularSharesResponseSchema.parse(
+    await apiRequest<unknown>({
+      path: '/v1/shares/popular',
+      searchParams: { limit },
+      baseUrl: SHARE_API_BASE_URL,
+      init: { signal },
+    }),
+  );
 }
