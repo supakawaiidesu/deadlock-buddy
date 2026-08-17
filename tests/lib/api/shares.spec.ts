@@ -54,6 +54,7 @@ const validGetResponse = {
   profile: validDocument.profile,
   bytes: { raw: 182, compressed: 143 },
   createdAt: '2026-08-17T04:01:43.007Z',
+  views: 5,
 };
 const validPopularResponse = {
   shares: [{
@@ -146,11 +147,12 @@ describe('Share path transport', () => {
     );
   });
 
-  it('gets by ID only and forwards cancellation', async () => {
+  it('gets the current share resource contract and forwards cancellation', async () => {
     fetchMock.mockResolvedValue(jsonResponse(validGetResponse));
     const controller = new AbortController();
 
     await expect(fetchShare(SHARE_ID, controller.signal)).resolves.toEqual(validGetResponse);
+    expect(GetShareResponseSchema.safeParse({ ...validGetResponse, views: -1 }).success).toBe(false);
 
     const [url, init] = fetchMock.mock.calls[0] as [string, RequestInit];
     expect(url).toBe(`${SHARE_API_BASE_URL}/v1/shares/${SHARE_ID}`);

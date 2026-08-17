@@ -445,6 +445,7 @@ export const CreateShareResponseSchema = ShareResourceSchema.extend({
 
 export const GetShareResponseSchema = ShareResourceSchema.extend({
   profile: ShareProfileV2Schema,
+  views: z.number().int().nonnegative(),
   createdAt: z.iso.datetime(),
 })
   .strict()
