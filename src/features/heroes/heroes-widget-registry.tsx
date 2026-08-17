@@ -1,4 +1,5 @@
 import { HeroOverviewPanel } from '@/features/heroes/components/hero-overview-panel';
+import { createGeometryWidgetLifecycle } from '@/features/widgets/widget-types';
 import type {
   HeroesWidgetInstance,
   HeroesWidgetRegistry,
@@ -13,9 +14,10 @@ export const heroesWidgetRegistry: HeroesWidgetRegistry = {
     defaultH: 24,
     minW: 2,
     minH: 10,
-    render: ({ data, headerActions }) => (
+    ...createGeometryWidgetLifecycle('overview'),
+    render: ({ data, headerActions }) => data ? (
       <HeroOverviewPanel rows={data.rows} headerActions={headerActions} />
-    ),
+    ) : null,
   },
 };
 

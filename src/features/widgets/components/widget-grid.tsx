@@ -43,28 +43,39 @@ import {
   WIDGET_ADD_MENU_TOGGLE_EVENT,
 } from '@/features/widgets/widget-events';
 
-type WidgetGridLayoutOwner<TType extends string> =
+type WidgetGridLayoutOwner<
+  TType extends string,
+  TInstance extends WidgetInstance<TType>,
+> =
   | {
       storageKey: string;
-      defaultLayout: readonly WidgetInstance<TType>[];
+      defaultLayout: readonly TInstance[];
       initialLayout?: never;
       onLayoutCommit?: never;
     }
   | {
-      initialLayout: readonly WidgetInstance<TType>[];
-      onLayoutCommit: (next: WidgetInstance<TType>[]) => void;
+      initialLayout: readonly TInstance[];
+      onLayoutCommit: (next: TInstance[]) => void;
       storageKey?: never;
       defaultLayout?: never;
     };
 
-type WidgetGridSharedProps<TType extends string, TData> = {
-  registry: WidgetRegistry<TType, TData>;
+type WidgetGridSharedProps<
+  TType extends string,
+  TData,
+  TInstance extends WidgetInstance<TType>,
+> = {
+  registry: WidgetRegistry<TType, TData, TInstance>;
   emptyStateTitle: string;
   emptyStateHint?: string | null;
   useGridHeightOnMobile?: boolean;
-} & WidgetGridLayoutOwner<TType>;
+} & WidgetGridLayoutOwner<TType, TInstance>;
 
-type WidgetGridProps<TType extends string, TData> = WidgetGridSharedProps<TType, TData> &
+type WidgetGridProps<
+  TType extends string,
+  TData,
+  TInstance extends WidgetInstance<TType>,
+> = WidgetGridSharedProps<TType, TData, TInstance> &
   (
     | {
         data: TData;
@@ -74,34 +85,33 @@ type WidgetGridProps<TType extends string, TData> = WidgetGridSharedProps<TType,
     | {
         data?: never;
         isLoading: true;
-        renderLoading: (
-          instance: WidgetInstance<TType>,
-          headerActions: ReactNode,
-        ) => ReactNode;
+        renderLoading: (instance: TInstance, headerActions: ReactNode) => ReactNode;
       }
   );
 
 type ResizeAxis = 'x' | 'y' | 'xy';
 
-type ResizeState<TType extends string> = {
+type ResizeState<TInstance extends WidgetInstance<string>> = {
   id: string;
   axis: ResizeAxis;
   startX: number;
   startY: number;
-  startRect: WidgetInstance<TType>;
+  startRect: TInstance;
 };
 
 
-export function WidgetGrid<TType extends string, TData>(
-  props: WidgetGridProps<TType, TData>,
-) {
+export function WidgetGrid<
+  TType extends string,
+  TData,
+  TInstance extends WidgetInstance<TType> = WidgetInstance<TType>,
+>(props: WidgetGridProps<TType, TData, TInstance>) {
   const {
     registry,
     emptyStateTitle,
     emptyStateHint = 'Use “Add widget” to bring metrics back.',
     useGridHeightOnMobile = false,
   } = props;
-  const [widgets, setWidgets] = useState<WidgetInstance<TType>[]>(() => {
+  const [widgets, setWidgets] = useState<TInstance[]>(() => {
     if (props.initialLayout !== undefined) return [...props.initialLayout];
     try {
       const stored = window.localStorage.getItem(props.storageKey);
@@ -109,10 +119,9 @@ export function WidgetGrid<TType extends string, TData>(
 
       const parsed = JSON.parse(stored) as unknown;
       return (
-        sanitizeWidgetLayout<TType>(
+        sanitizeWidgetLayout<TType, TInstance>(
           parsed,
-          new Set(Object.keys(registry)),
-          (type) => registry[type],
+          registry as WidgetRegistry<TType, unknown, TInstance>,
         ) ?? [...props.defaultLayout]
       );
     } catch (error) {
@@ -121,9 +130,9 @@ export function WidgetGrid<TType extends string, TData>(
     }
   });
   const [isAddMenuOpen, setIsAddMenuOpen] = useState(false);
-  const [preview, setPreview] = useState<WidgetInstance<TType>[] | null>(null);
+  const [preview, setPreview] = useState<TInstance[] | null>(null);
   const [activeId, setActiveId] = useState<string | null>(null);
-  const [resizeState, setResizeState] = useState<ResizeState<TType> | null>(null);
+  const [resizeState, setResizeState] = useState<ResizeState<TInstance> | null>(null);
   const [containerWidth, setContainerWidth] = useState(0);
   const [isDesktop, setIsDesktop] = useState(
     () => window.matchMedia('(min-width: 1024px)').matches,
@@ -154,7 +163,7 @@ export function WidgetGrid<TType extends string, TData>(
     }
   }, [props.onLayoutCommit, props.storageKey, widgets]);
 
-  const commitLayout = (next: WidgetInstance<TType>[]) => {
+  const commitLayout = (next: TInstance[]) => {
     setWidgets(next);
   };
 
@@ -289,15 +298,26 @@ export function WidgetGrid<TType extends string, TData>(
   const handleAddWidget = (type: TType) => {
     const definition = registry[type];
     const slot = findFreeSlot(widgets, definition.defaultW, definition.defaultH);
-    const next = {
-      id: createWidgetInstanceId(type),
-      type,
+    const next = definition.createInstance(createWidgetInstanceId(type), {
       ...slot,
       w: definition.defaultW,
       h: definition.defaultH,
-    };
+    });
     commitLayout(compactVertical([...widgets, next]));
     setIsAddMenuOpen(false);
+  };
+
+  const handleInstanceChange = (next: TInstance) => {
+    const current = widgets.find((widget) => widget.id === next.id);
+    if (!current || current.type !== next.type) return;
+    const definition = registry[current.type];
+    const sanitized = definition.sanitizeInstance(next, {
+      x: current.x,
+      y: current.y,
+      w: current.w,
+      h: current.h,
+    });
+    commitLayout(widgets.map((widget) => (widget.id === current.id ? sanitized : widget)));
   };
 
   const handleResizeStart = (
@@ -420,7 +440,7 @@ export function WidgetGrid<TType extends string, TData>(
     displayed.map((widget) => [widget.id, widget] as const),
   );
 
-  const renderCell = (instance: WidgetInstance<TType>, positioned: boolean) => {
+  const renderCell = (instance: TInstance, positioned: boolean) => {
     const committedInstance = committedWidgetsById.get(instance.id) ?? instance;
     const previewRect = displayedWidgetsById.get(instance.id) ?? instance;
     const originRect =
@@ -436,7 +456,7 @@ export function WidgetGrid<TType extends string, TData>(
         };
 
     return (
-      <WidgetCell<TType, TData>
+      <WidgetCell<TType, TData, TInstance>
         key={instance.id}
         instance={committedInstance}
         registry={registry}
@@ -448,6 +468,7 @@ export function WidgetGrid<TType extends string, TData>(
         isDesktop={isDesktop}
         useGridHeightOnMobile={useGridHeightOnMobile}
         onRemove={handleRemove}
+        onInstanceChange={handleInstanceChange}
         onResizeStart={handleResizeStart}
         onResizeMove={handleResizeMove}
         onResizeEnd={handleResizeEnd}
@@ -537,17 +558,22 @@ export function WidgetGrid<TType extends string, TData>(
   );
 }
 
-type WidgetCellSharedProps<TType extends string, TData> = {
-  instance: WidgetInstance<TType>;
-  registry: WidgetRegistry<TType, TData>;
+type WidgetCellSharedProps<
+  TType extends string,
+  TData,
+  TInstance extends WidgetInstance<TType>,
+> = {
+  instance: TInstance;
+  registry: WidgetRegistry<TType, TData, TInstance>;
   positioned: boolean;
   containerWidth: number;
-  renderRect: WidgetInstance<TType>;
+  renderRect: TInstance;
   isActive: boolean;
   isDragging: boolean;
   isDesktop: boolean;
   useGridHeightOnMobile: boolean;
   onRemove: (id: string) => void;
+  onInstanceChange: (next: TInstance) => void;
   onResizeStart: (
     id: string,
     axis: ResizeAxis,
@@ -556,12 +582,16 @@ type WidgetCellSharedProps<TType extends string, TData> = {
   onResizeMove: (id: string, event: ReactPointerEvent<HTMLButtonElement>) => void;
   onResizeEnd: (id: string) => void;
   onKeyboard: (
-    instance: WidgetInstance<TType>,
+    instance: TInstance,
     event: ReactKeyboardEvent<HTMLButtonElement>,
   ) => void;
 };
 
-type WidgetCellProps<TType extends string, TData> = WidgetCellSharedProps<TType, TData> &
+type WidgetCellProps<
+  TType extends string,
+  TData,
+  TInstance extends WidgetInstance<TType>,
+> = WidgetCellSharedProps<TType, TData, TInstance> &
   (
     | {
         data: TData;
@@ -571,14 +601,15 @@ type WidgetCellProps<TType extends string, TData> = WidgetCellSharedProps<TType,
     | {
         data?: never;
         isLoading: true;
-        renderLoading: (
-          instance: WidgetInstance<TType>,
-          headerActions: ReactNode,
-        ) => ReactNode;
+        renderLoading: (instance: TInstance, headerActions: ReactNode) => ReactNode;
       }
   );
 
-function WidgetCell<TType extends string, TData>(props: WidgetCellProps<TType, TData>) {
+function WidgetCell<
+  TType extends string,
+  TData,
+  TInstance extends WidgetInstance<TType>,
+>(props: WidgetCellProps<TType, TData, TInstance>) {
   const {
     instance,
     registry,
@@ -590,6 +621,7 @@ function WidgetCell<TType extends string, TData>(props: WidgetCellProps<TType, T
     isDesktop,
     useGridHeightOnMobile,
     onRemove,
+    onInstanceChange,
     onResizeStart,
     onResizeMove,
     onResizeEnd,
@@ -673,14 +705,23 @@ function WidgetCell<TType extends string, TData>(props: WidgetCellProps<TType, T
 
   const content = useMemo(
     () =>
-      props.isLoading
+      props.isLoading && !definition.renderWhileLoading
         ? props.renderLoading(instance, headerActions)
         : definition.render({
             instance,
-            data: props.data,
+            data: props.isLoading ? null : props.data,
+            onInstanceChange,
             headerActions,
           }),
-    [definition, headerActions, instance, props.data, props.isLoading, props.renderLoading],
+    [
+      definition,
+      headerActions,
+      instance,
+      onInstanceChange,
+      props.data,
+      props.isLoading,
+      props.renderLoading,
+    ],
   );
 
   return (

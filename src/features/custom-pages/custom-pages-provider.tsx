@@ -8,7 +8,7 @@ import {
   type ReactNode,
 } from 'react';
 import type { DashboardPanelInstance } from '@/features/dashboard/dashboard-types';
-import type { ShareProfileV2 } from '@/lib/api/schema';
+import type { ShareProfile } from '@/lib/api/schema';
 import {
   createCustomPage,
   importSharedCustomPages,
@@ -27,7 +27,7 @@ export type CustomPagesContextValue = {
   tabs: readonly CustomPageTab[];
   resolvePage: (tabNumberParam: string) => CustomPageResolution;
   createPage: () => CustomPageTab;
-  importSharedPages: (shared: ShareProfileV2) => CustomPageTab[];
+  importSharedPages: (shared: ShareProfile) => CustomPageTab[];
   resolvePages: (pageIds: readonly string[]) => CustomPageTab[];
   renamePage: (pageId: string, title: string) => CustomPageTab | undefined;
   updatePageLayout: (pageId: string, widgets: DashboardPanelInstance[]) => void;
@@ -57,7 +57,7 @@ export function CustomPagesProvider({ children }: { children: ReactNode }) {
     return created.page;
   }, [commitStore]);
 
-  const importSharedPages = useCallback((shared: ShareProfileV2) => {
+  const importSharedPages = useCallback((shared: ShareProfile) => {
     const imported = importSharedCustomPages(storeRef.current, shared);
     commitStore(imported.store);
     return imported.pages;
@@ -82,10 +82,8 @@ export function CustomPagesProvider({ children }: { children: ReactNode }) {
     widgets: DashboardPanelInstance[],
   ) => {
     if (!storeRef.current.tabs.some((tab) => tab.id === pageId)) return;
-    const next = updateCustomPageLayout(storeRef.current, pageId, widgets);
-    storeRef.current = next;
-    writeCustomPageStore(window.localStorage, next);
-  }, []);
+    commitStore(updateCustomPageLayout(storeRef.current, pageId, widgets));
+  }, [commitStore]);
 
   const removePage = useCallback((pageId: string) => {
     if (!storeRef.current.tabs.some((tab) => tab.id === pageId)) return;

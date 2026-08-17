@@ -27,6 +27,14 @@
   --info: #72a6bf;
   --success: #6db58e;
   --grid-line: rgb(var(--neutral-rgb) / 0.04);
+  --chart-series-1: var(--accent);
+  --chart-series-2: var(--info);
+  --chart-series-3: var(--danger);
+  --chart-series-4: var(--success);
+  --chart-series-5: var(--text-strong);
+  --chart-series-6: color-mix(in srgb, var(--accent) 55%, var(--info));
+  --chart-series-7: color-mix(in srgb, var(--danger) 55%, var(--text-strong));
+  --chart-series-8: color-mix(in srgb, var(--success) 55%, var(--info));
 }
 
 @theme inline {

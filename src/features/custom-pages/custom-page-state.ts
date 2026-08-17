@@ -1,10 +1,10 @@
-import { dashboardPanelManifest } from '@/features/dashboard/dashboard-panel-manifest';
+import { dashboardPanelRegistry } from '@/features/dashboard/dashboard-panel-registry';
 import type {
   DashboardPanelInstance,
   DashboardPanelType,
 } from '@/features/dashboard/dashboard-types';
 import { sanitizeWidgetLayout } from '@/features/widgets/widget-layout';
-import type { ShareDocumentV2, ShareProfileV2 } from '@/lib/api/schema';
+import type { ShareDocumentV3, ShareProfile } from '@/lib/api/schema';
 
 export const CUSTOM_PAGES_STORAGE_KEY = 'deadlock-buddy-custom-pages.v1';
 export const MAX_CUSTOM_PAGE_TITLE_LENGTH = 40;
@@ -15,7 +15,7 @@ const MAX_CUSTOM_PAGE_WIDGET_HEIGHT = 1000;
 const CUSTOM_PAGE_ID_PATTERN = /^[A-Za-z0-9_-]{1,128}$/;
 const GENERATED_TAB_TITLE_PATTERN = /^Tab (\d+)$/;
 const CUSTOM_PAGE_TAB_NUMBER_PATTERN = /^[1-9]\d*$/;
-const dashboardPanelTypes = new Set(Object.keys(dashboardPanelManifest));
+const dashboardPanelTypes = new Set(Object.keys(dashboardPanelRegistry));
 
 export type CustomPageTab = {
   id: string;
@@ -50,19 +50,10 @@ export function createEmptyCustomPageStore(): CustomPageStore {
   return { version: 1, nextTabNumber: 1, tabs: [] };
 }
 
-function sizeForDashboardPanel(type: DashboardPanelType) {
-  return dashboardPanelManifest[type];
-}
-
 function rebuildWidget(widget: DashboardPanelInstance): DashboardPanelInstance {
-  return {
-    id: widget.id,
-    type: widget.type,
-    x: widget.x,
-    y: widget.y,
-    w: widget.w,
-    h: widget.h,
-  };
+  return widget.type === 'hero-winrate-over-time'
+    ? { ...widget, settings: { ...widget.settings, heroIds: [...widget.settings.heroIds] } }
+    : { ...widget };
 }
 
 function sanitizeStoredWidgets(raw: unknown): DashboardPanelInstance[] | null {
@@ -85,10 +76,9 @@ function sanitizeStoredWidgets(raw: unknown): DashboardPanelInstance[] | null {
   });
 
   if (candidates.length === 0) return null;
-  return sanitizeWidgetLayout<DashboardPanelType>(
+  return sanitizeWidgetLayout<DashboardPanelType, DashboardPanelInstance>(
     candidates,
-    dashboardPanelTypes,
-    sizeForDashboardPanel,
+    dashboardPanelRegistry,
   );
 }
 
@@ -117,10 +107,9 @@ function sanitizeSharedWidgets(raw: unknown): DashboardPanelInstance[] | null {
   });
 
   if (candidates.length === 0) return null;
-  return sanitizeWidgetLayout<DashboardPanelType>(
+  return sanitizeWidgetLayout<DashboardPanelType, DashboardPanelInstance>(
     candidates,
-    dashboardPanelTypes,
-    sizeForDashboardPanel,
+    dashboardPanelRegistry,
   );
 }
 function clonePage(page: CustomPageTab): CustomPageTab {
@@ -292,7 +281,7 @@ export function createCustomPage(
 
 export function importSharedCustomPages(
   store: CustomPageStore,
-  shared: ShareProfileV2,
+  shared: ShareProfile,
 ): { store: CustomPageStore; pages: CustomPageTab[] } {
   const pages = shared.pages.map((sharedPage, index): CustomPageTab => {
     const tabNumber = store.nextTabNumber + index;
@@ -316,21 +305,34 @@ export function importSharedCustomPages(
 export function buildCustomPageShareDocument(
   name: string,
   pages: readonly CustomPageTab[],
-): ShareDocumentV2 {
+): ShareDocumentV3 {
   return {
     name,
     profile: {
-      version: 2,
+      version: 3,
       pages: pages.map((page) => ({
         title: page.title,
-        widgets: page.widgets.map((widget) => ({
-          id: widget.id,
-          type: widget.type,
-          x: widget.x,
-          y: widget.y,
-          w: widget.w,
-          h: widget.h,
-        })),
+        widgets: page.widgets.map((widget) => widget.type === 'hero-winrate-over-time'
+          ? {
+              id: widget.id,
+              type: widget.type,
+              x: widget.x,
+              y: widget.y,
+              w: widget.w,
+              h: widget.h,
+              settings: {
+                ...widget.settings,
+                heroIds: [...widget.settings.heroIds],
+              },
+            }
+          : {
+              id: widget.id,
+              type: widget.type,
+              x: widget.x,
+              y: widget.y,
+              w: widget.w,
+              h: widget.h,
+            }),
       })),
     },
   };

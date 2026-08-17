@@ -1,4 +1,5 @@
 import { z } from 'zod';
+import { heroSummaries } from '@/lib/data/heroes';
 
 export const PlayerHeroStatSchema = z.object({
   account_id: z.number(),
@@ -179,6 +180,35 @@ export const ItemStatsEntrySchema = z
 export type ItemStatsEntry = z.infer<typeof ItemStatsEntrySchema>;
 
 export const ItemStatsResponseSchema = z.array(ItemStatsEntrySchema);
+
+const NonnegativeIntegerSchema = z.number().int().nonnegative();
+
+export const AnalyticsHeroStatsSchema = z.object({
+  hero_id: NonnegativeIntegerSchema,
+  bucket: NonnegativeIntegerSchema,
+  wins: NonnegativeIntegerSchema,
+  losses: NonnegativeIntegerSchema,
+  matches: NonnegativeIntegerSchema,
+  matches_per_bucket: NonnegativeIntegerSchema,
+  total_kills: NonnegativeIntegerSchema,
+  total_deaths: NonnegativeIntegerSchema,
+  total_assists: NonnegativeIntegerSchema,
+  total_net_worth: NonnegativeIntegerSchema,
+  total_last_hits: NonnegativeIntegerSchema,
+  total_denies: NonnegativeIntegerSchema,
+  total_player_damage: NonnegativeIntegerSchema,
+  total_player_damage_taken: NonnegativeIntegerSchema,
+  total_boss_damage: NonnegativeIntegerSchema,
+  total_creep_damage: NonnegativeIntegerSchema,
+  total_neutral_damage: NonnegativeIntegerSchema,
+  total_max_health: NonnegativeIntegerSchema,
+  total_shots_hit: NonnegativeIntegerSchema,
+  total_shots_missed: NonnegativeIntegerSchema,
+});
+
+export type AnalyticsHeroStats = z.infer<typeof AnalyticsHeroStatsSchema>;
+
+export const AnalyticsHeroStatsResponseSchema = z.array(AnalyticsHeroStatsSchema);
 
 
 export const PlayerRankSchema = z
@@ -375,18 +405,42 @@ const ShareWidgetTypeSchema = z.enum([
   'popular-layouts',
 ]);
 
-const ShareWidgetSchema = z
-  .object({
-    id: z.string().min(1).max(128).regex(/^[A-Za-z0-9_-]+$/),
-    type: ShareWidgetTypeSchema,
-    x: z.number().int().min(0).max(10_000),
-    y: z.number().int().min(0).max(10_000),
-    w: z.number().int().min(1).max(12),
-    h: z.number().int().min(1).max(1_000),
-  })
-  .strict();
+const shareHeroIds = new Set(heroSummaries.map((hero) => hero.id));
+const ShareWidgetGeometrySchema = z.object({
+  id: z.string().min(1).max(128).regex(/^[A-Za-z0-9_-]+$/),
+  x: z.number().int().min(0).max(10_000),
+  y: z.number().int().min(0).max(10_000),
+  w: z.number().int().min(1).max(12),
+  h: z.number().int().min(1).max(1_000),
+});
 
-const SharePageSchema = z
+const GeometryShareWidgetSchema = ShareWidgetGeometrySchema.extend({
+  type: ShareWidgetTypeSchema,
+}).strict();
+
+export const HeroWinrateOverTimeSettingsSchema = z
+  .object({
+    heroIds: z.array(z.number().int().refine((id) => shareHeroIds.has(id))).min(1).max(8).refine(
+      (ids) => new Set(ids).size === ids.length,
+    ),
+    minUnixTimestamp: z.number().int().positive().safe(),
+    minAverageBadge: z.number().int().min(0).max(116).safe(),
+    maxAverageBadge: z.number().int().min(0).max(116).safe(),
+  })
+  .strict()
+  .refine((settings) => settings.minAverageBadge <= settings.maxAverageBadge);
+
+const HeroWinrateOverTimeShareWidgetSchema = ShareWidgetGeometrySchema.extend({
+  type: z.literal('hero-winrate-over-time'),
+  settings: HeroWinrateOverTimeSettingsSchema,
+}).strict();
+
+const ShareWidgetSchema = z.discriminatedUnion('type', [
+  GeometryShareWidgetSchema,
+  HeroWinrateOverTimeShareWidgetSchema,
+]);
+
+const SharePageV2Schema = z
   .object({
     title: z
       .string()
@@ -395,25 +449,41 @@ const SharePageSchema = z
         const length = codePointLength(value);
         return length >= 1 && length <= 40;
       }),
-    widgets: z.array(ShareWidgetSchema).max(64),
+    widgets: z.array(GeometryShareWidgetSchema).max(64),
   })
   .strict()
   .refine((page) => new Set(page.widgets.map((widget) => widget.id)).size === page.widgets.length);
 
+const SharePageV3Schema = SharePageV2Schema.safeExtend({
+  widgets: z.array(ShareWidgetSchema).max(64),
+});
+
 export const ShareProfileV2Schema = z
   .object({
     version: z.literal(2),
-    pages: z.array(SharePageSchema).min(1).max(64),
+    pages: z.array(SharePageV2Schema).min(1).max(64),
   })
   .strict();
+
+export const ShareProfileV3Schema = z
+  .object({
+    version: z.literal(3),
+    pages: z.array(SharePageV3Schema).min(1).max(64),
+  })
+  .strict();
+
+export const ShareProfileSchema = z.discriminatedUnion('version', [
+  ShareProfileV2Schema,
+  ShareProfileV3Schema,
+]);
 
 export const ShareDocumentV2Schema = z
-  .object({
-    name: ShareNameSchema,
-    profile: ShareProfileV2Schema,
-  })
+  .object({ name: ShareNameSchema, profile: ShareProfileV2Schema })
   .strict();
 
+export const ShareDocumentV3Schema = z
+  .object({ name: ShareNameSchema, profile: ShareProfileV3Schema })
+  .strict();
 const ShareSlugSchema = z.string().min(1).refine((slug) => !/[/?#]/u.test(slug));
 
 const ShareBytesSchema = z
@@ -444,7 +514,7 @@ export const CreateShareResponseSchema = ShareResourceSchema.extend({
   .refine(hasCanonicalSharePath);
 
 export const GetShareResponseSchema = ShareResourceSchema.extend({
-  profile: ShareProfileV2Schema,
+  profile: ShareProfileSchema,
   views: z.number().int().nonnegative(),
   createdAt: z.iso.datetime(),
 })
@@ -467,7 +537,10 @@ export const PopularSharesResponseSchema = z
 export type ShareId = z.infer<typeof ShareIdSchema>;
 export type ShareName = z.infer<typeof ShareNameSchema>;
 export type ShareProfileV2 = z.infer<typeof ShareProfileV2Schema>;
+export type ShareProfileV3 = z.infer<typeof ShareProfileV3Schema>;
+export type ShareProfile = z.infer<typeof ShareProfileSchema>;
 export type ShareDocumentV2 = z.infer<typeof ShareDocumentV2Schema>;
+export type ShareDocumentV3 = z.infer<typeof ShareDocumentV3Schema>;
 export type CreateShareResponse = z.infer<typeof CreateShareResponseSchema>;
 export type GetShareResponse = z.infer<typeof GetShareResponseSchema>;
 export type PopularShare = z.infer<typeof PopularShareSchema>;

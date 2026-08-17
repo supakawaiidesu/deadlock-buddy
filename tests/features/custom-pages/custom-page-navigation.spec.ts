@@ -23,6 +23,18 @@ const selectedPages: CustomPageTab[] = [
     widgets: [{ id: 'shared-widget', type: 'rank-distribution', x: 0, y: 0, w: 2, h: 10 }],
   },
 ];
+const chartPage: CustomPageTab = {
+  id: 'chart-page',
+  tabNumber: 4,
+  title: 'History',
+  widgets: [{
+    id: 'history', type: 'hero-winrate-over-time', x: 0, y: 0, w: 3, h: 18,
+    settings: {
+      heroIds: [1, 2], minUnixTimestamp: 1_700_000_000,
+      minAverageBadge: 91, maxAverageBadge: 116,
+    },
+  }],
+};
 
 describe('custom page navigation', () => {
   it('resolves local tabs only by their local monotonic number', () => {
@@ -40,12 +52,13 @@ describe('custom page navigation', () => {
     expect(buildCustomPageNavigation(1, false).replace).toBe(false);
   });
 
-  it('builds a v2 document in the supplied tab-bar order without local page metadata', () => {
-    expect(buildCustomPageShareDocument('Selected tabs', selectedPages)).toEqual({
+  it('builds a v3 document in tab order and preserves chart settings', () => {
+    const pages = [...selectedPages, chartPage];
+    expect(buildCustomPageShareDocument('Selected tabs', pages)).toEqual({
       name: 'Selected tabs',
       profile: {
-        version: 2,
-        pages: selectedPages.map(({ title, widgets }) => ({ title, widgets })),
+        version: 3,
+        pages: pages.map(({ title, widgets }) => ({ title, widgets })),
       },
     });
   });

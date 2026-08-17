@@ -49,6 +49,14 @@ export const dashboardPanelManifest = {
     minW: 1,
     minH: 7,
   },
+  'hero-winrate-over-time': {
+    title: 'Chart Widget',
+    description: 'Compare hero performance across a filtered match sample.',
+    defaultW: 3,
+    defaultH: 18,
+    minW: 2,
+    minH: 14,
+  },
   'item-popularity': {
     title: 'Item popularity ranking',
     description: 'Most purchased items in the tracked sample.',

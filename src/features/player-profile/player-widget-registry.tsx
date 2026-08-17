@@ -6,6 +6,7 @@ import { HeroPerformancePanel } from '@/features/player-profile/components/hero-
 import { MatchHistoryPanel } from '@/features/player-profile/components/match-history-panel';
 import { TopHeroesPanel } from '@/features/player-profile/components/top-heroes-panel';
 
+import { createGeometryWidgetLifecycle } from '@/features/widgets/widget-types';
 export const playerWidgetRegistry: PlayerWidgetRegistry = {
   'hero-performance': {
     type: 'hero-performance',
@@ -15,12 +16,10 @@ export const playerWidgetRegistry: PlayerWidgetRegistry = {
     defaultH: 13,
     minW: 1,
     minH: 8,
-    render: ({ data, headerActions }) => (
-      <HeroPerformancePanel
-        accountId={data.accountId}
-        headerActions={headerActions}
-      />
-    ),
+    ...createGeometryWidgetLifecycle('hero-performance'),
+    render: ({ data, headerActions }) => data ? (
+      <HeroPerformancePanel accountId={data.accountId} headerActions={headerActions} />
+    ) : null,
   },
   'match-history': {
     type: 'match-history',
@@ -30,12 +29,10 @@ export const playerWidgetRegistry: PlayerWidgetRegistry = {
     defaultH: 18,
     minW: 1,
     minH: 10,
-    render: ({ data, headerActions }) => (
-      <MatchHistoryPanel
-        accountId={data.accountId}
-        headerActions={headerActions}
-      />
-    ),
+    ...createGeometryWidgetLifecycle('match-history'),
+    render: ({ data, headerActions }) => data ? (
+      <MatchHistoryPanel accountId={data.accountId} headerActions={headerActions} />
+    ) : null,
   },
   'top-heroes': {
     type: 'top-heroes',
@@ -45,12 +42,10 @@ export const playerWidgetRegistry: PlayerWidgetRegistry = {
     defaultH: 11,
     minW: 1,
     minH: 6,
-    render: ({ data, headerActions }) => (
-      <TopHeroesPanel
-        accountId={data.accountId}
-        headerActions={headerActions}
-      />
-    ),
+    ...createGeometryWidgetLifecycle('top-heroes'),
+    render: ({ data, headerActions }) => data ? (
+      <TopHeroesPanel accountId={data.accountId} headerActions={headerActions} />
+    ) : null,
   },
 };
 

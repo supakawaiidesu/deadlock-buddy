@@ -1,6 +1,6 @@
 import { useMutation, useQuery } from '@tanstack/react-query';
 import { createShare, fetchShare, isRetryableShareError } from '@/lib/api/shares';
-import type { ShareDocumentV2 } from '@/lib/api/schema';
+import type { ShareDocumentV3 } from '@/lib/api/schema';
 
 export const shareQueryKeys = {
   detail: (id: string) => ['share', id] as const,
@@ -8,7 +8,7 @@ export const shareQueryKeys = {
 
 export function useCreateShare() {
   return useMutation({
-    mutationFn: (document: ShareDocumentV2) => createShare(document),
+    mutationFn: (document: ShareDocumentV3) => createShare(document),
     retry: isRetryableShareError,
   });
 }

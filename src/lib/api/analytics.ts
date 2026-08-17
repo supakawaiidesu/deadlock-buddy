@@ -1,8 +1,10 @@
 import { apiRequest } from './client';
 import {
+  AnalyticsHeroStatsResponseSchema,
   BadgeDistributionResponseSchema,
   HeroScoreboardResponseSchema,
   ItemStatsResponseSchema,
+  type AnalyticsHeroStats,
   type ItemStatsEntry,
 } from './schema';
 
@@ -18,6 +20,34 @@ export type HeroScoreboardParams = {
 } & DateRangeFilters;
 
 export type HeroScoreboardFilters = DateRangeFilters;
+
+export type HeroStatsBucket = 'start_time_day';
+
+export type HeroStatsFilters = {
+  readonly minUnixTimestamp: number;
+  readonly minAverageBadge: number;
+  readonly maxAverageBadge: number;
+};
+
+export async function fetchHeroStats(
+  filters: HeroStatsFilters,
+): Promise<AnalyticsHeroStats[]> {
+  const result = await apiRequest<unknown>({
+    path: '/v1/analytics/hero-stats',
+    searchParams: {
+      bucket: 'start_time_day' satisfies HeroStatsBucket,
+      game_mode: 'normal',
+      match_mode: 'ranked,unranked',
+      min_unix_timestamp: filters.minUnixTimestamp,
+      min_average_badge: filters.minAverageBadge,
+      max_average_badge: filters.maxAverageBadge,
+      min_hero_matches: 0,
+      min_hero_matches_total: 0,
+    },
+  });
+
+  return AnalyticsHeroStatsResponseSchema.parse(result);
+}
 
 export async function fetchHeroScoreboard(params: HeroScoreboardParams = {}) {
   const result = await apiRequest<unknown>({

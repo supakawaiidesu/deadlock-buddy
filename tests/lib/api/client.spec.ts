@@ -33,6 +33,7 @@ describe('deadlock API base routing', () => {
     '/v1/players/12345/rank',
     '/v1/players/hero-stats/extra',
     '/v1/analytics/unknown',
+    '/v1/analytics/hero-stats',
     '/steam/lookup',
   ])('keeps non-allowlisted path %s on upstream', (path) => {
     expect(isProxiedDeadlockPath(path)).toBe(false);

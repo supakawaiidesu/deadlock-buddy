@@ -1,5 +1,6 @@
 import { describe, expect, it, vi } from 'vitest';
 import {
+  buildCustomPageShareDocument,
   createCustomPage,
   createEmptyCustomPageStore,
   CUSTOM_PAGES_STORAGE_KEY,
@@ -17,6 +18,20 @@ import { ShareProfileV2Schema } from '@/lib/api/schema';
 const sharedWidgets: DashboardPanelInstance[] = [
   { id: 'rank', type: 'rank-distribution', x: 1, y: 0, w: 2, h: 10 },
 ];
+const chartWidget: DashboardPanelInstance = {
+  id: 'history',
+  type: 'hero-winrate-over-time',
+  x: 0,
+  y: 0,
+  w: 3,
+  h: 18,
+  settings: {
+    heroIds: [1, 2],
+    minUnixTimestamp: 1_700_000_000,
+    minAverageBadge: 91,
+    maxAverageBadge: 116,
+  },
+};
 
 describe('custom page store', () => {
   it('returns an empty store for missing, malformed, or blocked storage', () => {
@@ -128,6 +143,73 @@ describe('custom page store', () => {
     const restored = readCustomPageStore(storage);
 
     expect(restored.tabs[0].widgets).toEqual(widgets);
+  });
+
+  it('hydrates legacy chart geometry with deterministic defaults and replaces malformed settings', () => {
+    vi.useFakeTimers();
+    vi.setSystemTime(new Date('2026-08-17T18:00:00Z'));
+    try {
+      const expectedTimestamp = Date.UTC(2026, 6, 18) / 1000;
+      const store = sanitizeCustomPageStore({
+        version: 1,
+        nextTabNumber: 2,
+        tabs: [{
+          id: 'page',
+          title: 'Charts',
+          widgets: [
+            { id: 'legacy', type: 'hero-winrate-over-time', x: 0, y: 0, w: 3, h: 18 },
+            {
+              ...chartWidget,
+              id: 'malformed',
+              y: 18,
+              settings: { ...chartWidget.settings, heroIds: [1, 1] },
+            },
+          ],
+        }],
+      });
+
+      expect(store.tabs[0].widgets).toEqual([
+        {
+          id: 'legacy', type: 'hero-winrate-over-time', x: 0, y: 0, w: 3, h: 18,
+          settings: {
+            heroIds: [1], minUnixTimestamp: expectedTimestamp,
+            minAverageBadge: 91, maxAverageBadge: 116,
+          },
+        },
+        {
+          id: 'malformed', type: 'hero-winrate-over-time', x: 0, y: 18, w: 3, h: 18,
+          settings: {
+            heroIds: [1], minUnixTimestamp: expectedTimestamp,
+            minAverageBadge: 91, maxAverageBadge: 116,
+          },
+        },
+      ]);
+    } finally {
+      vi.useRealTimers();
+    }
+  });
+
+  it('preserves chart settings through layout, storage, v3 share, and import', () => {
+    const created = createCustomPage(createEmptyCustomPageStore(), {
+      id: 'chart-page',
+      widgets: [chartWidget],
+    });
+    const moved: DashboardPanelInstance = { ...chartWidget, x: 1, y: 0, w: 2, h: 20 };
+    const updated = updateCustomPageLayout(created.store, created.page.id, [moved]);
+    let persisted: string | null = null;
+    const storage = {
+      getItem: () => persisted,
+      setItem: (_key: string, value: string) => { persisted = value; },
+    };
+    writeCustomPageStore(storage, updated);
+    const restored = readCustomPageStore(storage);
+    const document = buildCustomPageShareDocument('Charts', restored.tabs);
+    const imported = importSharedCustomPages(createEmptyCustomPageStore(), document.profile);
+
+    expect(restored.tabs[0].widgets).toEqual([moved]);
+    expect(document.profile.version).toBe(3);
+    expect(document.profile.pages[0].widgets).toEqual([moved]);
+    expect(imported.pages[0].widgets).toEqual([moved]);
   });
 
   it('imports an ordered batch atomically with fresh IDs and consecutive numbers', () => {

@@ -1,5 +1,5 @@
 import { clampRect, compactVertical } from '@/features/widgets/widget-engine';
-import type { WidgetInstance } from '@/features/widgets/widget-types';
+import type { WidgetDefinition, WidgetInstance } from '@/features/widgets/widget-types';
 
 export function createWidgetInstanceId(type: string): string {
   if (typeof crypto !== 'undefined' && 'randomUUID' in crypto) {
@@ -8,17 +8,17 @@ export function createWidgetInstanceId(type: string): string {
   return `${type}-${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 8)}`;
 }
 
-export function sanitizeWidgetLayout<TType extends string>(
+export function sanitizeWidgetLayout<
+  TType extends string,
+  TInstance extends WidgetInstance<TType> = WidgetInstance<TType>,
+>(
   raw: unknown,
-  validTypes: ReadonlySet<string>,
-  sizeFor: (
-    type: TType,
-  ) => { defaultW: number; defaultH: number; minW: number; minH: number },
-): WidgetInstance<TType>[] | null {
+  registry: Readonly<Record<string, WidgetDefinition<TType, unknown, TInstance>>>,
+): TInstance[] | null {
   if (!Array.isArray(raw)) return null;
   if (raw.length === 0) return [];
 
-  const cleaned: WidgetInstance<TType>[] = [];
+  const cleaned: TInstance[] = [];
   const seenIds = new Set<string>();
 
   for (const [index, item] of raw.entries()) {
@@ -26,9 +26,10 @@ export function sanitizeWidgetLayout<TType extends string>(
 
     const { id, type } = item as Partial<WidgetInstance<TType>>;
     if (typeof id !== 'string' || typeof type !== 'string') continue;
-    if (!validTypes.has(type) || seenIds.has(id)) continue;
+    if (!(type in registry) || seenIds.has(id)) continue;
 
-    const definition = sizeFor(type as TType);
+    const definition = registry[type];
+    if (!definition) continue;
     const candidate = item as Partial<WidgetInstance<TType>>;
     const hasCoordinates = [candidate.x, candidate.y, candidate.w, candidate.h].every(
       (value) => typeof value === 'number' && Number.isFinite(value),
@@ -56,7 +57,7 @@ export function sanitizeWidgetLayout<TType extends string>(
         );
 
     seenIds.add(id);
-    cleaned.push({ id, type: type as TType, ...rect });
+    cleaned.push(definition.sanitizeInstance(item, rect));
   }
 
   if (cleaned.length === 0) return null;

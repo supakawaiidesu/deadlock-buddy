@@ -4,12 +4,12 @@ import {
   CreateShareResponseSchema,
   GetShareResponseSchema,
   PopularSharesResponseSchema,
-  ShareDocumentV2Schema,
+  ShareDocumentV3Schema,
   ShareIdSchema,
   type CreateShareResponse,
   type GetShareResponse,
   type PopularSharesResponse,
-  type ShareDocumentV2,
+  type ShareDocumentV3,
 } from './schema';
 
 export const SHARE_API_BASE_URL = 'https://taygeta-library-production.up.railway.app';
@@ -53,10 +53,10 @@ export function isRetryableShareError(failureCount: number, error: unknown): boo
 }
 
 export async function createShare(
-  document: ShareDocumentV2,
+  document: ShareDocumentV3,
   signal?: AbortSignal,
 ): Promise<CreateShareResponse> {
-  const parsedDocument = ShareDocumentV2Schema.parse(document);
+  const parsedDocument = ShareDocumentV3Schema.parse(document);
   const response = await apiRequest<unknown>({
     path: '/v1/shares',
     baseUrl: SHARE_API_BASE_URL,

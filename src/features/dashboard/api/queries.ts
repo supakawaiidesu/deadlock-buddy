@@ -55,6 +55,7 @@ function buildDashboardData(
   }, 0);
 
   return {
+    isReady: true,
     leaderboardEntries,
     heroWinrateEntries: heroWinratePanelEntries,
     heroPopularityEntries: heroPopularityPanelEntries,

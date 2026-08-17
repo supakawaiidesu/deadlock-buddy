@@ -1,8 +1,48 @@
 import { describe, expect, it } from 'vitest';
 import {
+  AnalyticsHeroStatsResponseSchema,
   PlayerSteamSearchResponseSchema,
   SteamLookupResponseSchema,
 } from '@/lib/api/schema';
+
+const analyticsHeroStatsRow = {
+  hero_id: 1,
+  bucket: 1_700_000_000,
+  wins: 12,
+  losses: 8,
+  matches: 20,
+  matches_per_bucket: 20,
+  total_kills: 120,
+  total_deaths: 80,
+  total_assists: 200,
+  total_net_worth: 1_000_000,
+  total_last_hits: 4_000,
+  total_denies: 500,
+  total_player_damage: 2_000_000,
+  total_player_damage_taken: 1_500_000,
+  total_boss_damage: 300_000,
+  total_creep_damage: 900_000,
+  total_neutral_damage: 600_000,
+  total_max_health: 100_000,
+  total_shots_hit: 50_000,
+  total_shots_missed: 25_000,
+};
+
+describe('AnalyticsHeroStatsResponseSchema', () => {
+  it('accepts a complete upstream row', () => {
+    expect(AnalyticsHeroStatsResponseSchema.parse([analyticsHeroStatsRow])).toEqual([
+      analyticsHeroStatsRow,
+    ]);
+  });
+
+  it.each([
+    ['missing', { ...analyticsHeroStatsRow, total_kills: undefined }],
+    ['negative', { ...analyticsHeroStatsRow, wins: -1 }],
+    ['nonnumeric', { ...analyticsHeroStatsRow, bucket: '1700000000' }],
+  ])('rejects %s required fields', (_case, row) => {
+    expect(() => AnalyticsHeroStatsResponseSchema.parse([row])).toThrow();
+  });
+});
 
 describe('SteamLookupResponseSchema', () => {
   it('preserves the resolved profile contract and nullable ban fields', () => {

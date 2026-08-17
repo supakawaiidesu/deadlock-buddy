@@ -5,9 +5,11 @@ import {
   CreateShareResponseSchema,
   GetShareResponseSchema,
   PopularSharesResponseSchema,
-  ShareDocumentV2Schema,
+  ShareDocumentV3Schema,
   ShareProfileV2Schema,
+  ShareProfileV3Schema,
   type ShareDocumentV2,
+  type ShareDocumentV3,
 } from '@/lib/api/schema';
 import {
   SHARE_API_BASE_URL,
@@ -31,11 +33,29 @@ const validWidget = {
   w: 1,
   h: 13,
 };
-const validDocument: ShareDocumentV2 = {
+const validDocument: ShareDocumentV3 = {
   name: 'Hero Stats',
   profile: {
-    version: 2,
+    version: 3,
     pages: [{ title: 'NA Picks', widgets: [validWidget] }],
+  },
+};
+const validV2Document: ShareDocumentV2 = {
+  name: validDocument.name,
+  profile: { version: 2, pages: [{ title: 'NA Picks', widgets: [validWidget] }] },
+};
+const validChartWidget = {
+  id: 'hero-history',
+  type: 'hero-winrate-over-time' as const,
+  x: 0,
+  y: 0,
+  w: 3,
+  h: 18,
+  settings: {
+    heroIds: [1, 2],
+    minUnixTimestamp: 1_700_000_000,
+    minAverageBadge: 91,
+    maxAverageBadge: 116,
   },
 };
 const validCreateResponse = {
@@ -79,7 +99,7 @@ function jsonResponse(body: unknown, status = 200): Response {
 function documentWithWidget(widget: Record<string, unknown>): unknown {
   return {
     name: 'Hero Stats',
-    profile: { version: 2, pages: [{ title: 'NA Picks', widgets: [widget] }] },
+    profile: { version: 3, pages: [{ title: 'NA Picks', widgets: [widget] }] },
   };
 }
 let fetchMock: Mock;
@@ -113,11 +133,11 @@ describe('Share path transport', () => {
     expect(fetchMock).not.toHaveBeenCalled();
   });
 
-  it('posts the exact normalized v2 document and accepts duplicate success', async () => {
+  it('posts the exact normalized v3 document and accepts duplicate success', async () => {
     fetchMock
       .mockResolvedValueOnce(jsonResponse(validCreateResponse))
       .mockResolvedValueOnce(jsonResponse({ ...validCreateResponse, created: false }));
-    const normalizedDocument: ShareDocumentV2 = {
+    const normalizedDocument: ShareDocumentV3 = {
       ...validDocument,
       name: normalizeShareName('  Hero   Stats  '),
     };
@@ -222,7 +242,7 @@ describe('Share wire schemas', () => {
       documentWithWidget({ ...validWidget, extra: true }),
     ];
     for (const candidate of requestUnknownKeys) {
-      expect(ShareDocumentV2Schema.safeParse(candidate).success).toBe(false);
+      expect(ShareDocumentV3Schema.safeParse(candidate).success).toBe(false);
     }
     expect(CreateShareResponseSchema.safeParse({ ...validCreateResponse, extra: true }).success)
       .toBe(false);
@@ -230,46 +250,46 @@ describe('Share wire schemas', () => {
       .toBe(false);
   });
 
-  it('enforces v2 pages and Unicode code-point name and title limits', () => {
-    expect(ShareDocumentV2Schema.safeParse({ ...validDocument, name: '😀'.repeat(80) }).success)
+  it('enforces v2/v3 pages and Unicode code-point name and title limits', () => {
+    expect(ShareDocumentV3Schema.safeParse({ ...validDocument, name: '😀'.repeat(80) }).success)
       .toBe(true);
-    expect(ShareDocumentV2Schema.safeParse({ ...validDocument, name: '😀'.repeat(81) }).success)
+    expect(ShareDocumentV3Schema.safeParse({ ...validDocument, name: '😀'.repeat(81) }).success)
       .toBe(false);
-    expect(ShareDocumentV2Schema.safeParse({ ...validDocument, name: ' Hero Stats ' }).success)
+    expect(ShareDocumentV3Schema.safeParse({ ...validDocument, name: ' Hero Stats ' }).success)
       .toBe(false);
-    expect(ShareDocumentV2Schema.safeParse({ ...validDocument, name: 'Hero\tStats' }).success)
+    expect(ShareDocumentV3Schema.safeParse({ ...validDocument, name: 'Hero\tStats' }).success)
       .toBe(false);
-    expect(ShareDocumentV2Schema.safeParse({ ...validDocument, name: '' }).success).toBe(false);
-    expect(ShareProfileV2Schema.safeParse({ ...validDocument.profile, version: 1 }).success)
+    expect(ShareDocumentV3Schema.safeParse({ ...validDocument, name: '' }).success).toBe(false);
+    expect(ShareProfileV2Schema.safeParse({ ...validV2Document.profile, version: 1 }).success)
       .toBe(false);
-    expect(ShareProfileV2Schema.safeParse({ version: 2, pages: [] }).success).toBe(false);
-    expect(ShareProfileV2Schema.safeParse({
-      version: 2,
+    expect(ShareProfileV3Schema.safeParse({ version: 3, pages: [] }).success).toBe(false);
+    expect(ShareProfileV3Schema.safeParse({
+      version: 3,
       pages: [{ title: '😀'.repeat(40), widgets: [] }],
     }).success).toBe(true);
-    expect(ShareProfileV2Schema.safeParse({
-      version: 2,
+    expect(ShareProfileV3Schema.safeParse({
+      version: 3,
       pages: [{ title: '😀'.repeat(41), widgets: [] }],
     }).success).toBe(false);
-    expect(ShareProfileV2Schema.safeParse({
-      version: 2,
+    expect(ShareProfileV3Schema.safeParse({
+      version: 3,
       pages: [{ title: ' Trimmed ', widgets: [] }],
     }).success).toBe(false);
   });
 
   it('rejects duplicate, malformed, and unsupported widgets', () => {
-    expect(ShareDocumentV2Schema.safeParse({
+    expect(ShareDocumentV3Schema.safeParse({
       ...validDocument,
       profile: {
-        version: 2,
+        version: 3,
         pages: [{ title: 'Duplicate', widgets: [validWidget, validWidget] }],
       },
     }).success).toBe(false);
-    expect(ShareDocumentV2Schema.safeParse(documentWithWidget({
+    expect(ShareDocumentV3Schema.safeParse(documentWithWidget({
       ...validWidget,
       id: 'bad id',
     })).success).toBe(false);
-    expect(ShareDocumentV2Schema.safeParse(documentWithWidget({
+    expect(ShareDocumentV3Schema.safeParse(documentWithWidget({
       ...validWidget,
       type: 'unknown-widget',
     })).success).toBe(false);
@@ -285,10 +305,34 @@ describe('Share wire schemas', () => {
     ['h', 1_001],
     ['h', '13'],
   ])('rejects invalid %s geometry %s', (field, value) => {
-    expect(ShareDocumentV2Schema.safeParse(documentWithWidget({
+    expect(ShareDocumentV3Schema.safeParse(documentWithWidget({
       ...validWidget,
       [field]: value,
     })).success).toBe(false);
+  });
+
+  it('accepts strict chart settings and rejects malformed configuration', () => {
+    expect(ShareDocumentV3Schema.safeParse(documentWithWidget(validChartWidget)).success).toBe(true);
+    const invalidSettings = [
+      undefined,
+      { ...validChartWidget.settings, unknown: true },
+      { ...validChartWidget.settings, heroIds: [] },
+      { ...validChartWidget.settings, heroIds: [1, 1] },
+      { ...validChartWidget.settings, heroIds: [999_999] },
+      { ...validChartWidget.settings, heroIds: Array.from({ length: 9 }, (_, i) => i + 1) },
+      { ...validChartWidget.settings, minUnixTimestamp: 0 },
+      { ...validChartWidget.settings, minUnixTimestamp: 1.5 },
+      { ...validChartWidget.settings, minAverageBadge: -1 },
+      { ...validChartWidget.settings, maxAverageBadge: 117 },
+      { ...validChartWidget.settings, minAverageBadge: 100, maxAverageBadge: 90 },
+    ];
+
+    for (const settings of invalidSettings) {
+      const widget = settings === undefined
+        ? Object.fromEntries(Object.entries(validChartWidget).filter(([key]) => key !== 'settings'))
+        : { ...validChartWidget, settings };
+      expect(ShareDocumentV3Schema.safeParse(documentWithWidget(widget)).success).toBe(false);
+    }
   });
 
   it('rejects unsafe slugs, paths, byte metadata, and timestamps', () => {
