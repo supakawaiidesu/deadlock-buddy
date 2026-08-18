@@ -10,20 +10,15 @@
 
 import { Route as rootRouteImport } from './routes/__root'
 import { Route as IndexRouteImport } from './routes/index'
-import { Route as HeroesIndexRouteImport } from './routes/heroes/index'
 import { Route as PlayersIndexRouteImport } from './routes/players/index'
-import { Route as PlayersAccountIdRouteImport } from './routes/players/$accountId'
-import { Route as SShareSlugRouteImport } from './routes/s/$shareSlug'
+import { Route as HeroesIndexRouteImport } from './routes/heroes/index'
 import { Route as TabTabNumberRouteImport } from './routes/tab/$tabNumber'
+import { Route as SShareSlugRouteImport } from './routes/s/$shareSlug'
+import { Route as PlayersAccountIdRouteImport } from './routes/players/$accountId'
 
 const IndexRoute = IndexRouteImport.update({
   id: '/',
   path: '/',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const HeroesIndexRoute = HeroesIndexRouteImport.update({
-  id: '/heroes/',
-  path: '/heroes/',
   getParentRoute: () => rootRouteImport,
 } as any)
 const PlayersIndexRoute = PlayersIndexRouteImport.update({
@@ -31,9 +26,14 @@ const PlayersIndexRoute = PlayersIndexRouteImport.update({
   path: '/players/',
   getParentRoute: () => rootRouteImport,
 } as any)
-const PlayersAccountIdRoute = PlayersAccountIdRouteImport.update({
-  id: '/players/$accountId',
-  path: '/players/$accountId',
+const HeroesIndexRoute = HeroesIndexRouteImport.update({
+  id: '/heroes/',
+  path: '/heroes/',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const TabTabNumberRoute = TabTabNumberRouteImport.update({
+  id: '/tab/$tabNumber',
+  path: '/tab/$tabNumber',
   getParentRoute: () => rootRouteImport,
 } as any)
 const SShareSlugRoute = SShareSlugRouteImport.update({
@@ -41,9 +41,9 @@ const SShareSlugRoute = SShareSlugRouteImport.update({
   path: '/s/$shareSlug',
   getParentRoute: () => rootRouteImport,
 } as any)
-const TabTabNumberRoute = TabTabNumberRouteImport.update({
-  id: '/tab/$tabNumber',
-  path: '/tab/$tabNumber',
+const PlayersAccountIdRoute = PlayersAccountIdRouteImport.update({
+  id: '/players/$accountId',
+  path: '/players/$accountId',
   getParentRoute: () => rootRouteImport,
 } as any)
 
@@ -117,13 +117,6 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof IndexRouteImport
       parentRoute: typeof rootRouteImport
     }
-    '/heroes/': {
-      id: '/heroes/'
-      path: '/heroes'
-      fullPath: '/heroes/'
-      preLoaderRoute: typeof HeroesIndexRouteImport
-      parentRoute: typeof rootRouteImport
-    }
     '/players/': {
       id: '/players/'
       path: '/players'
@@ -131,11 +124,18 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof PlayersIndexRouteImport
       parentRoute: typeof rootRouteImport
     }
-    '/players/$accountId': {
-      id: '/players/$accountId'
-      path: '/players/$accountId'
-      fullPath: '/players/$accountId'
-      preLoaderRoute: typeof PlayersAccountIdRouteImport
+    '/heroes/': {
+      id: '/heroes/'
+      path: '/heroes'
+      fullPath: '/heroes/'
+      preLoaderRoute: typeof HeroesIndexRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/tab/$tabNumber': {
+      id: '/tab/$tabNumber'
+      path: '/tab/$tabNumber'
+      fullPath: '/tab/$tabNumber'
+      preLoaderRoute: typeof TabTabNumberRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/s/$shareSlug': {
@@ -145,11 +145,11 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof SShareSlugRouteImport
       parentRoute: typeof rootRouteImport
     }
-    '/tab/$tabNumber': {
-      id: '/tab/$tabNumber'
-      path: '/tab/$tabNumber'
-      fullPath: '/tab/$tabNumber'
-      preLoaderRoute: typeof TabTabNumberRouteImport
+    '/players/$accountId': {
+      id: '/players/$accountId'
+      path: '/players/$accountId'
+      fullPath: '/players/$accountId'
+      preLoaderRoute: typeof PlayersAccountIdRouteImport
       parentRoute: typeof rootRouteImport
     }
   }
