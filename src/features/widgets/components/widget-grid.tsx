@@ -766,7 +766,7 @@ function WidgetCell<
             type="button"
             aria-label="Resize panel width and height"
             title="Resize panel width and height"
-            className="absolute bottom-0 right-0 z-20 h-[14px] w-[14px] touch-none border-0 bg-transparent p-0"
+            className="absolute bottom-0 right-0 z-20 h-[18px] w-[18px] cursor-nwse-resize touch-none border-0 bg-transparent p-0 text-[rgb(var(--accent-rgb)/0.5)] transition-colors hover:text-[var(--accent)] focus-visible:text-[var(--accent)] focus-visible:outline-none"
             onPointerDown={(event) => handlePointerDown('xy', event)}
             onPointerMove={(event) => onResizeMove(instance.id, event)}
             onPointerUp={(event) => {
@@ -778,12 +778,9 @@ function WidgetCell<
             onLostPointerCapture={() => onResizeEnd(instance.id)}
           >
             <span
-              className="pointer-events-none absolute bottom-0 right-0 h-3 w-3 opacity-0 transition-opacity group-hover:opacity-100 group-focus-within:opacity-100"
+              className="pointer-events-none absolute bottom-[4px] right-[4px] h-[7px] w-[7px] bg-current"
               aria-hidden="true"
-            >
-              <span className="absolute bottom-[2px] right-[2px] h-px w-3 origin-right -rotate-45 bg-[rgb(var(--text-rgb)/0.3)]" />
-              <span className="absolute bottom-[2px] right-[2px] h-px w-3 origin-right rotate-[-135deg] bg-[rgb(var(--text-rgb)/0.3)]" />
-            </span>
+            />
           </button>
         </>
       ) : null}
