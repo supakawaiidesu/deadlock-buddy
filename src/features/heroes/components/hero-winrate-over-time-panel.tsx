@@ -142,17 +142,8 @@ export function HeroWinrateOverTimePanel({
     updateSettings({ heroIds: [...settings.heroIds, heroId] });
   };
   return (
-    <Panel className="flex h-full min-w-0 flex-col gap-0 !p-0">
+    <Panel className="flex h-full min-w-0 flex-col gap-0 !p-0" aria-label="Hero win rate over time">
       <div className="panel-header">
-        <div className="min-w-0 flex-1 px-4 py-3">
-          <h2 className="text-sm font-semibold uppercase tracking-[0.2em] text-[var(--text-strong)]">
-            Chart Widget
-          </h2>
-        </div>
-        <div className="panel-header-actions">{headerActions}</div>
-      </div>
-
-      <div className="flex h-12 shrink-0 items-stretch border-b border-[var(--surface-border-muted)]">
         <details
           ref={rankMenuRef}
           className="group relative flex min-w-0 flex-1 border-r border-[var(--surface-border-muted)]"
@@ -313,6 +304,7 @@ export function HeroWinrateOverTimePanel({
             })}
           </div>
         </details>
+        <div className="panel-header-actions">{headerActions}</div>
       </div>
 
       <div className="relative min-h-0 flex-1">

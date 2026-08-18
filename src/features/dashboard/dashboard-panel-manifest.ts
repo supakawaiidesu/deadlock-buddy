@@ -50,7 +50,7 @@ export const dashboardPanelManifest = {
     minH: 7,
   },
   'hero-winrate-over-time': {
-    title: 'Chart Widget',
+    title: 'Hero win rate over time',
     description: 'Compare hero performance across a filtered match sample.',
     defaultW: 3,
     defaultH: 18,
