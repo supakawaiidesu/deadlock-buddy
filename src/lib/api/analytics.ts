@@ -1,9 +1,11 @@
 import { apiRequest } from './client';
 import {
+  AnalyticsGameStatsResponseSchema,
   AnalyticsHeroStatsResponseSchema,
   BadgeDistributionResponseSchema,
   HeroScoreboardResponseSchema,
   ItemStatsResponseSchema,
+  type AnalyticsGameStats,
   type AnalyticsHeroStats,
   type ItemStatsEntry,
 } from './schema';
@@ -47,6 +49,32 @@ export async function fetchHeroStats(
   });
 
   return AnalyticsHeroStatsResponseSchema.parse(result);
+}
+
+export type GameStatsBucket = 'start_time_day';
+
+export type GameStatsFilters = {
+  readonly minUnixTimestamp: number;
+  readonly minAverageBadge: number;
+  readonly maxAverageBadge: number;
+};
+
+export async function fetchGameStats(
+  filters: GameStatsFilters,
+): Promise<AnalyticsGameStats[]> {
+  const result = await apiRequest<unknown>({
+    path: '/v1/analytics/game-stats',
+    searchParams: {
+      bucket: 'start_time_day' satisfies GameStatsBucket,
+      game_mode: 'normal',
+      match_mode: 'ranked,unranked',
+      min_unix_timestamp: filters.minUnixTimestamp,
+      min_average_badge: filters.minAverageBadge,
+      max_average_badge: filters.maxAverageBadge,
+    },
+  });
+
+  return AnalyticsGameStatsResponseSchema.parse(result);
 }
 
 export async function fetchHeroScoreboard(params: HeroScoreboardParams = {}) {

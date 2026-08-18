@@ -45,6 +45,12 @@ export const dashboardPanelManifest = {
     defaultW: 12,
     defaultH: 18,
   },
+  'total-matches-over-time': {
+    title: 'Total matches over time',
+    description: 'Track daily match volume across a filtered sample.',
+    defaultW: 12,
+    defaultH: 18,
+  },
   'item-popularity': {
     title: 'Item popularity ranking',
     description: 'Most purchased items in the tracked sample.',

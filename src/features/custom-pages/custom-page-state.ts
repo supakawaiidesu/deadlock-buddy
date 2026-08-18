@@ -61,9 +61,13 @@ export function createEmptyCustomPageStore(): CustomPageStore {
 }
 
 function rebuildWidget(widget: DashboardPanelInstance): DashboardPanelInstance {
-  return widget.type === 'hero-winrate-over-time'
-    ? { ...widget, settings: { ...widget.settings, heroIds: [...widget.settings.heroIds] } }
-    : { ...widget };
+  if (widget.type === 'hero-winrate-over-time') {
+    return { ...widget, settings: { ...widget.settings, heroIds: [...widget.settings.heroIds] } };
+  }
+  if (widget.type === 'total-matches-over-time') {
+    return { ...widget, settings: { ...widget.settings } };
+  }
+  return { ...widget };
 }
 
 function sanitizeStoredWidgets(raw: unknown): DashboardPanelInstance[] | null {
@@ -339,27 +343,33 @@ export function buildCustomPageShareDocument(
         title: page.title,
         widgets: (quantizeTwelveColumnWidgetLayoutForShare(
           page.widgets,
-        ) as DashboardPanelInstance[]).map((widget) => widget.type === 'hero-winrate-over-time'
-          ? {
-              id: widget.id,
+        ) as DashboardPanelInstance[]).map((widget) => {
+          const geometry = {
+            id: widget.id,
+            x: widget.x,
+            y: widget.y,
+            w: widget.w,
+            h: widget.h,
+          };
+          if (widget.type === 'hero-winrate-over-time') {
+            return {
               type: widget.type,
-              x: widget.x,
-              y: widget.y,
-              w: widget.w,
-              h: widget.h,
+              ...geometry,
               settings: {
                 ...widget.settings,
                 heroIds: [...widget.settings.heroIds],
               },
-            }
-          : {
-              id: widget.id,
+            };
+          }
+          if (widget.type === 'total-matches-over-time') {
+            return {
               type: widget.type,
-              x: widget.x,
-              y: widget.y,
-              w: widget.w,
-              h: widget.h,
-            }),
+              ...geometry,
+              settings: { ...widget.settings },
+            };
+          }
+          return { ...geometry, type: widget.type };
+        }),
       })),
     },
   };

@@ -60,7 +60,7 @@
   --font-inter: 'Inter', 'Helvetica Neue', Arial, sans-serif;
 }
 
-.hero-winrate-chart-host .tv-lightweight-charts > table {
+.analytics-time-series-chart-host .tv-lightweight-charts > table {
   border-collapse: separate;
   border-spacing: 0;
 }

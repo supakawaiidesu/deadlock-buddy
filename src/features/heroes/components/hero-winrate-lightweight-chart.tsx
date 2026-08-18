@@ -20,6 +20,7 @@ import {
   type UTCTimestamp,
   type WhitespaceData,
 } from 'lightweight-charts';
+import { resolveCssColor } from '@/features/analytics/lib/lightweight-chart-colors';
 import { useTheme } from '@/features/theme/theme-provider';
 import type {
   HeroWinratePoint,
@@ -89,43 +90,6 @@ export function findHeroEndpoint(
     if (point) return point;
   }
   return null;
-}
-const CSS_SRGB_COLOR_PATTERN = new RegExp(
-  String.raw`^color\s*\(\s*srgb\s+([+-]?(?:\d+(?:\.\d*)?|\.\d+)(?:e[+-]?\d+)?)\s+([+-]?(?:\d+(?:\.\d*)?|\.\d+)(?:e[+-]?\d+)?)\s+([+-]?(?:\d+(?:\.\d*)?|\.\d+)(?:e[+-]?\d+)?)(?:\s*\/\s*([+-]?(?:\d+(?:\.\d*)?|\.\d+)(?:e[+-]?\d+)?))?\s*\)$`,
-  'i',
-);
-
-export function normalizeChartColor(value: string): string {
-  const match = CSS_SRGB_COLOR_PATTERN.exec(value);
-  if (!match) return value;
-
-  const channel = (component: string) => (
-    Math.round(Math.min(1, Math.max(0, Number(component))) * 255)
-  );
-  const red = channel(match[1]);
-  const green = channel(match[2]);
-  const blue = channel(match[3]);
-  const alpha = match[4] === undefined
-    ? 1
-    : Math.min(1, Math.max(0, Number(match[4])));
-
-  return alpha < 1
-    ? `rgba(${red}, ${green}, ${blue}, ${alpha})`
-    : `rgb(${red}, ${green}, ${blue})`;
-}
-
-export function resolveCssColor(owner: HTMLElement, value: string): string {
-  const probe = owner.ownerDocument.createElement('span');
-  probe.setAttribute('aria-hidden', 'true');
-  probe.style.display = 'none';
-  probe.style.color = value;
-  owner.ownerDocument.body.append(probe);
-
-  try {
-    return normalizeChartColor(getComputedStyle(probe).color);
-  } finally {
-    probe.remove();
-  }
 }
 
 function resolveHeroColors(
@@ -517,7 +481,7 @@ export function HeroWinrateLightweightChart({
 
   return (
     <div ref={frameRef} className="relative h-full w-full">
-      <div ref={hostRef} className="hero-winrate-chart-host absolute bottom-1 left-0 right-0 top-1" />
+      <div ref={hostRef} className="analytics-time-series-chart-host absolute bottom-1 left-0 right-0 top-1" />
       {tooltip ? (
         <div
           ref={tooltipRef}

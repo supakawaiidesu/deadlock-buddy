@@ -5,6 +5,7 @@ import {
   CreateShareResponseSchema,
   GetShareResponseSchema,
   PopularSharesResponseSchema,
+  ShareDocumentV2Schema,
   ShareDocumentV3Schema,
   ShareProfileV2Schema,
   ShareProfileV3Schema,
@@ -55,6 +56,19 @@ const validChartWidget = {
     heroIds: [1, 2],
     minUnixTimestamp: 1_700_000_000,
     minAverageBadge: 91,
+    maxAverageBadge: 116,
+  },
+};
+const validTotalMatchesWidget = {
+  id: 'total-matches-history',
+  type: 'total-matches-over-time' as const,
+  x: 0,
+  y: 0,
+  w: 3,
+  h: 18,
+  settings: {
+    minUnixTimestamp: 1_785_430_800,
+    minAverageBadge: 0,
     maxAverageBadge: 116,
   },
 };
@@ -333,6 +347,20 @@ describe('Share wire schemas', () => {
         : { ...validChartWidget, settings };
       expect(ShareDocumentV3Schema.safeParse(documentWithWidget(widget)).success).toBe(false);
     }
+  });
+
+  it('round-trips strict total-matches settings in V3', () => {
+    const document = documentWithWidget(validTotalMatchesWidget);
+    expect(ShareDocumentV3Schema.parse(document)).toEqual(document);
+    expect(ShareDocumentV3Schema.safeParse(documentWithWidget({
+      ...validTotalMatchesWidget,
+      settings: { ...validTotalMatchesWidget.settings, maxAverageBadge: 117 },
+    })).success).toBe(false);
+    expect(ShareDocumentV3Schema.safeParse(documentWithWidget({
+      ...validTotalMatchesWidget,
+      settings: { ...validTotalMatchesWidget.settings, unknown: true },
+    })).success).toBe(false);
+    expect(ShareDocumentV2Schema.safeParse(document).success).toBe(false);
   });
 
   it('rejects unsafe slugs, paths, byte metadata, and timestamps', () => {

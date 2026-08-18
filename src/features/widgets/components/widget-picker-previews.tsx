@@ -235,14 +235,18 @@ export function HistoryWidgetPreview({ rows }: { rows: readonly PreviewHistoryRo
 export type PreviewLineSeries = {
   color: string;
   points: string;
-  heroName: string;
-  iconUrl: string | null;
+  label: string;
+  iconUrl?: string | null;
 };
 
 export function LineWidgetPreview({
   series,
+  axisLabels = ['60%', '50%', '40%'],
+  showLegend = true,
 }: {
   series: readonly PreviewLineSeries[];
+  axisLabels?: readonly [string, string, string];
+  showLegend?: boolean;
 }) {
   return (
     <div aria-hidden="true" className="relative h-full w-full overflow-hidden bg-transparent">
@@ -286,9 +290,9 @@ export function LineWidgetPreview({
         ))}
 
         {[
-          { y: 19, label: '60%' },
-          { y: 53, label: '50%' },
-          { y: 87, label: '40%' },
+          { y: 19, label: axisLabels[0] },
+          { y: 53, label: axisLabels[1] },
+          { y: 87, label: axisLabels[2] },
         ].map((tick) => (
           <text
             key={tick.label}
@@ -304,7 +308,7 @@ export function LineWidgetPreview({
 
         {series.map((line, index) => (
           <polyline
-            key={`${line.heroName}-${index}`}
+            key={`${line.label}-${index}`}
             points={line.points}
             fill="none"
             stroke={line.color}
@@ -316,31 +320,33 @@ export function LineWidgetPreview({
         ))}
       </svg>
 
-      <div className="absolute right-12 top-2 flex flex-row-reverse gap-1 border border-[rgb(var(--text-rgb)/0.12)] bg-[var(--overlay-soft-background)] p-1">
-        {series.map((line, index) => (
-          <span
-            key={`${line.heroName}-${index}`}
-            title={line.heroName}
-            className="h-5 w-5 overflow-hidden border bg-[var(--surface-muted)]"
-            style={{ borderColor: line.color }}
-          >
-            {line.iconUrl ? (
-              <img
-                src={line.iconUrl}
-                alt=""
-                width={20}
-                height={20}
-                className="h-full w-full object-cover"
-                decoding="async"
-              />
-            ) : (
-              <span className="flex h-full w-full items-center justify-center text-[7px] font-semibold text-[var(--text-strong)]">
-                {line.heroName.slice(0, 1)}
-              </span>
-            )}
-          </span>
-        ))}
-      </div>
+      {showLegend ? (
+        <div className="absolute right-12 top-2 flex flex-row-reverse gap-1 border border-[rgb(var(--text-rgb)/0.12)] bg-[var(--overlay-soft-background)] p-1">
+          {series.map((line, index) => (
+            <span
+              key={`${line.label}-${index}`}
+              title={line.label}
+              className="h-5 w-5 overflow-hidden border bg-[var(--surface-muted)]"
+              style={{ borderColor: line.color }}
+            >
+              {line.iconUrl ? (
+                <img
+                  src={line.iconUrl}
+                  alt=""
+                  width={20}
+                  height={20}
+                  className="h-full w-full object-cover"
+                  decoding="async"
+                />
+              ) : (
+                <span className="flex h-full w-full items-center justify-center text-[7px] font-semibold text-[var(--text-strong)]">
+                  {line.label.slice(0, 1)}
+                </span>
+              )}
+            </span>
+          ))}
+        </div>
+      ) : null}
     </div>
   );
 }

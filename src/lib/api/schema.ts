@@ -210,6 +210,60 @@ export type AnalyticsHeroStats = z.infer<typeof AnalyticsHeroStatsSchema>;
 
 export const AnalyticsHeroStatsResponseSchema = z.array(AnalyticsHeroStatsSchema);
 
+export const AnalyticsGameStatsSchema = z.object({
+  bucket: NonnegativeIntegerSchema,
+  total_matches: NonnegativeIntegerSchema,
+  total_players: NonnegativeIntegerSchema,
+  team0_wins: NonnegativeIntegerSchema,
+  team1_wins: NonnegativeIntegerSchema,
+  avg_duration_s: z.number(),
+  avg_kills: z.number(),
+  avg_deaths: z.number(),
+  avg_assists: z.number(),
+  avg_kd_ratio: z.number(),
+  avg_net_worth: z.number(),
+  avg_last_hits: z.number(),
+  avg_denies: z.number(),
+  avg_player_damage: z.number(),
+  avg_player_damage_taken: z.number(),
+  avg_boss_damage: z.number(),
+  avg_player_healing: z.number(),
+  avg_accuracy: z.number(),
+  avg_crit_rate: z.number(),
+  avg_ending_level: z.number(),
+  avg_gold_player: z.number(),
+  avg_gold_player_orbs: z.number(),
+  avg_gold_lane_creep: z.number(),
+  avg_gold_lane_creep_orbs: z.number(),
+  avg_gold_neutral_creep: z.number(),
+  avg_gold_neutral_creep_orbs: z.number(),
+  avg_gold_boss: z.number(),
+  avg_gold_boss_orb: z.number(),
+  avg_gold_treasure: z.number(),
+  avg_gold_denied: z.number(),
+  avg_gold_death_loss: z.number(),
+  avg_creep_damage: z.number(),
+  avg_neutral_damage: z.number(),
+  avg_self_healing: z.number(),
+  avg_damage_mitigated: z.number(),
+  avg_damage_absorbed: z.number(),
+  avg_heal_prevented: z.number(),
+  avg_creep_kills: z.number(),
+  avg_neutral_kills: z.number(),
+  avg_possible_creeps: z.number(),
+  avg_max_health: z.number(),
+  avg_weapon_power: z.number(),
+  avg_tech_power: z.number(),
+  avg_first_mid_boss_time_s: z.number(),
+  avg_first_objective_destroyed_time_s: z.number(),
+  mid_boss_kill_rate: z.number(),
+  abandon_rate: z.number(),
+});
+
+export type AnalyticsGameStats = z.infer<typeof AnalyticsGameStatsSchema>;
+
+export const AnalyticsGameStatsResponseSchema = z.array(AnalyticsGameStatsSchema);
+
 
 export const PlayerRankSchema = z
   .object({
@@ -418,11 +472,8 @@ const GeometryShareWidgetSchema = ShareWidgetGeometrySchema.extend({
   type: ShareWidgetTypeSchema,
 }).strict();
 
-export const HeroWinrateOverTimeSettingsSchema = z
+export const AnalyticsTimeSeriesFilterSettingsSchema = z
   .object({
-    heroIds: z.array(z.number().int().refine((id) => shareHeroIds.has(id))).min(1).max(8).refine(
-      (ids) => new Set(ids).size === ids.length,
-    ),
     minUnixTimestamp: z.number().int().positive().safe(),
     minAverageBadge: z.number().int().min(0).max(116).safe(),
     maxAverageBadge: z.number().int().min(0).max(116).safe(),
@@ -430,14 +481,26 @@ export const HeroWinrateOverTimeSettingsSchema = z
   .strict()
   .refine((settings) => settings.minAverageBadge <= settings.maxAverageBadge);
 
+export const HeroWinrateOverTimeSettingsSchema = AnalyticsTimeSeriesFilterSettingsSchema.safeExtend({
+  heroIds: z.array(z.number().int().refine((id) => shareHeroIds.has(id))).min(1).max(8).refine(
+    (ids) => new Set(ids).size === ids.length,
+  ),
+});
+
 const HeroWinrateOverTimeShareWidgetSchema = ShareWidgetGeometrySchema.extend({
   type: z.literal('hero-winrate-over-time'),
   settings: HeroWinrateOverTimeSettingsSchema,
 }).strict();
 
+const TotalMatchesOverTimeShareWidgetSchema = ShareWidgetGeometrySchema.extend({
+  type: z.literal('total-matches-over-time'),
+  settings: AnalyticsTimeSeriesFilterSettingsSchema,
+}).strict();
+
 const ShareWidgetSchema = z.discriminatedUnion('type', [
   GeometryShareWidgetSchema,
   HeroWinrateOverTimeShareWidgetSchema,
+  TotalMatchesOverTimeShareWidgetSchema,
 ]);
 
 const SharePageV2Schema = z

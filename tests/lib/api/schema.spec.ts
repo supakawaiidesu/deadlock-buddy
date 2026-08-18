@@ -1,5 +1,7 @@
 import { describe, expect, it } from 'vitest';
+import { analyticsGameStatsRow } from '../../fixtures/analytics-game-stats';
 import {
+  AnalyticsGameStatsResponseSchema,
   AnalyticsHeroStatsResponseSchema,
   PlayerSteamSearchResponseSchema,
   SteamLookupResponseSchema,
@@ -41,6 +43,22 @@ describe('AnalyticsHeroStatsResponseSchema', () => {
     ['nonnumeric', { ...analyticsHeroStatsRow, bucket: '1700000000' }],
   ])('rejects %s required fields', (_case, row) => {
     expect(() => AnalyticsHeroStatsResponseSchema.parse([row])).toThrow();
+  });
+});
+
+describe('AnalyticsGameStatsResponseSchema', () => {
+  it('preserves the complete upstream row and strips unknown fields', () => {
+    expect(AnalyticsGameStatsResponseSchema.parse([{
+      ...analyticsGameStatsRow,
+      future_metric: 12,
+    }])).toEqual([analyticsGameStatsRow]);
+  });
+
+  it.each([
+    ['missing avg_kills', { ...analyticsGameStatsRow, avg_kills: undefined }],
+    ['string total_matches', { ...analyticsGameStatsRow, total_matches: '75000' }],
+  ])('rejects %s', (_case, row) => {
+    expect(() => AnalyticsGameStatsResponseSchema.parse([row])).toThrow();
   });
 });
 

@@ -1,3 +1,4 @@
+import type { AnalyticsTimeSeriesFilterValues } from '@/features/analytics/lib/time-series-filters';
 import type {
   WidgetDefinition,
   WidgetInstance,
@@ -14,29 +15,34 @@ export type DashboardPanelType =
   | 'hero-popularity'
   | 'hero-winrate'
   | 'hero-winrate-over-time'
+  | 'total-matches-over-time'
   | 'item-popularity'
   | 'item-winrate'
   | 'popular-layouts';
 
-export type HeroWinrateOverTimeSettings = {
+export type HeroWinrateOverTimeSettings = AnalyticsTimeSeriesFilterValues & {
   heroIds: number[];
-  minUnixTimestamp: number;
-  minAverageBadge: number;
-  maxAverageBadge: number;
 };
+
+export type GameStatsTimeSeriesSettings = AnalyticsTimeSeriesFilterValues;
 
 export type GeometryDashboardPanelInstance = WidgetInstance<Exclude<
   DashboardPanelType,
-  'hero-winrate-over-time'
+  'hero-winrate-over-time' | 'total-matches-over-time'
 >>;
 
 export type HeroWinrateOverTimePanelInstance = WidgetInstance<'hero-winrate-over-time'> & {
   settings: HeroWinrateOverTimeSettings;
 };
 
+export type TotalMatchesOverTimePanelInstance = WidgetInstance<'total-matches-over-time'> & {
+  settings: GameStatsTimeSeriesSettings;
+};
+
 export type DashboardPanelInstance =
   | GeometryDashboardPanelInstance
-  | HeroWinrateOverTimePanelInstance;
+  | HeroWinrateOverTimePanelInstance
+  | TotalMatchesOverTimePanelInstance;
 
 export function createDefaultHeroWinrateOverTimeSettings(
   now = Date.now(),
@@ -52,6 +58,23 @@ export function createDefaultHeroWinrateOverTimeSettings(
     heroIds: [1],
     minUnixTimestamp: todayUtcSeconds - 30 * 86_400,
     minAverageBadge: 91,
+    maxAverageBadge: 116,
+  };
+}
+
+export function createDefaultGameStatsTimeSeriesSettings(
+  now = Date.now(),
+): GameStatsTimeSeriesSettings {
+  const date = new Date(now);
+  const todayUtcSeconds = Date.UTC(
+    date.getUTCFullYear(),
+    date.getUTCMonth(),
+    date.getUTCDate(),
+  ) / 1000;
+
+  return {
+    minUnixTimestamp: todayUtcSeconds - 30 * 86_400,
+    minAverageBadge: 0,
     maxAverageBadge: 116,
   };
 }

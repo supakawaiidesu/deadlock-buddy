@@ -1,11 +1,14 @@
 import {
+  createDefaultGameStatsTimeSeriesSettings,
   createDefaultHeroWinrateOverTimeSettings,
   type DashboardPanelInstance,
   type DashboardPanelRegistry,
   type HeroWinrateOverTimePanelInstance,
+  type TotalMatchesOverTimePanelInstance,
 } from '@/features/dashboard/dashboard-types';
 import { dashboardPanelManifest } from '@/features/dashboard/dashboard-panel-manifest';
 import { RankDistributionPanel } from '@/features/analytics/components/rank-distribution-panel';
+import { TotalMatchesOverTimePanel } from '@/features/analytics/components/total-matches-over-time-panel';
 import { HeroLeaderboardPanel } from '@/features/heroes/components/hero-leaderboard-panel';
 import { ItemLeaderboardPanel } from '@/features/items/components/item-leaderboard-panel';
 import { HeroWinrateOverTimePanel } from '@/features/heroes/components/hero-winrate-over-time-panel';
@@ -42,18 +45,13 @@ function withGeometryLifecycle<TType extends DashboardPanelInstance['type']>(typ
   };
 }
 
-function isValidChartSettings(raw: unknown): raw is HeroWinrateOverTimePanelInstance['settings'] {
+function isValidAnalyticsTimeSeriesSettings(raw: unknown): raw is TotalMatchesOverTimePanelInstance['settings'] {
   if (!raw || typeof raw !== 'object') return false;
-  if (!('heroIds' in raw) || !Array.isArray(raw.heroIds)) return false;
   if (!('minUnixTimestamp' in raw) || !('minAverageBadge' in raw) || !('maxAverageBadge' in raw)) {
     return false;
   }
-  const { heroIds, minUnixTimestamp, minAverageBadge, maxAverageBadge } = raw;
+  const { minUnixTimestamp, minAverageBadge, maxAverageBadge } = raw;
   return (
-    heroIds.length > 0 &&
-    heroIds.length <= 8 &&
-    heroIds.every((id) => Number.isSafeInteger(id) && catalogHeroIds.has(id)) &&
-    new Set(heroIds).size === heroIds.length &&
     Number.isSafeInteger(minUnixTimestamp) &&
     typeof minUnixTimestamp === 'number' &&
     minUnixTimestamp > 0 &&
@@ -66,6 +64,18 @@ function isValidChartSettings(raw: unknown): raw is HeroWinrateOverTimePanelInst
     maxAverageBadge >= 0 &&
     maxAverageBadge <= 116 &&
     minAverageBadge <= maxAverageBadge
+  );
+}
+
+function isValidHeroChartSettings(raw: unknown): raw is HeroWinrateOverTimePanelInstance['settings'] {
+  if (!isValidAnalyticsTimeSeriesSettings(raw)) return false;
+  if (!('heroIds' in raw) || !Array.isArray(raw.heroIds)) return false;
+  const { heroIds } = raw;
+  return (
+    heroIds.length > 0 &&
+    heroIds.length <= 8 &&
+    heroIds.every((id) => Number.isSafeInteger(id) && catalogHeroIds.has(id)) &&
+    new Set(heroIds).size === heroIds.length
   );
 }
 
@@ -90,9 +100,39 @@ export function sanitizeHeroWinrateOverTimeInstance(
     id,
     type: 'hero-winrate-over-time',
     ...rect,
-    settings: isValidChartSettings(settings)
+    settings: isValidHeroChartSettings(settings)
       ? { ...settings, heroIds: [...settings.heroIds] }
       : createDefaultHeroWinrateOverTimeSettings(),
+  };
+}
+
+function createTotalMatchesOverTimeInstance(
+  id: string,
+  rect: GridRect,
+): TotalMatchesOverTimePanelInstance {
+  return {
+    id,
+    type: 'total-matches-over-time',
+    ...rect,
+    settings: createDefaultGameStatsTimeSeriesSettings(),
+  };
+}
+
+export function sanitizeTotalMatchesOverTimeInstance(
+  raw: unknown,
+  rect: GridRect,
+): TotalMatchesOverTimePanelInstance {
+  const id = raw && typeof raw === 'object' && 'id' in raw && typeof raw.id === 'string'
+    ? raw.id
+    : '';
+  const settings = raw && typeof raw === 'object' && 'settings' in raw ? raw.settings : null;
+  return {
+    id,
+    type: 'total-matches-over-time',
+    ...rect,
+    settings: isValidAnalyticsTimeSeriesSettings(settings)
+      ? { ...settings }
+      : createDefaultGameStatsTimeSeriesSettings(),
   };
 }
 
@@ -221,19 +261,19 @@ export const dashboardPanelRegistry: DashboardPanelRegistry = {
           {
             color: 'var(--chart-series-1)',
             points: '18,64 56,59 94,62 132,46 170,50 208,36 246,40 282,27',
-            heroName: 'Infernus',
+            label: 'Infernus',
             iconUrl: getHeroIconUrl(1),
           },
           {
             color: 'var(--chart-series-2)',
             points: '18,40 56,44 94,35 132,42 170,31 208,34 246,24 282,30',
-            heroName: 'Seven',
+            label: 'Seven',
             iconUrl: getHeroIconUrl(2),
           },
           {
             color: 'var(--chart-series-3)',
             points: '18,72 56,67 94,75 132,61 170,65 208,52 246,58 282,49',
-            heroName: 'Haze',
+            label: 'Haze',
             iconUrl: getHeroIconUrl(13),
           },
         ]}
@@ -246,6 +286,36 @@ export const dashboardPanelRegistry: DashboardPanelRegistry = {
       if (instance.type !== 'hero-winrate-over-time') return null;
       return (
         <HeroWinrateOverTimePanel
+          settings={instance.settings}
+          onSettingsChange={(settings) => onInstanceChange({ ...instance, settings })}
+          headerActions={headerActions}
+          size={size}
+        />
+      );
+    },
+  },
+  'total-matches-over-time': {
+    type: 'total-matches-over-time',
+    ...dashboardPanelManifest['total-matches-over-time'],
+    previewSize: { width: 400, contentHeight: 158 },
+    preview: (
+      <LineWidgetPreview
+        series={[{
+          color: 'var(--chart-series-1)',
+          points: '18,72 56,65 94,70 132,54 170,48 208,34 246,40 282,24',
+          label: 'Matches',
+        }]}
+        axisLabels={['75K', '50K', '25K']}
+        showLegend={false}
+      />
+    ),
+    createInstance: createTotalMatchesOverTimeInstance,
+    sanitizeInstance: sanitizeTotalMatchesOverTimeInstance,
+    renderWhileLoading: true,
+    render: ({ instance, onInstanceChange, headerActions, size }) => {
+      if (instance.type !== 'total-matches-over-time') return null;
+      return (
+        <TotalMatchesOverTimePanel
           settings={instance.settings}
           onSettingsChange={(settings) => onInstanceChange({ ...instance, settings })}
           headerActions={headerActions}

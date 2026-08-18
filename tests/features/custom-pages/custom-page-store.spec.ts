@@ -35,6 +35,20 @@ const chartWidget: DashboardPanelInstance = {
   h: 3,
   settings: chartSettings,
 };
+const gameStatsSettings = {
+  minUnixTimestamp: 1_785_430_800,
+  minAverageBadge: 0,
+  maxAverageBadge: 116,
+};
+const totalMatchesWidget: DashboardPanelInstance = {
+  id: 'matches',
+  type: 'total-matches-over-time',
+  x: 0,
+  y: 0,
+  w: 12,
+  h: 18,
+  settings: gameStatsSettings,
+};
 
 describe('custom page store', () => {
   it('resolves current and legacy storage with exact precedence and migration state', () => {
@@ -182,6 +196,38 @@ describe('custom page store', () => {
 
     expect(restored).toEqual({ store: updated, migrated: false });
     expect(restored.store.tabs[0].widgets).toEqual([chartWidget]);
+  });
+
+  it('persists and shares total-matches settings without loss', () => {
+    const created = createCustomPage(createEmptyCustomPageStore(), {
+      id: 'matches-page',
+      widgets: [totalMatchesWidget],
+    });
+    const updated = updateCustomPageLayout(
+      created.store,
+      created.page.id,
+      [totalMatchesWidget],
+    );
+    let persisted: string | null = null;
+    const storage = {
+      getItem: (key: string) => key === CUSTOM_PAGES_STORAGE_KEY ? persisted : null,
+      setItem: (key: string, value: string) => {
+        if (key === CUSTOM_PAGES_STORAGE_KEY) persisted = value;
+      },
+    };
+
+    writeCustomPageStore(storage, updated);
+    expect(readCustomPageStore(storage).store.tabs[0].widgets).toEqual([totalMatchesWidget]);
+
+    const document = buildCustomPageShareDocument('Matches', [updated.tabs[0]]);
+    expect(document.profile.pages[0].widgets).toEqual([{
+      ...totalMatchesWidget,
+      x: 0,
+      w: 3,
+    }]);
+    expect(ShareProfileV3Schema.parse(document.profile)).toEqual(document.profile);
+    expect(importSharedCustomPages(createEmptyCustomPageStore(), document.profile).pages[0].widgets)
+      .toEqual([totalMatchesWidget]);
   });
 
   it('quantizes V3 exports and migrates both V2 and V3 imports', () => {
