@@ -1,4 +1,4 @@
-import { useMemo, type ReactNode } from 'react';
+import { memo, useMemo, type ReactNode } from 'react';
 import {
   Bar,
   BarChart,
@@ -109,6 +109,77 @@ function withTierAxisTicks(data: Omit<ChartDatum, 'showTierTick'>[]): ChartDatum
   return result;
 }
 
+const RankDistributionChart = memo(function RankDistributionChart({
+  chartData,
+}: {
+  chartData: readonly ChartDatum[];
+}) {
+  return (
+    <div className="min-h-[180px] w-full flex-1">
+      <ResponsiveContainer
+        width="100%"
+        height="100%"
+        className="focus:outline-none focus-visible:outline-none"
+      >
+        <BarChart
+          data={chartData}
+          margin={{ top: 0, right: 0, bottom: 10, left: 0 }}
+        >
+          <CartesianGrid
+            vertical={false}
+            stroke="rgb(var(--text-rgb)/0.08)"
+          />
+          <XAxis
+            dataKey="rank"
+            interval={0}
+            tickLine={false}
+            axisLine={{ stroke: 'rgb(var(--text-rgb)/0.12)' }}
+            stroke="rgb(var(--text-rgb)/0.45)"
+            height={28}
+            tick={({ x, y, payload }) => {
+              const datum = chartData.find((entry) => entry.rank === payload.value);
+              if (!datum?.showTierTick) return <g />;
+
+              return (
+                <text
+                  x={x}
+                  y={y}
+                  dy={12}
+                  textAnchor="middle"
+                  fill="rgb(var(--text-rgb)/0.55)"
+                  fontSize={10}
+                >
+                  {datum.tierName}
+                </text>
+              );
+            }}
+          />
+          <YAxis
+            tickLine={false}
+            axisLine={{ stroke: 'rgb(var(--text-rgb)/0.12)' }}
+            stroke="rgb(var(--text-rgb)/0.45)"
+            tick={{ fontSize: 10 }}
+            width={38}
+          />
+          <Tooltip
+            cursor={{ fill: 'rgb(var(--accent-rgb)/0.12)' }}
+            content={RankDistributionTooltip}
+          />
+          <Bar
+            dataKey="players"
+            radius={[2, 2, 0, 0]}
+            minPointSize={2}
+          >
+            {chartData.map((entry) => (
+              <Cell key={entry.rank} fill={entry.color} />
+            ))}
+          </Bar>
+        </BarChart>
+      </ResponsiveContainer>
+    </div>
+  );
+});
+
 export function RankDistributionPanel({
   entries,
   minUnixTimestamp,
@@ -189,68 +260,7 @@ export function RankDistributionPanel({
             Distribution data unavailable. Try again later.
           </div>
         ) : (
-          <div className="min-h-[180px] w-full flex-1">
-            <ResponsiveContainer
-              width="100%"
-              height="100%"
-              className="focus:outline-none focus-visible:outline-none"
-            >
-              <BarChart
-                data={chartData}
-                margin={{ top: 0, right: 0, bottom: 10, left: 0 }}
-              >
-                <CartesianGrid
-                  vertical={false}
-                  stroke="rgb(var(--text-rgb)/0.08)"
-                />
-                <XAxis
-                  dataKey="rank"
-                  interval={0}
-                  tickLine={false}
-                  axisLine={{ stroke: 'rgb(var(--text-rgb)/0.12)' }}
-                  stroke="rgb(var(--text-rgb)/0.45)"
-                  height={28}
-                  tick={({ x, y, payload }) => {
-                    const datum = chartData.find((entry) => entry.rank === payload.value);
-                    if (!datum?.showTierTick) return <g />;
-
-                    return (
-                      <text
-                        x={x}
-                        y={y}
-                        dy={12}
-                        textAnchor="middle"
-                        fill="rgb(var(--text-rgb)/0.55)"
-                        fontSize={10}
-                      >
-                        {datum.tierName}
-                      </text>
-                    );
-                  }}
-                />
-                <YAxis
-                  tickLine={false}
-                  axisLine={{ stroke: 'rgb(var(--text-rgb)/0.12)' }}
-                  stroke="rgb(var(--text-rgb)/0.45)"
-                  tick={{ fontSize: 10 }}
-                  width={38}
-                />
-                <Tooltip
-                  cursor={{ fill: 'rgb(var(--accent-rgb)/0.12)' }}
-                  content={RankDistributionTooltip}
-                />
-                <Bar
-                  dataKey="players"
-                  radius={[2, 2, 0, 0]}
-                  minPointSize={2}
-                >
-                  {chartData.map((entry) => (
-                    <Cell key={entry.rank} fill={entry.color} />
-                  ))}
-                </Bar>
-              </BarChart>
-            </ResponsiveContainer>
-          </div>
+          <RankDistributionChart chartData={chartData} />
         )}
       </div>
     </Panel>

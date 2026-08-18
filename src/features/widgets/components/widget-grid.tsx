@@ -1,4 +1,5 @@
 import {
+  useCallback,
   useEffect,
   useLayoutEffect,
   useMemo,
@@ -99,6 +100,9 @@ type ResizeState<TInstance extends WidgetInstance<string>> = {
   startRect: TInstance;
 };
 
+const POINTER_SENSOR_OPTIONS = { activationConstraint: { distance: 10 } };
+const TOUCH_SENSOR_OPTIONS = { activationConstraint: { delay: 200, tolerance: 8 } };
+
 
 export function WidgetGrid<
   TType extends string,
@@ -163,9 +167,9 @@ export function WidgetGrid<
     }
   }, [props.onLayoutCommit, props.storageKey, widgets]);
 
-  const commitLayout = (next: TInstance[]) => {
+  const commitLayout = useCallback((next: TInstance[]) => {
     setWidgets(next);
-  };
+  }, []);
 
   useEffect(() => {
     const handleToggle = () => {
@@ -244,8 +248,8 @@ export function WidgetGrid<
   }, []);
 
   const sensors = useSensors(
-    useSensor(PointerSensor, { activationConstraint: { distance: 10 } }),
-    useSensor(TouchSensor, { activationConstraint: { delay: 200, tolerance: 8 } }),
+    useSensor(PointerSensor, POINTER_SENSOR_OPTIONS),
+    useSensor(TouchSensor, TOUCH_SENSOR_OPTIONS),
   );
 
   const handleDragStart = ({ active }: DragStartEvent) => {
@@ -291,9 +295,12 @@ export function WidgetGrid<
   const handleDragEnd = () => finishInteraction(true);
   const handleDragCancel = () => finishInteraction(false);
 
-  const handleRemove = (id: string) => {
-    commitLayout(compactVertical(widgets.filter((widget) => widget.id !== id)));
-  };
+  const handleRemove = useCallback(
+    (id: string) => {
+      commitLayout(compactVertical(widgets.filter((widget) => widget.id !== id)));
+    },
+    [commitLayout, widgets],
+  );
 
   const handleAddWidget = (type: TType) => {
     const definition = registry[type];
@@ -307,18 +314,21 @@ export function WidgetGrid<
     setIsAddMenuOpen(false);
   };
 
-  const handleInstanceChange = (next: TInstance) => {
-    const current = widgets.find((widget) => widget.id === next.id);
-    if (!current || current.type !== next.type) return;
-    const definition = registry[current.type];
-    const sanitized = definition.sanitizeInstance(next, {
-      x: current.x,
-      y: current.y,
-      w: current.w,
-      h: current.h,
-    });
-    commitLayout(widgets.map((widget) => (widget.id === current.id ? sanitized : widget)));
-  };
+  const handleInstanceChange = useCallback(
+    (next: TInstance) => {
+      const current = widgets.find((widget) => widget.id === next.id);
+      if (!current || current.type !== next.type) return;
+      const definition = registry[current.type];
+      const sanitized = definition.sanitizeInstance(next, {
+        x: current.x,
+        y: current.y,
+        w: current.w,
+        h: current.h,
+      });
+      commitLayout(widgets.map((widget) => (widget.id === current.id ? sanitized : widget)));
+    },
+    [commitLayout, registry, widgets],
+  );
 
   const handleResizeStart = (
     id: string,
@@ -384,43 +394,46 @@ export function WidgetGrid<
     setResizeState(null);
   };
 
-  const handleKeyboard = (
-    instance: WidgetInstance<TType>,
-    event: ReactKeyboardEvent<HTMLButtonElement>,
-  ) => {
-    if (!isDesktop) return;
+  const handleKeyboard = useCallback(
+    (
+      instance: WidgetInstance<TType>,
+      event: ReactKeyboardEvent<HTMLButtonElement>,
+    ) => {
+      if (!isDesktop) return;
 
-    const move = {
-      ArrowUp: { x: 0, y: -1 },
-      ArrowDown: { x: 0, y: 1 },
-      ArrowLeft: { x: -1, y: 0 },
-      ArrowRight: { x: 1, y: 0 },
-    }[event.key];
-    if (!move) return;
+      const move = {
+        ArrowUp: { x: 0, y: -1 },
+        ArrowDown: { x: 0, y: 1 },
+        ArrowLeft: { x: -1, y: 0 },
+        ArrowRight: { x: 1, y: 0 },
+      }[event.key];
+      if (!move) return;
 
-    const definition = registry[instance.type];
-    const next = event.shiftKey
-      ? resizeItem(
-          widgets,
-          instance.id,
-          {
-            w: instance.w + (move.x === 0 ? 0 : move.x),
-            h: instance.h + (move.y === 0 ? 0 : move.y),
-          },
-          definition.minW,
-          definition.minH,
-        )
-      : moveItem(
-          widgets,
-          instance.id,
-          { x: instance.x + move.x, y: instance.y + move.y },
-          definition.minW,
-          definition.minH,
-        );
+      const definition = registry[instance.type];
+      const next = event.shiftKey
+        ? resizeItem(
+            widgets,
+            instance.id,
+            {
+              w: instance.w + (move.x === 0 ? 0 : move.x),
+              h: instance.h + (move.y === 0 ? 0 : move.y),
+            },
+            definition.minW,
+            definition.minH,
+          )
+        : moveItem(
+            widgets,
+            instance.id,
+            { x: instance.x + move.x, y: instance.y + move.y },
+            definition.minW,
+            definition.minH,
+          );
 
-    event.preventDefault();
-    commitLayout(next);
-  };
+      event.preventDefault();
+      commitLayout(next);
+    },
+    [commitLayout, isDesktop, registry, widgets],
+  );
 
   const displayed = preview ?? widgets;
   const mobileWidgets = useMemo(
