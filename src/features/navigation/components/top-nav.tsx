@@ -14,9 +14,10 @@ import { useCreateShare } from '@/features/custom-pages/api/queries';
 import { getTheme } from '@/features/theme/theme';
 import { useTheme } from '@/features/theme/theme-provider';
 import {
-  WIDGET_ADD_MENU_CLOSE_EVENT,
-  WIDGET_ADD_MENU_STATE_EVENT,
-  WIDGET_ADD_MENU_TOGGLE_EVENT,
+  WIDGET_ADD_PICKER_CLOSE_EVENT,
+  WIDGET_ADD_PICKER_STATE_EVENT,
+  WIDGET_ADD_PICKER_TOGGLE_EVENT,
+  WIDGET_PICKER_DIALOG_ID,
 } from '@/features/widgets/widget-events';
 import { ApiError } from '@/lib/api/client';
 import { buildPublicShareUrl, normalizeShareName } from '@/lib/api/shares';
@@ -51,7 +52,7 @@ export function TopNav() {
   const createShareMutation = useCreateShare();
   const { themeId, themes, setThemeId } = useTheme();
   const currentTheme = getTheme(themeId);
-  const [isAddMenuOpen, setIsAddMenuOpen] = useState(false);
+  const [isAddPickerOpen, setIsAddPickerOpen] = useState(false);
   const [isThemeMenuOpen, setIsThemeMenuOpen] = useState(false);
   const [isShareMenuOpen, setIsShareMenuOpen] = useState(false);
   const [selectedPageIds, setSelectedPageIds] = useState<Set<string>>(() => new Set());
@@ -74,18 +75,18 @@ export function TopNav() {
     const handleState = (event: Event) => {
       const custom = event as CustomEvent<{ open?: boolean }>;
       if (typeof custom.detail?.open === 'boolean') {
-        setIsAddMenuOpen(custom.detail.open);
+        setIsAddPickerOpen(custom.detail.open);
       }
     };
 
-    window.addEventListener(WIDGET_ADD_MENU_STATE_EVENT, handleState);
-    return () => window.removeEventListener(WIDGET_ADD_MENU_STATE_EVENT, handleState);
+    window.addEventListener(WIDGET_ADD_PICKER_STATE_EVENT, handleState);
+    return () => window.removeEventListener(WIDGET_ADD_PICKER_STATE_EVENT, handleState);
   }, []);
 
   useEffect(() => {
     if (!hasWidgetSurface) {
-      setIsAddMenuOpen(false);
-      window.dispatchEvent(new Event(WIDGET_ADD_MENU_CLOSE_EVENT));
+      setIsAddPickerOpen(false);
+      window.dispatchEvent(new Event(WIDGET_ADD_PICKER_CLOSE_EVENT));
     }
   }, [hasWidgetSurface]);
 
@@ -151,8 +152,8 @@ export function TopNav() {
     };
   }, []);
 
-  const handleToggleAddMenu = () => {
-    window.dispatchEvent(new Event(WIDGET_ADD_MENU_TOGGLE_EVENT));
+  const handleToggleAddPicker = () => {
+    window.dispatchEvent(new Event(WIDGET_ADD_PICKER_TOGGLE_EVENT));
   };
 
   const startRename = (tab: CustomPageTab) => {
@@ -437,13 +438,15 @@ export function TopNav() {
           {hasWidgetSurface ? (
             <button
               type="button"
-              onClick={handleToggleAddMenu}
-              aria-pressed={isAddMenuOpen}
+              onClick={handleToggleAddPicker}
+              aria-expanded={isAddPickerOpen}
+              aria-haspopup="dialog"
+              aria-controls={WIDGET_PICKER_DIALOG_ID}
               aria-label="Add widget"
               title="Add widget"
               className={clsx(
                 'panel-header-action border-r border-[var(--surface-border-muted)]',
-                isAddMenuOpen && 'bg-[var(--accent-muted)] !text-[var(--accent)]',
+                isAddPickerOpen && 'bg-[var(--accent-muted)] !text-[var(--accent)]',
               )}
             >
               <Plus className="h-4 w-4" aria-hidden="true" />

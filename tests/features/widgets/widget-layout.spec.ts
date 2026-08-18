@@ -14,6 +14,7 @@ function definition(
   return {
     type,
     title: type,
+    preview: null,
     ...size,
     createInstance: (id, rect) => ({ id, type, ...rect }),
     sanitizeInstance: (raw, rect) => {
@@ -78,6 +79,7 @@ describe('widget layout sanitization', () => {
       configured: {
         type: 'configured',
         title: 'Configured',
+        preview: null,
         defaultW: 1,
         defaultH: 3,
         minW: 1,

@@ -39,10 +39,11 @@ import {
   resizeItem,
 } from '@/features/widgets/widget-engine';
 import {
-  WIDGET_ADD_MENU_CLOSE_EVENT,
-  WIDGET_ADD_MENU_STATE_EVENT,
-  WIDGET_ADD_MENU_TOGGLE_EVENT,
+  WIDGET_ADD_PICKER_CLOSE_EVENT,
+  WIDGET_ADD_PICKER_STATE_EVENT,
+  WIDGET_ADD_PICKER_TOGGLE_EVENT,
 } from '@/features/widgets/widget-events';
+import { WidgetPicker } from '@/features/widgets/components/widget-picker';
 
 type WidgetGridLayoutOwner<
   TType extends string,
@@ -133,7 +134,7 @@ export function WidgetGrid<
       return [...props.defaultLayout];
     }
   });
-  const [isAddMenuOpen, setIsAddMenuOpen] = useState(false);
+  const [isAddPickerOpen, setIsAddPickerOpen] = useState(false);
   const [preview, setPreview] = useState<TInstance[] | null>(null);
   const [activeId, setActiveId] = useState<string | null>(null);
   const [resizeState, setResizeState] = useState<ResizeState<TInstance> | null>(null);
@@ -141,13 +142,20 @@ export function WidgetGrid<
   const [isDesktop, setIsDesktop] = useState(
     () => window.matchMedia('(min-width: 1024px)').matches,
   );
-  const menuRef = useRef<HTMLDivElement | null>(null);
   const surfaceRef = useRef<HTMLDivElement | null>(null);
   const hasPersistedLayoutRef = useRef(false);
   const resizeCommittedRef = useRef(false);
   const snappedDragRef = useRef<{ id: string; dx: number; dy: number } | null>(null);
   const availableWidgets = useMemo(
-    () => Object.keys(registry).map((type) => registry[type as TType]),
+    () => Object.keys(registry).map((type) => {
+      const definition = registry[type as TType];
+      return {
+        type: definition.type,
+        title: definition.title,
+        description: definition.description ?? '',
+        preview: definition.preview,
+      };
+    }),
     [registry],
   );
 
@@ -173,49 +181,30 @@ export function WidgetGrid<
 
   useEffect(() => {
     const handleToggle = () => {
-      setIsAddMenuOpen((open) => !open);
+      setIsAddPickerOpen((open) => !open);
     };
-    const handleClose = () => setIsAddMenuOpen(false);
+    const handleClose = () => setIsAddPickerOpen(false);
 
-    window.addEventListener(WIDGET_ADD_MENU_TOGGLE_EVENT, handleToggle);
-    window.addEventListener(WIDGET_ADD_MENU_CLOSE_EVENT, handleClose);
+    window.addEventListener(WIDGET_ADD_PICKER_TOGGLE_EVENT, handleToggle);
+    window.addEventListener(WIDGET_ADD_PICKER_CLOSE_EVENT, handleClose);
 
     return () => {
-      window.removeEventListener(WIDGET_ADD_MENU_TOGGLE_EVENT, handleToggle);
-      window.removeEventListener(WIDGET_ADD_MENU_CLOSE_EVENT, handleClose);
+      window.removeEventListener(WIDGET_ADD_PICKER_TOGGLE_EVENT, handleToggle);
+      window.removeEventListener(WIDGET_ADD_PICKER_CLOSE_EVENT, handleClose);
     };
   }, []);
 
   useEffect(() => {
-    if (!isAddMenuOpen) return undefined;
-
-    const handleKeyDown = (event: KeyboardEvent) => {
-      if (event.key === 'Escape') {
-        setIsAddMenuOpen(false);
-      }
-    };
-    const handlePointerDown = (event: PointerEvent) => {
-      const target = event.target as Node | null;
-      const menuNode = menuRef.current;
-      if (menuNode && target && !menuNode.contains(target)) {
-        setIsAddMenuOpen(false);
-      }
-    };
-
-    window.addEventListener('keydown', handleKeyDown);
-    window.addEventListener('pointerdown', handlePointerDown);
-
-    return () => {
-      window.removeEventListener('keydown', handleKeyDown);
-      window.removeEventListener('pointerdown', handlePointerDown);
-    };
-  }, [isAddMenuOpen]);
-
-  useEffect(() => {
     window.dispatchEvent(
-      new CustomEvent(WIDGET_ADD_MENU_STATE_EVENT, { detail: { open: isAddMenuOpen } }),
+      new CustomEvent(WIDGET_ADD_PICKER_STATE_EVENT, { detail: { open: isAddPickerOpen } }),
     );
-  }, [isAddMenuOpen]);
+  }, [isAddPickerOpen]);
+
+  useEffect(() => () => {
+    window.dispatchEvent(
+      new CustomEvent(WIDGET_ADD_PICKER_STATE_EVENT, { detail: { open: false } }),
+    );
+  }, []);
 
   useLayoutEffect(() => {
     if (widgets.length === 0) return;
@@ -311,7 +300,7 @@ export function WidgetGrid<
       h: definition.defaultH,
     });
     commitLayout(compactVertical([...widgets, next]));
-    setIsAddMenuOpen(false);
+    setIsAddPickerOpen(false);
   };
 
   const handleInstanceChange = useCallback(
@@ -544,28 +533,12 @@ export function WidgetGrid<
           )}
         </DndContext>
       )}
-      {isAddMenuOpen ? (
-        <div
-          ref={menuRef}
-          className="fixed right-8 top-[124px] z-[60] w-56 rounded-sm border border-[rgb(var(--text-rgb)/0.16)] bg-[var(--overlay-background)] p-2 shadow-lg shadow-[rgb(var(--shadow-rgb)/0.35)] backdrop-blur-sm lg:top-[76px]"
-        >
-          <span className="mb-2 block text-[10px] uppercase tracking-[0.22em] text-[rgb(var(--text-rgb)/0.5)]">
-            Panel types
-          </span>
-          <ul className="flex flex-col gap-1 text-left">
-            {availableWidgets.map((widget) => (
-              <li key={widget.type}>
-                <button
-                  type="button"
-                  onClick={() => handleAddWidget(widget.type)}
-                  className="w-full rounded-sm border border-transparent px-2 py-2 text-left text-[11px] uppercase tracking-[0.16em] text-[rgb(var(--text-rgb)/0.75)] transition hover:border-[var(--accent)] hover:text-[var(--text-strong)]"
-                >
-                  {widget.title}
-                </button>
-              </li>
-            ))}
-          </ul>
-        </div>
+      {isAddPickerOpen ? (
+        <WidgetPicker
+          options={availableWidgets}
+          onSelect={handleAddWidget}
+          onClose={() => setIsAddPickerOpen(false)}
+        />
       ) : null}
     </>
   );

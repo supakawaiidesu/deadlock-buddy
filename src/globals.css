@@ -193,6 +193,29 @@ textarea {
   border-radius: 9999px;
 }
 
+.widget-picker-dialog {
+  position: fixed;
+  inset: 0;
+  width: 100vw;
+  max-width: none;
+  height: 100dvh;
+  max-height: none;
+  margin: 0;
+  padding: 1rem;
+  color: inherit;
+  background: transparent;
+  border: 0;
+}
+
+.widget-picker-dialog[open] {
+  display: grid;
+  place-items: center;
+}
+
+.widget-picker-dialog::backdrop {
+  background: rgb(var(--shadow-rgb) / 0.72);
+}
+
 html,
 .scrollbar-hidden {
   -ms-overflow-style: none;

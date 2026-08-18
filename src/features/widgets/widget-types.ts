@@ -24,6 +24,7 @@ export type WidgetDefinition<
 > = {
   type: TType;
   title: string;
+  preview: ReactNode;
   description?: string;
   defaultW: 1 | 2 | 3;
   defaultH: number;
