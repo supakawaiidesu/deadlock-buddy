@@ -2,12 +2,14 @@ import { useLayoutEffect, useRef, useState, type CSSProperties, type ReactNode }
 import { createPortal } from 'react-dom';
 import { Search, X } from 'lucide-react';
 import { WIDGET_PICKER_DIALOG_ID } from '@/features/widgets/widget-events';
+import type { WidgetPickerPreviewSize } from '@/features/widgets/widget-types';
 
 export type WidgetPickerOption<TType extends string> = {
   type: TType;
   title: string;
   description: string;
   preview: ReactNode;
+  previewSize?: WidgetPickerPreviewSize;
 };
 
 type WidgetPickerProps<TType extends string> = {
@@ -15,6 +17,10 @@ type WidgetPickerProps<TType extends string> = {
   onSelect: (type: TType) => void;
   onClose: () => void;
 };
+
+const DEFAULT_PREVIEW_WIDTH = 320;
+const DEFAULT_PREVIEW_CONTENT_HEIGHT = 112;
+const PREVIEW_DESCRIPTION_HEIGHT = 40;
 
 
 export function WidgetPicker<TType extends string>({
@@ -66,8 +72,10 @@ export function WidgetPicker<TType extends string>({
   let flyoutSide: 'left' | 'right' = 'right';
   if (visiblePreview) {
     const viewportMargin = 16;
-    const desiredWidth = 320;
-    const flyoutHeight = 152;
+    const desiredWidth = visiblePreview.option.previewSize?.width ?? DEFAULT_PREVIEW_WIDTH;
+    const previewContentHeight = visiblePreview.option.previewSize?.contentHeight
+      ?? DEFAULT_PREVIEW_CONTENT_HEIGHT;
+    const flyoutHeight = previewContentHeight + PREVIEW_DESCRIPTION_HEIGHT;
     const spaceRight = window.innerWidth - visiblePreview.anchor.right - viewportMargin;
     const spaceLeft = visiblePreview.anchor.left - viewportMargin;
     flyoutSide = spaceRight >= 192 || spaceRight >= spaceLeft ? 'right' : 'left';
@@ -93,6 +101,7 @@ export function WidgetPicker<TType extends string>({
         ? visiblePreview.anchor.right
         : visiblePreview.anchor.left - width,
       width,
+      height: flyoutHeight,
     };
     connectorStyle = {
       top: connectorTop,
@@ -184,10 +193,14 @@ export function WidgetPicker<TType extends string>({
         <aside
           id="widget-picker-option-preview"
           role="tooltip"
-          className="widget-picker-preview pointer-events-none fixed z-[80] hidden h-[9.5rem] flex-col border border-[var(--surface-border-muted)] md:flex"
+          className="widget-picker-preview pointer-events-none fixed z-[80] hidden flex-col border border-[var(--surface-border-muted)] md:flex"
           style={flyoutStyle}
         >
-          <div className="h-28 shrink-0 overflow-hidden" aria-hidden="true">
+          <div
+            className="shrink-0 overflow-hidden"
+            style={{ height: visiblePreview.option.previewSize?.contentHeight ?? DEFAULT_PREVIEW_CONTENT_HEIGHT }}
+            aria-hidden="true"
+          >
             {visiblePreview.option.preview}
           </div>
           <p className="min-h-0 flex-1 truncate border-t border-[var(--surface-border-muted)] px-3 py-2.5 text-[10px] text-[rgb(var(--text-rgb)/0.62)]">

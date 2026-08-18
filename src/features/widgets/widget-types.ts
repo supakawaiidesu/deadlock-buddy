@@ -6,6 +6,11 @@ export type WidgetRenderSize = Readonly<{
   width: number | null;
   height: number | null;
 }>;
+export type WidgetPickerPreviewSize = Readonly<{
+  width: number;
+  contentHeight: number;
+}>;
+
 
 export type WidgetInstance<TType extends string> = GridRect & {
   id: string;
@@ -32,6 +37,7 @@ export type WidgetDefinition<
   type: TType;
   title: string;
   preview: ReactNode;
+  previewSize?: WidgetPickerPreviewSize;
   description?: string;
   defaultW: WidgetGridWidth;
   defaultH: number;

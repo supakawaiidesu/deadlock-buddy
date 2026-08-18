@@ -174,6 +174,7 @@ export function WidgetGrid<
         title: definition.title,
         description: definition.description ?? '',
         preview: definition.preview,
+        previewSize: definition.previewSize,
       };
     }),
     [registry],

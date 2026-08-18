@@ -21,6 +21,7 @@ const registry: WidgetRegistry<TestWidgetType, null, TestWidgetInstance> = {
     title: 'Alpha widget',
     description: 'Shows the alpha metric at a glance.',
     preview: <span>Alpha preview</span>,
+    previewSize: { width: 400, contentHeight: 132 },
     defaultW: 1,
     defaultH: 3,
     createInstance: (id, rect) => ({ id, type: 'a', ...rect }),
@@ -171,7 +172,7 @@ describe('widget picker', () => {
     openPicker();
 
     const alpha = screen.getByRole('button', { name: 'Alpha widget' });
-    vi.spyOn(alpha, 'getBoundingClientRect').mockReturnValue(new DOMRect(300, 200, 320, 44));
+    vi.spyOn(alpha, 'getBoundingClientRect').mockReturnValue(new DOMRect(200, 200, 320, 44));
     const beta = screen.getByRole('button', { name: 'Beta widget' });
     fireEvent.mouseEnter(alpha);
 
@@ -182,10 +183,13 @@ describe('widget picker', () => {
     expect(tooltip.className).not.toContain('shadow');
     expect(tooltip.querySelector('[aria-hidden="true"].absolute')).toBeTruthy();
     expect(tooltip.style.top).toBe('199px');
-    expect(tooltip.style.left).toBe('620px');
+    expect(tooltip.style.left).toBe('520px');
     const connector = tooltip.querySelector<HTMLElement>('[aria-hidden="true"].absolute');
     expect(connector?.style.top).toBe('0px');
     expect(connector?.style.height).toBe('43px');
+    expect(tooltip.style.width).toBe('400px');
+    expect(tooltip.style.height).toBe('172px');
+    expect(tooltip.firstElementChild?.getAttribute('style')).toContain('height: 132px');
   });
 
   it('filters options by title and reports an empty result', () => {

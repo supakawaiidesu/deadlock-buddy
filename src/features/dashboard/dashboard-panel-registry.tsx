@@ -12,10 +12,11 @@ import { HeroWinrateOverTimePanel } from '@/features/heroes/components/hero-winr
 import { NaLeaderboardPanel } from '@/features/dashboard/components/na-leaderboard-panel';
 import { TelemetrySnapshotPanel } from '@/features/dashboard/components/telemetry-snapshot-panel';
 import { PopularLayoutsPanel } from '@/features/dashboard/components/popular-layouts-panel';
-import { heroSummaries } from '@/lib/data/heroes';
+import { getHeroIconUrl, heroSummaries } from '@/lib/data/heroes';
+import { TIER_COLORS } from '@/lib/data/ranks';
 import type { GridRect } from '@/features/widgets/widget-engine';
 import {
-  BarsWidgetPreview,
+  HistogramWidgetPreview,
   LineWidgetPreview,
   MetricWidgetPreview,
   RowsWidgetPreview,
@@ -124,12 +125,12 @@ export const dashboardPanelRegistry: DashboardPanelRegistry = {
     type: 'rank-distribution',
     ...dashboardPanelManifest['rank-distribution'],
     preview: (
-      <BarsWidgetPreview
-        bars={[
-          { label: 'Seeker', value: 42, color: 'var(--chart-series-2)' },
-          { label: 'Alchemist', value: 68, color: 'var(--chart-series-1)' },
-          { label: 'Arcanist', value: 92, color: 'var(--chart-series-4)' },
-          { label: 'Oracle', value: 57, color: 'var(--chart-series-3)' },
+      <HistogramWidgetPreview
+        bands={[
+          { label: 'Acolyte', color: TIER_COLORS.Acolyte, values: [14, 22, 31, 43, 55, 66] },
+          { label: 'Sentinel', color: TIER_COLORS.Sentinel, values: [74, 82, 90, 95, 91, 86] },
+          { label: 'Mystic', color: TIER_COLORS.Mystic, values: [79, 70, 61, 51, 42, 33] },
+          { label: 'Ritualist', color: TIER_COLORS.Ritualist, values: [27, 21, 16, 11, 7, 4] },
         ]}
       />
     ),
@@ -213,12 +214,28 @@ export const dashboardPanelRegistry: DashboardPanelRegistry = {
   'hero-winrate-over-time': {
     type: 'hero-winrate-over-time',
     ...dashboardPanelManifest['hero-winrate-over-time'],
+    previewSize: { width: 400, contentHeight: 158 },
     preview: (
       <LineWidgetPreview
         series={[
-          { color: 'var(--chart-series-1)', points: '0,75 40,68 80,71 120,50 160,56 200,38 240,42 280,24 320,31' },
-          { color: 'var(--chart-series-2)', points: '0,42 40,46 80,36 120,44 160,29 200,34 240,19 280,27 320,14' },
-          { color: 'var(--chart-series-3)', points: '0,82 40,77 80,85 120,69 160,73 200,58 240,64 280,51 320,55' },
+          {
+            color: 'var(--chart-series-1)',
+            points: '18,64 56,59 94,62 132,46 170,50 208,36 246,40 282,27',
+            heroName: 'Infernus',
+            iconUrl: getHeroIconUrl(1),
+          },
+          {
+            color: 'var(--chart-series-2)',
+            points: '18,40 56,44 94,35 132,42 170,31 208,34 246,24 282,30',
+            heroName: 'Seven',
+            iconUrl: getHeroIconUrl(2),
+          },
+          {
+            color: 'var(--chart-series-3)',
+            points: '18,72 56,67 94,75 132,61 170,65 208,52 246,58 282,49',
+            heroName: 'Haze',
+            iconUrl: getHeroIconUrl(13),
+          },
         ]}
       />
     ),
