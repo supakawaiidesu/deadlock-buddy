@@ -22,10 +22,14 @@ import {
 } from '@dnd-kit/core';
 import { X } from 'lucide-react';
 import { clsx } from 'clsx';
-import type { WidgetInstance, WidgetRegistry } from '@/features/widgets/widget-types';
+import type {
+  WidgetInstance,
+  WidgetRegistry,
+  WidgetRenderSize,
+} from '@/features/widgets/widget-types';
 import {
   createWidgetInstanceId,
-  sanitizeWidgetLayout,
+  resolveStoredWidgetLayout,
 } from '@/features/widgets/widget-layout';
 import {
   GRID_GAP,
@@ -51,6 +55,7 @@ type WidgetGridLayoutOwner<
 > =
   | {
       storageKey: string;
+      legacyThreeColumnStorageKey: string;
       defaultLayout: readonly TInstance[];
       initialLayout?: never;
       onLayoutCommit?: never;
@@ -59,6 +64,7 @@ type WidgetGridLayoutOwner<
       initialLayout: readonly TInstance[];
       onLayoutCommit: (next: TInstance[]) => void;
       storageKey?: never;
+      legacyThreeColumnStorageKey?: never;
       defaultLayout?: never;
     };
 
@@ -87,7 +93,11 @@ type WidgetGridProps<
     | {
         data?: never;
         isLoading: true;
-        renderLoading: (instance: TInstance, headerActions: ReactNode) => ReactNode;
+        renderLoading: (
+          instance: TInstance,
+          headerActions: ReactNode,
+          size: WidgetRenderSize,
+        ) => ReactNode;
       }
   );
 
@@ -116,23 +126,33 @@ export function WidgetGrid<
     emptyStateHint = 'Use “Add widget” to bring metrics back.',
     useGridHeightOnMobile = false,
   } = props;
+  const migratedLayoutRef = useRef(false);
   const [widgets, setWidgets] = useState<TInstance[]>(() => {
     if (props.initialLayout !== undefined) return [...props.initialLayout];
+
+    let current: unknown | undefined;
+    let legacy: unknown | undefined;
     try {
       const stored = window.localStorage.getItem(props.storageKey);
-      if (!stored) return [...props.defaultLayout];
-
-      const parsed = JSON.parse(stored) as unknown;
-      return (
-        sanitizeWidgetLayout<TType, TInstance>(
-          parsed,
-          registry as WidgetRegistry<TType, unknown, TInstance>,
-        ) ?? [...props.defaultLayout]
-      );
+      if (stored !== null) current = JSON.parse(stored) as unknown;
     } catch (error) {
       console.warn('Failed to hydrate widget layout', error);
-      return [...props.defaultLayout];
     }
+    try {
+      const stored = window.localStorage.getItem(props.legacyThreeColumnStorageKey);
+      if (stored !== null) legacy = JSON.parse(stored) as unknown;
+    } catch (error) {
+      console.warn('Failed to hydrate widget layout', error);
+    }
+
+    const resolved = resolveStoredWidgetLayout<TType, TInstance>({
+      current,
+      legacy,
+      defaultLayout: props.defaultLayout,
+      registry: registry as WidgetRegistry<TType, unknown, TInstance>,
+    });
+    migratedLayoutRef.current = resolved.migrated;
+    return resolved.widgets;
   });
   const [isAddPickerOpen, setIsAddPickerOpen] = useState(false);
   const [preview, setPreview] = useState<TInstance[] | null>(null);
@@ -143,7 +163,7 @@ export function WidgetGrid<
     () => window.matchMedia('(min-width: 1024px)').matches,
   );
   const surfaceRef = useRef<HTMLDivElement | null>(null);
-  const hasPersistedLayoutRef = useRef(false);
+  const initialWidgetsRef = useRef(widgets);
   const resizeCommittedRef = useRef(false);
   const snappedDragRef = useRef<{ id: string; dx: number; dy: number } | null>(null);
   const availableWidgets = useMemo(
@@ -160,9 +180,9 @@ export function WidgetGrid<
   );
 
   useEffect(() => {
-    if (!hasPersistedLayoutRef.current) {
-      hasPersistedLayoutRef.current = true;
-      return;
+    if (widgets === initialWidgetsRef.current) {
+      if (!migratedLayoutRef.current) return;
+      migratedLayoutRef.current = false;
     }
     if (props.storageKey !== undefined) {
       try {
@@ -254,7 +274,6 @@ export function WidgetGrid<
     const origin = widgets.find((widget) => widget.id === id);
     if (!origin || containerWidth <= 0) return;
 
-    const definition = registry[origin.type];
     const columnPitch = columnWidthPx(containerWidth) + GRID_GAP;
     if (columnPitch <= 0) return;
 
@@ -263,15 +282,7 @@ export function WidgetGrid<
     const snapped = snappedDragRef.current;
     if (snapped?.id === id && snapped.dx === dx && snapped.dy === dy) return;
     snappedDragRef.current = { id, dx, dy };
-    setPreview(
-      moveItem(
-        widgets,
-        id,
-        { x: origin.x + dx, y: origin.y + dy },
-        definition.minW,
-        definition.minH,
-      ),
-    );
+    setPreview(moveItem(widgets, id, { x: origin.x + dx, y: origin.y + dy }));
   };
 
   const finishInteraction = (commit: boolean) => {
@@ -343,7 +354,6 @@ export function WidgetGrid<
 
     const origin = widgets.find((widget) => widget.id === id);
     if (!origin) return;
-    const definition = registry[origin.type];
     const columnPitch = columnWidthPx(containerWidth) + GRID_GAP;
     if (columnPitch <= 0) return;
 
@@ -358,15 +368,7 @@ export function WidgetGrid<
     const currentPreview = preview?.find((widget) => widget.id === id);
     if (currentPreview?.w === width && currentPreview.h === height) return;
 
-    setPreview(
-      resizeItem(
-        widgets,
-        id,
-        { w: width, h: height },
-        definition.minW,
-        definition.minH,
-      ),
-    );
+    setPreview(resizeItem(widgets, id, { w: width, h: height }));
   };
 
   const handleResizeEnd = (id: string) => {
@@ -398,30 +400,20 @@ export function WidgetGrid<
       }[event.key];
       if (!move) return;
 
-      const definition = registry[instance.type];
       const next = event.shiftKey
-        ? resizeItem(
-            widgets,
-            instance.id,
-            {
-              w: instance.w + (move.x === 0 ? 0 : move.x),
-              h: instance.h + (move.y === 0 ? 0 : move.y),
-            },
-            definition.minW,
-            definition.minH,
-          )
-        : moveItem(
-            widgets,
-            instance.id,
-            { x: instance.x + move.x, y: instance.y + move.y },
-            definition.minW,
-            definition.minH,
-          );
+        ? resizeItem(widgets, instance.id, {
+            w: instance.w + (move.x === 0 ? 0 : move.x),
+            h: instance.h + (move.y === 0 ? 0 : move.y),
+          })
+        : moveItem(widgets, instance.id, {
+            x: instance.x + move.x,
+            y: instance.y + move.y,
+          });
 
       event.preventDefault();
       commitLayout(next);
     },
-    [commitLayout, isDesktop, registry, widgets],
+    [commitLayout, isDesktop, widgets],
   );
 
   const displayed = preview ?? widgets;
@@ -587,7 +579,11 @@ type WidgetCellProps<
     | {
         data?: never;
         isLoading: true;
-        renderLoading: (instance: TInstance, headerActions: ReactNode) => ReactNode;
+        renderLoading: (
+          instance: TInstance,
+          headerActions: ReactNode,
+          size: WidgetRenderSize,
+        ) => ReactNode;
       }
   );
 
@@ -619,6 +615,17 @@ function WidgetCell<
   });
   const definition = registry[instance.type];
   const pixelRect = positioned ? rectToPixels(renderRect, containerWidth) : null;
+  const mobileHeight = useGridHeightOnMobile
+    ? renderRect.h * GRID_ROW_HEIGHT + (renderRect.h - 1) * GRID_GAP
+    : null;
+  const renderWidth = positioned
+    ? pixelRect?.width ?? null
+    : containerWidth > 0 ? containerWidth : null;
+  const renderHeight = positioned ? pixelRect?.height ?? null : mobileHeight;
+  const size = useMemo<WidgetRenderSize>(
+    () => ({ width: renderWidth, height: renderHeight }),
+    [renderHeight, renderWidth],
+  );
   const dragX = isDragging ? (transform?.x ?? 0) : 0;
   const dragY = isDragging ? (transform?.y ?? 0) : 0;
   const style: CSSProperties | undefined = pixelRect
@@ -634,8 +641,8 @@ function WidgetCell<
           : 'transform 180ms ease, width 180ms ease, height 180ms ease',
         zIndex: isActive ? 30 : undefined,
       }
-    : useGridHeightOnMobile && !positioned
-      ? { height: instance.h * GRID_ROW_HEIGHT + (instance.h - 1) * GRID_GAP }
+    : mobileHeight !== null
+      ? { height: mobileHeight }
       : undefined;
 
   const handlePointerDown = (
@@ -692,11 +699,12 @@ function WidgetCell<
   const content = useMemo(
     () =>
       props.isLoading && !definition.renderWhileLoading
-        ? props.renderLoading(instance, headerActions)
+        ? props.renderLoading(instance, headerActions, size)
         : definition.render({
             instance,
             data: props.isLoading ? null : props.data,
             onInstanceChange,
+            size,
             headerActions,
           }),
     [
@@ -707,6 +715,7 @@ function WidgetCell<
       props.data,
       props.isLoading,
       props.renderLoading,
+      size,
     ],
   );
 

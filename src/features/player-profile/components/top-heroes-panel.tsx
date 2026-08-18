@@ -8,13 +8,15 @@ import {
   WidgetMessage,
   WidgetPanel,
 } from '@/features/widgets/components/widget-panel';
+import type { WidgetRenderSize } from '@/features/widgets/widget-types';
 
 type Props = {
   accountId: number;
   headerActions?: ReactNode;
+  size: WidgetRenderSize;
 };
 
-export function TopHeroesPanel({ accountId, headerActions }: Props) {
+export function TopHeroesPanel({ accountId, headerActions, size }: Props) {
   const heroStatsQuery = usePlayerHeroStats(accountId);
   const heroRows = useMemo(
     () => (heroStatsQuery.data ? buildHeroRows(heroStatsQuery.data) : []),
@@ -30,12 +32,14 @@ export function TopHeroesPanel({ accountId, headerActions }: Props) {
       })),
     [topHeroes],
   );
+  const isCompact = size.width === null || size.width < 420;
 
   return (
     <WidgetPanel
       title="Top heroes"
       meta={<span className="panel-header-meta">Volume {'\u00B7'} Win%</span>}
       headerActions={headerActions}
+      size={size}
     >
       {heroStatsQuery.isLoading ? (
         <Skeleton className="min-h-0 w-full flex-1" />
@@ -46,24 +50,26 @@ export function TopHeroesPanel({ accountId, headerActions }: Props) {
           {topHeroesWithMeta.map((hero) => (
             <li
               key={hero.heroId}
-              className="flex items-center justify-between border-b border-[rgb(var(--text-rgb)/0.12)] px-3 py-2 text-xs"
+              className="flex min-w-0 items-center justify-between gap-2 border-b border-[rgb(var(--text-rgb)/0.12)] px-3 py-2 text-xs"
             >
-              <div className="flex items-center gap-3">
+              <div className="flex min-w-0 items-center gap-3">
                 {hero.iconUrl ? (
-                  <img src={hero.iconUrl} alt={`${hero.name} icon`} width={24} height={24} className="h-6 w-6 object-cover" />
+                  <img src={hero.iconUrl} alt={`${hero.name} icon`} width={24} height={24} className="h-6 w-6 shrink-0 object-cover" />
                 ) : null}
-                <div className="flex flex-col text-left">
-                  <span className="font-semibold text-[var(--text-strong)]">{hero.name}</span>
+                <div className="flex min-w-0 flex-col text-left">
+                  <span className="truncate font-semibold text-[var(--text-strong)]">{hero.name}</span>
                   <span className="text-[10px] uppercase tracking-[0.12em] text-[rgb(var(--text-rgb)/0.55)]">
                     Matches {formatNumber(hero.matches)}
                   </span>
                 </div>
               </div>
-              <div className="text-right">
+              <div className="shrink-0 text-right">
                 <p className="font-semibold text-[var(--text-strong)]">{formatPercent(hero.winRate)}</p>
-                <p className="text-[10px] uppercase tracking-[0.12em] text-[rgb(var(--text-rgb)/0.55)]">
-                  Last played {formatRelativeTimestamp(hero.lastPlayed)}
-                </p>
+                {isCompact ? null : (
+                  <p className="text-[10px] uppercase tracking-[0.12em] text-[rgb(var(--text-rgb)/0.55)]">
+                    Last played {formatRelativeTimestamp(hero.lastPlayed)}
+                  </p>
+                )}
               </div>
             </li>
           ))}

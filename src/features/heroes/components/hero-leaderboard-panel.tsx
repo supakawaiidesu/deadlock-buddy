@@ -6,6 +6,7 @@ import {
 import { fetchHeroPopularityLeaderboard, fetchHeroWinrateLeaderboard, type HeroScoreboardFilters } from '@/lib/api/analytics';
 import type { HeroScoreboardEntry } from '@/lib/api/schema';
 import { getHeroDisplayName, getHeroIconUrl } from '@/lib/data/heroes';
+import type { WidgetRenderSize } from '@/features/widgets/widget-types';
 
 type HeroLeaderboardPanelMode = 'popularity' | 'winrate';
 
@@ -21,6 +22,7 @@ type HeroLeaderboardPanelProps = {
   limit?: number;
   initialEntries: HeroLeaderboardEntry[];
   headerActions?: ReactNode;
+  size: WidgetRenderSize;
 };
 
 function formatPercent(value?: number): string | null {
@@ -71,6 +73,7 @@ export function HeroLeaderboardPanel({
   limit,
   initialEntries,
   headerActions,
+  size,
 }: HeroLeaderboardPanelProps) {
   const fetcher = useCallback(
     (params: { limit?: number; filters: DateRangeFilters }) =>
@@ -87,19 +90,21 @@ export function HeroLeaderboardPanel({
       fetcher={fetcher}
       getEntryKey={(entry) => `${panelKey}-${entry.hero_id}`}
       headerActions={headerActions}
-      renderEntry={(entry) => {
+      size={size}
+      renderEntry={(entry, _index, isCompact) => {
         const heroName = getHeroDisplayName(entry.hero_id);
         const iconUrl = getHeroIconUrl(entry.hero_id);
         const matchesLabel = entry.matches.toLocaleString();
 
         if (mode === 'popularity') {
           const winrateLabel = formatPercent(entry.winrateValue);
-          const winrateRankLabel =
-            typeof entry.winrateRank === 'number' ? ` (Rank #${entry.winrateRank})` : '';
+          const winrateRankLabel = !isCompact && typeof entry.winrateRank === 'number'
+            ? ` (Rank #${entry.winrateRank})`
+            : '';
 
           return (
             <>
-              <div className="flex items-center gap-3">
+              <div className="flex min-w-0 items-center gap-3">
                 <span className="text-[rgb(var(--text-rgb)/0.45)]">#{entry.rank}</span>
                 {iconUrl ? (
                   <img
@@ -114,8 +119,8 @@ export function HeroLeaderboardPanel({
                     {heroName.slice(0, 1)}
                   </span>
                 )}
-                <div className="flex flex-col text-left">
-                  <span className="font-semibold text-[var(--text-strong)]">{heroName}</span>
+                <div className="flex min-w-0 flex-col text-left">
+                  <span className="truncate font-semibold text-[var(--text-strong)]">{heroName}</span>
                   {winrateLabel ? (
                     <span className="text-[10px] uppercase tracking-[0.12em] text-[rgb(var(--text-rgb)/0.5)]">
                       Winrate {winrateLabel}
@@ -128,7 +133,7 @@ export function HeroLeaderboardPanel({
                   )}
                 </div>
               </div>
-              <span className="font-semibold text-[var(--accent)]">Matches {matchesLabel}</span>
+              <span className="shrink-0 font-semibold text-[var(--accent)]">{isCompact ? `${matchesLabel} matches` : `Matches ${matchesLabel}`}</span>
             </>
           );
         }
@@ -137,7 +142,7 @@ export function HeroLeaderboardPanel({
 
         return (
           <>
-            <div className="flex items-center gap-3">
+            <div className="flex min-w-0 items-center gap-3">
               <span className="text-[rgb(var(--text-rgb)/0.45)]">#{entry.rank}</span>
               {iconUrl ? (
                 <img
@@ -152,14 +157,14 @@ export function HeroLeaderboardPanel({
                   {heroName.slice(0, 1)}
                 </span>
               )}
-              <div className="flex flex-col text-left">
-                <span className="font-semibold text-[var(--text-strong)]">{heroName}</span>
+              <div className="flex min-w-0 flex-col text-left">
+                <span className="truncate font-semibold text-[var(--text-strong)]">{heroName}</span>
                 <span className="text-[10px] uppercase tracking-[0.12em] text-[rgb(var(--text-rgb)/0.5)]">
                   Matches {matchesLabel}
                 </span>
               </div>
             </div>
-            <span className="font-semibold text-[var(--accent)]">{winRatePercent}</span>
+            <span className="shrink-0 font-semibold text-[var(--accent)]">{winRatePercent}</span>
           </>
         );
       }}

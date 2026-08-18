@@ -2,21 +2,24 @@ import type { ReactNode } from 'react';
 import { Panel } from '@/ui/panel';
 import type { LeaderboardEntry } from '@/lib/api/schema';
 import { getHeroDisplayName, getHeroIconUrl } from '@/lib/data/heroes';
+import type { WidgetRenderSize } from '@/features/widgets/widget-types';
 
 type NaLeaderboardPanelProps = {
   entries: readonly LeaderboardEntry[];
   headerActions?: ReactNode;
+  size: WidgetRenderSize;
 };
 
-export function NaLeaderboardPanel({ entries, headerActions }: NaLeaderboardPanelProps) {
+export function NaLeaderboardPanel({ entries, headerActions, size }: NaLeaderboardPanelProps) {
+  const isCompact = size.width === null || size.width < 420;
   return (
     <Panel className="flex h-full flex-col gap-[4px] !p-0">
       <div className="panel-header">
-        <h2 className="min-w-0 flex-1 px-4 py-3 text-sm font-semibold uppercase tracking-[0.2em] text-[var(--text-strong)]">
+        <h2 className="min-w-0 flex-1 truncate px-4 py-3 text-sm font-semibold uppercase tracking-[0.2em] text-[var(--text-strong)]">
           NA leaderboard highlight
         </h2>
         <div className="panel-header-actions">
-          <span className="panel-header-meta">Top {entries.length || 0}</span>
+          {isCompact ? null : <span className="panel-header-meta">Top {entries.length || 0}</span>}
           {headerActions}
         </div>
       </div>
@@ -24,14 +27,14 @@ export function NaLeaderboardPanel({ entries, headerActions }: NaLeaderboardPane
         {entries.map((entry) => (
           <li
             key={`${entry.rank}-${entry.account_name}`}
-            className="flex items-center justify-between border-b border-[rgb(var(--text-rgb)/0.12)] px-4 py-3 text-xs text-[rgb(var(--text-rgb)/0.7)]"
+            className="flex min-w-0 items-center justify-between gap-2 border-b border-[rgb(var(--text-rgb)/0.12)] px-4 py-3 text-xs text-[rgb(var(--text-rgb)/0.7)]"
           >
-            <div className="flex items-center gap-3">
-              <span className="text-[rgb(var(--text-rgb)/0.45)]">#{entry.rank}</span>
-              <span className="font-semibold text-[var(--text-strong)]">{entry.account_name}</span>
+            <div className="flex min-w-0 items-center gap-3">
+              <span className="shrink-0 text-[rgb(var(--text-rgb)/0.45)]">#{entry.rank}</span>
+              <span className="min-w-0 truncate font-semibold text-[var(--text-strong)]">{entry.account_name}</span>
             </div>
             <div className="flex items-center gap-2">
-              {entry.top_hero_ids.slice(0, 3).map((heroId) => {
+              {entry.top_hero_ids.slice(0, isCompact ? 1 : 3).map((heroId) => {
                 const iconUrl = getHeroIconUrl(heroId);
                 const heroName = getHeroDisplayName(heroId);
 

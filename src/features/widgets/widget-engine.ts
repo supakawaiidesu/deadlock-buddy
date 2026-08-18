@@ -1,6 +1,8 @@
-export const GRID_COLUMNS = 3;
+export const GRID_COLUMNS = 12;
 export const GRID_ROW_HEIGHT = 20;
 export const GRID_GAP = 4;
+export const MIN_WIDGET_WIDTH = 1;
+export const MIN_WIDGET_HEIGHT = 3;
 
 const GRID_ROW_PITCH = GRID_ROW_HEIGHT + GRID_GAP;
 
@@ -26,11 +28,9 @@ export function rectsCollide(a: GridRect, b: GridRect): boolean {
   );
 }
 
-export function clampRect(rect: GridRect, minW: number, minH: number): GridRect {
-  const minWidth = Math.floor(minW);
-  const minHeight = Math.floor(minH);
-  const w = Math.max(minWidth, Math.min(GRID_COLUMNS, Math.floor(rect.w)));
-  const h = Math.max(minHeight, Math.floor(rect.h));
+export function clampRect(rect: GridRect): GridRect {
+  const w = Math.max(MIN_WIDGET_WIDTH, Math.min(GRID_COLUMNS, Math.floor(rect.w)));
+  const h = Math.max(MIN_WIDGET_HEIGHT, Math.floor(rect.h));
   const x = Math.max(0, Math.min(GRID_COLUMNS - w, Math.floor(rect.x)));
   const y = Math.max(0, Math.floor(rect.y));
 
@@ -123,15 +123,13 @@ export function moveItem<T extends GridItem>(
   items: readonly T[],
   id: string,
   to: { x: number; y: number },
-  minW: number,
-  minH: number,
 ): T[] {
   const index = items.findIndex((item) => item.id === id);
   if (index === -1) return [...items];
 
   const next = items.map((item, itemIndex) => {
     if (itemIndex !== index) return item;
-    const moved = { ...item, ...clampRect({ ...item, ...to }, minW, minH) } as T;
+    const moved = { ...item, ...clampRect({ ...item, ...to }) } as T;
     return moved.x === item.x && moved.y === item.y ? item : moved;
   });
 
@@ -142,11 +140,9 @@ export function moveItem<T extends GridItem>(
 function clampResizeRect(
   item: GridItem,
   size: { w: number; h: number },
-  minW: number,
-  minH: number,
 ): GridRect {
-  const clamped = clampRect({ ...item, ...size }, minW, minH);
-  const x = Math.max(0, Math.min(GRID_COLUMNS - minW, Math.floor(item.x)));
+  const clamped = clampRect({ ...item, ...size });
+  const x = Math.max(0, Math.min(GRID_COLUMNS - MIN_WIDGET_WIDTH, Math.floor(item.x)));
   return {
     ...clamped,
     x,
@@ -158,15 +154,13 @@ export function resizeItem<T extends GridItem>(
   items: readonly T[],
   id: string,
   size: { w: number; h: number },
-  minW: number,
-  minH: number,
 ): T[] {
   const index = items.findIndex((item) => item.id === id);
   if (index === -1) return [...items];
 
   const next = items.map((item, itemIndex) => {
     if (itemIndex !== index) return item;
-    const resized = { ...item, ...clampResizeRect(item, size, minW, minH) } as T;
+    const resized = { ...item, ...clampResizeRect(item, size) } as T;
     return resized.x === item.x &&
       resized.y === item.y &&
       resized.w === item.w &&

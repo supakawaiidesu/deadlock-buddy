@@ -3,10 +3,15 @@ import type {
   DashboardPanelInstance,
   DashboardPanelType,
 } from '@/features/dashboard/dashboard-types';
-import { sanitizeWidgetLayout } from '@/features/widgets/widget-layout';
+import {
+  migrateThreeColumnWidgetLayout,
+  quantizeTwelveColumnWidgetLayoutForShare,
+  sanitizeWidgetLayout,
+} from '@/features/widgets/widget-layout';
 import type { ShareDocumentV3, ShareProfile } from '@/lib/api/schema';
 
-export const CUSTOM_PAGES_STORAGE_KEY = 'deadlock-buddy-custom-pages.v1';
+export const CUSTOM_PAGES_STORAGE_KEY = 'deadlock-buddy-custom-pages.v2';
+export const LEGACY_CUSTOM_PAGES_STORAGE_KEY = 'deadlock-buddy-custom-pages.v1';
 export const MAX_CUSTOM_PAGE_TITLE_LENGTH = 40;
 
 const MAX_CUSTOM_PAGE_WIDGETS = 64;
@@ -25,9 +30,14 @@ export type CustomPageTab = {
 };
 
 export type CustomPageStore = {
-  version: 1;
+  version: 2;
   nextTabNumber: number;
   tabs: CustomPageTab[];
+};
+
+export type CustomPageStoreHydration = {
+  store: CustomPageStore;
+  migrated: boolean;
 };
 
 
@@ -47,7 +57,7 @@ export type CustomPageResolution =
   | { status: 'invalid' };
 
 export function createEmptyCustomPageStore(): CustomPageStore {
-  return { version: 1, nextTabNumber: 1, tabs: [] };
+  return { version: 2, nextTabNumber: 1, tabs: [] };
 }
 
 function rebuildWidget(widget: DashboardPanelInstance): DashboardPanelInstance {
@@ -134,13 +144,11 @@ function nextAvailableTabNumber(seen: ReadonlySet<number>): number {
   return value;
 }
 
-export function sanitizeCustomPageStore(raw: unknown): CustomPageStore {
-  if (!raw || typeof raw !== 'object') return createEmptyCustomPageStore();
+function parseCustomPageStore(raw: unknown, version: 1 | 2): CustomPageStore | null {
+  if (!raw || typeof raw !== 'object') return null;
 
   const candidate = raw as Record<string, unknown>;
-  if (candidate.version !== 1 || !Array.isArray(candidate.tabs)) {
-    return createEmptyCustomPageStore();
-  }
+  if (candidate.version !== version || !Array.isArray(candidate.tabs)) return null;
 
   const tabs: CustomPageTab[] = [];
   const seenIds = new Set<string>();
@@ -160,7 +168,9 @@ export function sanitizeCustomPageStore(raw: unknown): CustomPageStore {
 
     const title = tab.title.trim();
     if (!title || Array.from(title).length > MAX_CUSTOM_PAGE_TITLE_LENGTH) continue;
-    const widgets = sanitizeStoredWidgets(tab.widgets);
+    const widgets = sanitizeStoredWidgets(
+      version === 1 ? migrateThreeColumnWidgetLayout(tab.widgets) : tab.widgets,
+    );
     if (widgets === null) continue;
 
     const storedTabNumber =
@@ -197,19 +207,32 @@ export function sanitizeCustomPageStore(raw: unknown): CustomPageStore {
   );
   const nextTabNumber = Math.max(storedNextTabNumber, highestTabNumber + 1);
 
-  return { version: 1, nextTabNumber, tabs };
+  return { version: 2, nextTabNumber, tabs };
+}
+
+export function sanitizeCustomPageStore(raw: unknown): CustomPageStore {
+  return parseCustomPageStore(raw, 2) ?? createEmptyCustomPageStore();
 }
 
 export function readCustomPageStore(
   storage: Pick<Storage, 'getItem'>,
-): CustomPageStore {
-  try {
-    const stored = storage.getItem(CUSTOM_PAGES_STORAGE_KEY);
-    if (stored === null) return createEmptyCustomPageStore();
-    return sanitizeCustomPageStore(JSON.parse(stored));
-  } catch {
-    return createEmptyCustomPageStore();
-  }
+): CustomPageStoreHydration {
+  const read = (key: string): unknown | undefined => {
+    try {
+      const stored = storage.getItem(key);
+      return stored === null ? undefined : JSON.parse(stored) as unknown;
+    } catch {
+      return undefined;
+    }
+  };
+
+  const current = parseCustomPageStore(read(CUSTOM_PAGES_STORAGE_KEY), 2);
+  if (current) return { store: current, migrated: false };
+
+  const legacy = parseCustomPageStore(read(LEGACY_CUSTOM_PAGES_STORAGE_KEY), 1);
+  if (legacy) return { store: legacy, migrated: true };
+
+  return { store: createEmptyCustomPageStore(), migrated: false };
 }
 
 export function writeCustomPageStore(
@@ -271,7 +294,7 @@ export function createCustomPage(
   };
   return {
     store: {
-      version: 1,
+      version: 2,
       nextTabNumber: tabNumber + 1,
       tabs: [...store.tabs.map(clonePage), page],
     },
@@ -289,12 +312,14 @@ export function importSharedCustomPages(
       id: createCustomPageId(),
       tabNumber,
       title: normalizeCustomPageTitle(sharedPage.title, `Tab ${tabNumber}`),
-      widgets: normalizeInputWidgets(sharedPage.widgets),
+      widgets: normalizeInputWidgets(
+        migrateThreeColumnWidgetLayout(sharedPage.widgets) as DashboardPanelInstance[],
+      ),
     };
   });
   return {
     store: {
-      version: 1,
+      version: 2,
       nextTabNumber: store.nextTabNumber + pages.length,
       tabs: [...store.tabs.map(clonePage), ...pages],
     },
@@ -312,7 +337,9 @@ export function buildCustomPageShareDocument(
       version: 3,
       pages: pages.map((page) => ({
         title: page.title,
-        widgets: page.widgets.map((widget) => widget.type === 'hero-winrate-over-time'
+        widgets: (quantizeTwelveColumnWidgetLayoutForShare(
+          page.widgets,
+        ) as DashboardPanelInstance[]).map((widget) => widget.type === 'hero-winrate-over-time'
           ? {
               id: widget.id,
               type: widget.type,
@@ -344,7 +371,7 @@ export function renameCustomPage(
   title: string,
 ): CustomPageStore {
   return {
-    version: 1,
+    version: 2,
     nextTabNumber: store.nextTabNumber,
     tabs: store.tabs.map((tab) =>
       tab.id === pageId
@@ -361,7 +388,7 @@ export function updateCustomPageLayout(
 ): CustomPageStore {
   const nextWidgets = normalizeInputWidgets(widgets);
   return {
-    version: 1,
+    version: 2,
     nextTabNumber: store.nextTabNumber,
     tabs: store.tabs.map((tab) =>
       tab.id === pageId ? { ...clonePage(tab), widgets: nextWidgets } : clonePage(tab),
@@ -374,7 +401,7 @@ export function removeCustomPage(
   pageId: string,
 ): CustomPageStore {
   return {
-    version: 1,
+    version: 2,
     nextTabNumber: store.nextTabNumber,
     tabs: store.tabs.filter((tab) => tab.id !== pageId).map(clonePage),
   };

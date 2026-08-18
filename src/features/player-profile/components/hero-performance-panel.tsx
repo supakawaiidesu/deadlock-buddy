@@ -8,13 +8,15 @@ import {
   WidgetMessage,
   WidgetPanel,
 } from '@/features/widgets/components/widget-panel';
+import type { WidgetRenderSize } from '@/features/widgets/widget-types';
 
 type Props = {
   accountId: number;
   headerActions?: ReactNode;
+  size: WidgetRenderSize;
 };
 
-export function HeroPerformancePanel({ accountId, headerActions }: Props) {
+export function HeroPerformancePanel({ accountId, headerActions, size }: Props) {
   const heroStatsQuery = usePlayerHeroStats(accountId);
   const heroRows = useMemo(
     () => (heroStatsQuery.data ? buildHeroRows(heroStatsQuery.data) : []),
@@ -26,6 +28,7 @@ export function HeroPerformancePanel({ accountId, headerActions }: Props) {
       title="Hero performance"
       meta={<span className="panel-header-meta">{heroRows.length} heroes</span>}
       headerActions={headerActions}
+      size={size}
     >
       {heroStatsQuery.isLoading ? (
         <Skeleton className="min-h-0 w-full flex-1" />

@@ -2,6 +2,7 @@ import {
   createContext,
   useCallback,
   useContext,
+  useEffect,
   useMemo,
   useRef,
   useState,
@@ -19,6 +20,7 @@ import {
   updateCustomPageLayout,
   writeCustomPageStore,
   type CustomPageStore,
+  type CustomPageStoreHydration,
   type CustomPageResolution,
   type CustomPageTab,
 } from '@/features/custom-pages/custom-page-state';
@@ -37,13 +39,23 @@ export type CustomPagesContextValue = {
 const CustomPagesContext = createContext<CustomPagesContextValue | null>(null);
 
 export function CustomPagesProvider({ children }: { children: ReactNode }) {
-  const [store, setStore] = useState(() => readCustomPageStore(window.localStorage));
+  const hydrationRef = useRef<CustomPageStoreHydration | null>(null);
+  const [store, setStore] = useState(() => {
+    const hydration = readCustomPageStore(window.localStorage);
+    hydrationRef.current = hydration;
+    return hydration.store;
+  });
   const storeRef = useRef<CustomPageStore>(store);
-
   const commitStore = useCallback((next: CustomPageStore) => {
     storeRef.current = next;
     writeCustomPageStore(window.localStorage, next);
     setStore(next);
+  }, []);
+
+  useEffect(() => {
+    if (!hydrationRef.current?.migrated) return;
+    hydrationRef.current = { ...hydrationRef.current, migrated: false };
+    writeCustomPageStore(window.localStorage, storeRef.current);
   }, []);
 
   const resolvePage = useCallback(

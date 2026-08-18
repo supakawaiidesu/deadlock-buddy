@@ -16,6 +16,8 @@ import {
 } from '@/lib/utils/format';
 import { WidgetPanel } from '@/features/widgets/components/widget-panel';
 import { Skeleton } from '@/ui/skeleton';
+import type { WidgetRenderSize } from '@/features/widgets/widget-types';
+import { getWidgetWidthMode, type WidgetWidthMode } from '@/features/widgets/widget-responsive';
 import type {
   MatchHistoryMetricTone,
   MatchHistoryOutcome,
@@ -56,9 +58,9 @@ const METRIC_TONE_CLASSES: Record<MatchHistoryMetricTone, string> = {
 type Props = {
   accountId: number;
   headerActions?: ReactNode;
+  size: WidgetRenderSize;
 };
-
-export function MatchHistoryPanel({ accountId, headerActions }: Props) {
+export function MatchHistoryPanel({ accountId, headerActions, size }: Props) {
   const feed = usePlayerMatchHistoryFeed(accountId);
   const accountIds = useMemo(
     () =>
@@ -80,6 +82,7 @@ export function MatchHistoryPanel({ accountId, headerActions }: Props) {
   const canRetryInitialDetails = feed.metadataQuery.isError && metadataPageCount === 0;
   const showLoadAction = feed.hasMore || feed.metadataQuery.isError;
   const remainingMatches = Math.max(feed.matches.length - feed.visibleMatches.length, 0);
+  const widthMode = getWidgetWidthMode(size.width, 640, 1000);
 
   function handleLoadAction() {
     if (canRetryInitialDetails) {
@@ -95,59 +98,67 @@ export function MatchHistoryPanel({ accountId, headerActions }: Props) {
       title="Match history"
       meta={<span className="panel-header-meta">{rows.length} matches</span>}
       headerActions={headerActions}
+      size={size}
     >
-      {feed.isLoading ? (
-        <div className="flex min-h-0 flex-1 flex-col divide-y divide-[var(--surface-border-muted)] overflow-y-auto scroll-quiet">
-          {[0, 1, 2].map((index) => (
-            <MatchHistoryRowSkeleton key={index} />
-          ))}
-        </div>
-      ) : feed.historyQuery.isError ? (
-        <div className="px-4 py-8 text-center text-xs text-[rgb(var(--text-rgb)/0.6)]">
-          Match history is unavailable right now. Try again later.
-        </div>
-      ) : feed.matches.length === 0 ? (
-        <div className="px-4 py-8 text-center text-xs text-[rgb(var(--text-rgb)/0.6)]">
-          No matches found for this player.
-        </div>
-      ) : (
-        <>
-          {feed.metadataQuery.isError ? (
-            <div className="border-b border-[var(--surface-border-muted)] px-4 py-2 text-[10px] uppercase tracking-[0.14em] text-[rgb(var(--text-rgb)/0.55)]">
-              Some enriched match details are unavailable. Basic history remains visible.
-            </div>
-          ) : null}
-          <div className="flex min-h-0 min-w-0 flex-1 flex-col divide-y divide-[var(--surface-border-muted)] overflow-y-auto scroll-quiet">
-            {rows.map((row) => (
-              <MatchHistoryRowView key={row.matchId} row={row} />
+      <div className="min-h-0 min-w-0 flex-1 overflow-y-auto scroll-quiet">
+        {feed.isLoading ? (
+          <div className="flex min-h-0 flex-1 flex-col divide-y divide-[var(--surface-border-muted)]">
+            {[0, 1, 2].map((index) => (
+              <MatchHistoryRowSkeleton key={index} widthMode={widthMode} />
             ))}
           </div>
-          {showLoadAction ? (
-            <button
-              type="button"
-              onClick={handleLoadAction}
-              disabled={feed.metadataQuery.isFetchingNextPage || feed.metadataQuery.isLoading}
-              className="flex min-h-12 w-full items-center justify-center gap-2 border-t border-[var(--surface-border-muted)] px-4 py-3 text-[10px] font-semibold uppercase tracking-[0.2em] text-[rgb(var(--text-rgb)/0.65)] transition hover:bg-[rgb(var(--text-rgb)/0.05)] hover:text-[var(--text-strong)] focus-visible:outline-2 focus-visible:outline-[var(--accent)] disabled:cursor-wait disabled:opacity-60"
-            >
-              {feed.metadataQuery.isFetchingNextPage || feed.metadataQuery.isLoading ? (
-                <LoaderCircle className="h-4 w-4 animate-spin" aria-hidden="true" />
-              ) : null}
-              <span>
-                {canRetryInitialDetails
-                  ? 'Retry match details'
-                  : `Load ${Math.min(MATCH_METADATA_PAGE_SIZE, remainingMatches)} more matches`}
-              </span>
-            </button>
-          ) : null}
-        </>
-      )}
+        ) : feed.historyQuery.isError ? (
+          <div className="px-4 py-8 text-center text-xs text-[rgb(var(--text-rgb)/0.6)]">
+            Match history is unavailable right now. Try again later.
+          </div>
+        ) : feed.matches.length === 0 ? (
+          <div className="px-4 py-8 text-center text-xs text-[rgb(var(--text-rgb)/0.6)]">
+            No matches found for this player.
+          </div>
+        ) : (
+          <>
+            {feed.metadataQuery.isError ? (
+              <div className="border-b border-[var(--surface-border-muted)] px-4 py-2 text-[10px] uppercase tracking-[0.14em] text-[rgb(var(--text-rgb)/0.55)]">
+                Some enriched match details are unavailable. Basic history remains visible.
+              </div>
+            ) : null}
+            <div className="flex min-w-0 flex-col divide-y divide-[var(--surface-border-muted)]">
+              {rows.map((row) => (
+                <MatchHistoryRowView key={row.matchId} row={row} widthMode={widthMode} />
+              ))}
+            </div>
+            {showLoadAction ? (
+              <button
+                type="button"
+                onClick={handleLoadAction}
+                disabled={feed.metadataQuery.isFetchingNextPage || feed.metadataQuery.isLoading}
+                className="flex min-h-12 w-full items-center justify-center gap-2 border-t border-[var(--surface-border-muted)] px-4 py-3 text-[10px] font-semibold uppercase tracking-[0.2em] text-[rgb(var(--text-rgb)/0.65)] transition hover:bg-[rgb(var(--text-rgb)/0.05)] hover:text-[var(--text-strong)] focus-visible:outline-2 focus-visible:outline-[var(--accent)] disabled:cursor-wait disabled:opacity-60"
+              >
+                {feed.metadataQuery.isFetchingNextPage || feed.metadataQuery.isLoading ? (
+                  <LoaderCircle className="h-4 w-4 animate-spin" aria-hidden="true" />
+                ) : null}
+                <span>
+                  {canRetryInitialDetails
+                    ? 'Retry match details'
+                    : `Load ${Math.min(MATCH_METADATA_PAGE_SIZE, remainingMatches)} more matches`}
+                </span>
+              </button>
+            ) : null}
+          </>
+        )}
+      </div>
     </WidgetPanel>
   );
 }
 
-function MatchHistoryRowSkeleton() {
+function MatchHistoryRowSkeleton({ widthMode }: { widthMode: WidgetWidthMode }) {
   return (
-    <div className="grid min-w-0 grid-cols-1 gap-4 px-3 py-4 md:grid-cols-[minmax(180px,0.85fr)_minmax(250px,1.2fr)] xl:grid-cols-[minmax(180px,0.9fr)_minmax(260px,1.2fr)_minmax(210px,0.9fr)]">
+    <div className={clsx(
+      'grid min-w-0 gap-4 px-3 py-4',
+      widthMode === 'compact' && 'grid-cols-1',
+      widthMode === 'standard' && 'grid-cols-[48px_minmax(0,1fr)_minmax(190px,auto)]',
+      widthMode === 'wide' && 'grid-cols-[48px_minmax(360px,1.2fr)_minmax(190px,0.8fr)_minmax(250px,1.1fr)]',
+    )}>
       <div className="flex gap-3">
         <Skeleton className="h-14 w-14 shrink-0" />
         <div className="flex min-w-0 flex-1 flex-col gap-2">
@@ -166,7 +177,7 @@ function MatchHistoryRowSkeleton() {
   );
 }
 
-function MatchHistoryRowView({ row }: { row: MatchHistoryRow }) {
+function MatchHistoryRowView({ row, widthMode }: { row: MatchHistoryRow; widthMode: WidgetWidthMode }) {
   const heroName = row.heroId === null ? 'Unknown hero' : getHeroDisplayName(row.heroId);
   const heroIconUrl = row.heroId === null ? null : getHeroIconUrl(row.heroId);
   const dateLabel =
@@ -190,7 +201,12 @@ function MatchHistoryRowView({ row }: { row: MatchHistoryRow }) {
         <span className="shrink-0 text-[rgb(var(--text-rgb)/0.38)]">#{row.matchId}</span>
       </div>
 
-      <div className="grid min-w-0 grid-cols-[48px_minmax(0,1fr)] items-center gap-x-3 gap-y-2 px-3 py-2 lg:grid-cols-[48px_minmax(0,1.8fr)_minmax(190px,0.2fr)] 2xl:grid-cols-[48px_minmax(360px,1.2fr)_minmax(190px,0.8fr)_minmax(250px,1.1fr)]">
+      <div className={clsx(
+        'grid min-w-0 items-center gap-x-3 gap-y-2 px-3 py-2',
+        widthMode === 'compact' && 'grid-cols-[48px_minmax(0,1fr)]',
+        widthMode === 'standard' && 'grid-cols-[48px_minmax(0,1fr)_minmax(190px,auto)]',
+        widthMode === 'wide' && 'grid-cols-[48px_minmax(360px,1.2fr)_minmax(190px,0.8fr)_minmax(250px,1.1fr)]',
+      )}>
         <div
           className="flex h-12 w-12 shrink-0 items-center justify-center bg-[rgb(var(--neutral-rgb)/0.08)]"
           role="img"
@@ -209,7 +225,7 @@ function MatchHistoryRowView({ row }: { row: MatchHistoryRow }) {
           )}
         </div>
 
-        <div className="grid min-w-0 grid-cols-3 gap-x-3 xl:grid-cols-[minmax(0,1fr)_minmax(160px,auto)_minmax(0,1fr)]">
+        <div className="grid min-w-0 grid-cols-3 gap-x-3">
           <Metric
             ariaLabel="Kills, deaths, and assists"
             value={
@@ -236,16 +252,21 @@ function MatchHistoryRowView({ row }: { row: MatchHistoryRow }) {
             ]}
           />
           <Metric
-            className="xl:text-right"
+            className="text-right"
             ariaLabel="Kill participation and headshot rate"
             value={`${formatPercent(row.stats.killParticipation)} KP`}
             detail={`${formatPercent(row.stats.headshotRate)} headshots`}
           />
         </div>
 
-        <FinalBuild itemIds={row.finalBuildItemIds} />
+        <FinalBuild itemIds={row.finalBuildItemIds} widthMode={widthMode} />
 
-        <div className="col-span-2 flex min-h-[5.75rem] min-w-0 self-stretch items-center border-t border-[var(--surface-border-muted)] -mx-3 px-3 py-2 lg:col-span-3 2xl:col-span-1 2xl:mx-0 2xl:-my-2 2xl:border-l 2xl:border-t-0 2xl:px-0 2xl:pl-3">
+        <div className={clsx(
+          'flex min-h-[5.75rem] min-w-0 self-stretch items-center border-[var(--surface-border-muted)] px-3 py-2',
+          widthMode === 'compact' && 'col-span-2 -mx-3 border-t',
+          widthMode === 'standard' && 'col-span-3 -mx-3 border-t',
+          widthMode === 'wide' && '-my-2 border-l pl-3',
+        )}>
           {row.teams.length > 0 ? (
             <div className="grid w-full min-w-0 grid-cols-2 items-center gap-x-1">
               {row.teams.slice(0, 2).map((team) => (
@@ -291,11 +312,19 @@ function Metric({
   );
 }
 
-function FinalBuild({ itemIds }: { itemIds: readonly number[] }) {
-  const visibleItemIds = itemIds.slice(-12);
-
+function FinalBuild({
+  itemIds,
+  widthMode,
+}: {
+  itemIds: readonly number[];
+  widthMode: WidgetWidthMode;
+}) {
+  const visibleItemIds = itemIds.slice(-6);
   return (
-    <div className="col-span-2 flex min-w-0 items-center justify-center lg:col-span-1 xl:-translate-x-2 xl:justify-end">
+    <div className={clsx(
+      'flex min-w-0 items-center',
+      widthMode === 'compact' ? 'col-span-2 justify-center' : 'justify-end',
+    )}>
       <span className="sr-only">Final build</span>
       {visibleItemIds.length > 0 ? (
         <div className="grid grid-cols-6 gap-1" aria-label={`${visibleItemIds.length} final items`}>

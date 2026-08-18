@@ -1,5 +1,11 @@
 import type { ReactNode } from 'react';
 import type { GridRect } from '@/features/widgets/widget-engine';
+export type WidgetGridWidth = 1 | 2 | 3 | 4 | 5 | 6 | 7 | 8 | 9 | 10 | 11 | 12;
+
+export type WidgetRenderSize = Readonly<{
+  width: number | null;
+  height: number | null;
+}>;
 
 export type WidgetInstance<TType extends string> = GridRect & {
   id: string;
@@ -14,6 +20,7 @@ export type WidgetRenderProps<
   instance: TInstance;
   data: TData | null;
   onInstanceChange: (next: TInstance) => void;
+  size: WidgetRenderSize;
   headerActions?: ReactNode;
 };
 
@@ -26,10 +33,8 @@ export type WidgetDefinition<
   title: string;
   preview: ReactNode;
   description?: string;
-  defaultW: 1 | 2 | 3;
+  defaultW: WidgetGridWidth;
   defaultH: number;
-  minW: 1 | 2 | 3;
-  minH: number;
   createInstance: (id: string, rect: GridRect) => TInstance;
   sanitizeInstance: (raw: unknown, rect: GridRect) => TInstance;
   renderWhileLoading?: boolean;

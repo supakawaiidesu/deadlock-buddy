@@ -109,13 +109,14 @@ export const dashboardPanelRegistry: DashboardPanelRegistry = {
       />
     ),
     ...withGeometryLifecycle('telemetry-snapshot'),
-    render: ({ data, headerActions }) => data ? (
+    render: ({ data, headerActions, size }) => data ? (
       <TelemetrySnapshotPanel
         leaderboardSampleSize={data.leaderboardEntries.length}
         heroCount={data.heroCount}
         highestBadge={data.highestBadge}
         heroWinrateEntries={data.heroWinrateEntries}
         headerActions={headerActions}
+        size={size}
       />
     ) : null,
   },
@@ -133,11 +134,12 @@ export const dashboardPanelRegistry: DashboardPanelRegistry = {
       />
     ),
     ...withGeometryLifecycle('rank-distribution'),
-    render: ({ data, headerActions }) => data ? (
+    render: ({ data, headerActions, size }) => data ? (
       <RankDistributionPanel
         entries={data.rankDistributionEntries}
         minUnixTimestamp={data.rankDistributionMinUnixTimestamp}
         headerActions={headerActions}
+        size={size}
       />
     ) : null,
   },
@@ -154,8 +156,8 @@ export const dashboardPanelRegistry: DashboardPanelRegistry = {
       />
     ),
     ...withGeometryLifecycle('na-leaderboard'),
-    render: ({ data, headerActions }) => data ? (
-      <NaLeaderboardPanel entries={data.leaderboardEntries} headerActions={headerActions} />
+    render: ({ data, headerActions, size }) => data ? (
+      <NaLeaderboardPanel entries={data.leaderboardEntries} headerActions={headerActions} size={size} />
     ) : null,
   },
   'hero-popularity': {
@@ -171,7 +173,7 @@ export const dashboardPanelRegistry: DashboardPanelRegistry = {
       />
     ),
     ...withGeometryLifecycle('hero-popularity'),
-    render: ({ instance, data, headerActions }) => data ? (
+    render: ({ instance, data, headerActions, size }) => data ? (
       <HeroLeaderboardPanel
         title="Hero popularity ranking"
         panelKey={`hero-popularity-${instance.id}`}
@@ -179,6 +181,7 @@ export const dashboardPanelRegistry: DashboardPanelRegistry = {
         limit={50}
         initialEntries={data.heroPopularityEntries}
         headerActions={headerActions}
+        size={size}
       />
     ) : null,
   },
@@ -195,7 +198,7 @@ export const dashboardPanelRegistry: DashboardPanelRegistry = {
       />
     ),
     ...withGeometryLifecycle('hero-winrate'),
-    render: ({ instance, data, headerActions }) => data ? (
+    render: ({ instance, data, headerActions, size }) => data ? (
       <HeroLeaderboardPanel
         title="Hero winrate ranking"
         panelKey={`hero-winrate-${instance.id}`}
@@ -203,6 +206,7 @@ export const dashboardPanelRegistry: DashboardPanelRegistry = {
         limit={50}
         initialEntries={data.heroWinrateEntries}
         headerActions={headerActions}
+        size={size}
       />
     ) : null,
   },
@@ -221,13 +225,14 @@ export const dashboardPanelRegistry: DashboardPanelRegistry = {
     createInstance: createChartInstance,
     sanitizeInstance: sanitizeHeroWinrateOverTimeInstance,
     renderWhileLoading: true,
-    render: ({ instance, onInstanceChange, headerActions }) => {
+    render: ({ instance, onInstanceChange, headerActions, size }) => {
       if (instance.type !== 'hero-winrate-over-time') return null;
       return (
         <HeroWinrateOverTimePanel
           settings={instance.settings}
           onSettingsChange={(settings) => onInstanceChange({ ...instance, settings })}
           headerActions={headerActions}
+          size={size}
         />
       );
     },
@@ -245,7 +250,7 @@ export const dashboardPanelRegistry: DashboardPanelRegistry = {
       />
     ),
     ...withGeometryLifecycle('item-popularity'),
-    render: ({ instance, data, headerActions }) => data ? (
+    render: ({ instance, data, headerActions, size }) => data ? (
       <ItemLeaderboardPanel
         title="Item popularity ranking"
         panelKey={`item-popularity-${instance.id}`}
@@ -253,6 +258,7 @@ export const dashboardPanelRegistry: DashboardPanelRegistry = {
         limit={50}
         initialEntries={data.itemPopularityEntries}
         headerActions={headerActions}
+        size={size}
       />
     ) : null,
   },
@@ -269,7 +275,7 @@ export const dashboardPanelRegistry: DashboardPanelRegistry = {
       />
     ),
     ...withGeometryLifecycle('item-winrate'),
-    render: ({ instance, data, headerActions }) => data ? (
+    render: ({ instance, data, headerActions, size }) => data ? (
       <ItemLeaderboardPanel
         title="Item winrate ranking"
         panelKey={`item-winrate-${instance.id}`}
@@ -277,6 +283,7 @@ export const dashboardPanelRegistry: DashboardPanelRegistry = {
         limit={10}
         initialEntries={data.itemWinrateEntries}
         headerActions={headerActions}
+        size={size}
       />
     ) : null,
   },
@@ -293,19 +300,19 @@ export const dashboardPanelRegistry: DashboardPanelRegistry = {
       />
     ),
     ...withGeometryLifecycle('popular-layouts'),
-    render: ({ data, headerActions }) => data ? (
-      <PopularLayoutsPanel entries={data.popularShares} headerActions={headerActions} />
+    render: ({ data, headerActions, size }) => data ? (
+      <PopularLayoutsPanel entries={data.popularShares} headerActions={headerActions} size={size} />
     ) : null,
   },
 };
 
 export const defaultDashboardLayout: DashboardPanelInstance[] = [
-  { id: 'panel-telemetry', type: 'telemetry-snapshot', x: 0, y: 0, w: 1, h: 9 },
-  { id: 'panel-rank-distribution', type: 'rank-distribution', x: 1, y: 0, w: 2, h: 13 },
-  { id: 'panel-na-leaderboard', type: 'na-leaderboard', x: 0, y: 9, w: 1, h: 13 },
-  { id: 'panel-hero-popularity', type: 'hero-popularity', x: 1, y: 13, w: 1, h: 13 },
-  { id: 'panel-hero-winrate', type: 'hero-winrate', x: 2, y: 13, w: 1, h: 13 },
-  { id: 'panel-item-popularity', type: 'item-popularity', x: 0, y: 22, w: 1, h: 13 },
-  { id: 'panel-item-winrate', type: 'item-winrate', x: 1, y: 26, w: 1, h: 13 },
-  { id: 'panel-popular-layouts', type: 'popular-layouts', x: 2, y: 26, w: 1, h: 13 },
+  { id: 'panel-telemetry', type: 'telemetry-snapshot', x: 0, y: 0, w: 4, h: 9 },
+  { id: 'panel-rank-distribution', type: 'rank-distribution', x: 4, y: 0, w: 8, h: 13 },
+  { id: 'panel-na-leaderboard', type: 'na-leaderboard', x: 0, y: 9, w: 4, h: 13 },
+  { id: 'panel-hero-popularity', type: 'hero-popularity', x: 4, y: 13, w: 4, h: 13 },
+  { id: 'panel-hero-winrate', type: 'hero-winrate', x: 8, y: 13, w: 4, h: 13 },
+  { id: 'panel-item-popularity', type: 'item-popularity', x: 0, y: 22, w: 4, h: 13 },
+  { id: 'panel-item-winrate', type: 'item-winrate', x: 4, y: 26, w: 4, h: 13 },
+  { id: 'panel-popular-layouts', type: 'popular-layouts', x: 8, y: 26, w: 4, h: 13 },
 ];

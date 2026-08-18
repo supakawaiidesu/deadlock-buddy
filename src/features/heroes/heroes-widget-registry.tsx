@@ -22,17 +22,15 @@ export const heroesWidgetRegistry: HeroesWidgetRegistry = {
       />
     ),
     description: 'All active heroes ranked by win rate, pick rate, games, and players.',
-    defaultW: 3,
+    defaultW: 12,
     defaultH: 24,
-    minW: 2,
-    minH: 10,
     ...createGeometryWidgetLifecycle('overview'),
-    render: ({ data, headerActions }) => data ? (
-      <HeroOverviewPanel rows={data.rows} headerActions={headerActions} />
+    render: ({ data, headerActions, size }) => data ? (
+      <HeroOverviewPanel rows={data.rows} headerActions={headerActions} size={size} />
     ) : null,
   },
 };
 
 export const defaultHeroesWidgetLayout: HeroesWidgetInstance[] = [
-  { id: 'heroes-widget-overview', type: 'overview', x: 0, y: 0, w: 3, h: 24 },
+  { id: 'heroes-widget-overview', type: 'overview', x: 0, y: 0, w: 12, h: 24 },
 ];

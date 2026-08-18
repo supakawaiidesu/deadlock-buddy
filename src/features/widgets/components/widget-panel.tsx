@@ -2,11 +2,13 @@ import { useState, type ReactNode } from 'react';
 import { Filter } from 'lucide-react';
 import { clsx } from 'clsx';
 import { Panel } from '@/ui/panel';
+import type { WidgetRenderSize } from '@/features/widgets/widget-types';
 
 type WidgetPanelProps = {
   title: string;
   meta?: ReactNode;
   headerActions?: ReactNode;
+  size: WidgetRenderSize;
   className?: string;
   children: ReactNode;
 };
@@ -15,10 +17,12 @@ export function WidgetPanel({
   title,
   meta,
   headerActions,
+  size,
   className,
   children,
 }: WidgetPanelProps) {
   const [isOptionsOpen, setIsOptionsOpen] = useState(false);
+  const isCompact = size.width === null || size.width < 420;
 
   return (
     <Panel
@@ -28,8 +32,8 @@ export function WidgetPanel({
         <h2 className="min-w-0 flex-1 truncate px-4 py-3 text-sm font-semibold uppercase tracking-[0.2em] text-[var(--text-strong)]">
           {title}
         </h2>
-        <div className="panel-header-actions">
-          {meta}
+        <div className="panel-header-actions min-w-0">
+          {isCompact ? null : meta}
           <button
             type="button"
             onClick={() => setIsOptionsOpen((open) => !open)}
@@ -47,9 +51,9 @@ export function WidgetPanel({
         </div>
       </div>
 
-      <div className="relative flex min-h-0 min-w-0 flex-1 flex-col">
+      <div className="relative flex min-h-0 min-w-0 flex-1 flex-col overflow-hidden">
         {isOptionsOpen ? (
-          <div className="absolute inset-0 z-10 flex flex-col items-start gap-3 bg-[var(--overlay-soft-background)] p-4">
+          <div className="absolute inset-0 z-10 flex min-h-0 flex-col items-start gap-3 overflow-y-auto bg-[var(--overlay-soft-background)] p-4 scroll-quiet">
             <span className="text-[10px] uppercase tracking-[0.22em] text-[rgb(var(--text-rgb)/0.5)]">
               Widget options
             </span>
@@ -73,7 +77,7 @@ export function WidgetPanel({
 
 export function WidgetMessage({ children }: { children: ReactNode }) {
   return (
-    <div className="px-4 py-8 text-center text-xs text-[rgb(var(--text-rgb)/0.6)]">
+    <div className="min-h-0 overflow-y-auto px-4 py-8 text-center text-xs text-[rgb(var(--text-rgb)/0.6)] scroll-quiet">
       {children}
     </div>
   );

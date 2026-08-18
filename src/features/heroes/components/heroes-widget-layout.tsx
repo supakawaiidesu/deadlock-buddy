@@ -5,6 +5,10 @@ import {
 } from '@/features/heroes/heroes-widget-registry';
 import type { HeroesWidgetData } from '@/features/heroes/heroes-widget-types';
 import { WidgetGrid } from '@/features/widgets/components/widget-grid';
+import type { WidgetRenderSize } from '@/features/widgets/widget-types';
+
+const HEROES_STORAGE_KEY = 'deadlock-buddy-heroes-layout.v2';
+const LEGACY_HEROES_STORAGE_KEY = 'deadlock-buddy-heroes-layout.v1';
 
 type HeroesWidgetLayoutProps =
   | {
@@ -23,8 +27,9 @@ export function HeroesWidgetLayout(props: HeroesWidgetLayoutProps) {
         renderLoading: (
           _instance: (typeof defaultHeroesWidgetLayout)[number],
           headerActions: React.ReactNode,
+          size: WidgetRenderSize,
         ) => (
-          <HeroOverviewPanel rows={[]} isLoading headerActions={headerActions} />
+          <HeroOverviewPanel rows={[]} isLoading headerActions={headerActions} size={size} />
         ),
       }
     : { data: props.data };
@@ -33,7 +38,8 @@ export function HeroesWidgetLayout(props: HeroesWidgetLayoutProps) {
     <WidgetGrid
       registry={heroesWidgetRegistry}
       defaultLayout={defaultHeroesWidgetLayout}
-      storageKey="deadlock-buddy-heroes-layout.v1"
+      storageKey={HEROES_STORAGE_KEY}
+      legacyThreeColumnStorageKey={LEGACY_HEROES_STORAGE_KEY}
       emptyStateTitle="No widgets on the heroes page yet."
       useGridHeightOnMobile
       {...modeProps}

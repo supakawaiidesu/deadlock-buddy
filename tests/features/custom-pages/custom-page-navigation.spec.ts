@@ -13,14 +13,14 @@ const localPage: CustomPageTab = {
   id: 'page-1',
   tabNumber: 1,
   title: 'Local',
-  widgets: [{ id: 'local-widget', type: 'telemetry-snapshot', x: 0, y: 0, w: 1, h: 9 }],
+  widgets: [{ id: 'local-widget', type: 'telemetry-snapshot', x: 0, y: 0, w: 4, h: 9 }],
 };
-const store: CustomPageStore = { version: 1, nextTabNumber: 2, tabs: [localPage] };
+const store: CustomPageStore = { version: 2, nextTabNumber: 2, tabs: [localPage] };
 const selectedPages: CustomPageTab[] = [
   { id: 'page-3', tabNumber: 3, title: 'Third', widgets: [] },
   {
     id: 'page-1', tabNumber: 1, title: 'First',
-    widgets: [{ id: 'shared-widget', type: 'rank-distribution', x: 0, y: 0, w: 2, h: 10 }],
+    widgets: [{ id: 'shared-widget', type: 'rank-distribution', x: 0, y: 0, w: 8, h: 10 }],
   },
 ];
 const chartPage: CustomPageTab = {
@@ -28,7 +28,7 @@ const chartPage: CustomPageTab = {
   tabNumber: 4,
   title: 'History',
   widgets: [{
-    id: 'history', type: 'hero-winrate-over-time', x: 0, y: 0, w: 3, h: 18,
+    id: 'history', type: 'hero-winrate-over-time', x: 0, y: 0, w: 12, h: 18,
     settings: {
       heroIds: [1, 2], minUnixTimestamp: 1_700_000_000,
       minAverageBadge: 91, maxAverageBadge: 116,
@@ -52,13 +52,16 @@ describe('custom page navigation', () => {
     expect(buildCustomPageNavigation(1, false).replace).toBe(false);
   });
 
-  it('builds a v3 document in tab order and preserves chart settings', () => {
+  it('builds a quantized v3 document in tab order and preserves chart settings', () => {
     const pages = [...selectedPages, chartPage];
     expect(buildCustomPageShareDocument('Selected tabs', pages)).toEqual({
       name: 'Selected tabs',
       profile: {
         version: 3,
-        pages: pages.map(({ title, widgets }) => ({ title, widgets })),
+        pages: pages.map(({ title, widgets }) => ({
+          title,
+          widgets: widgets.map((widget) => ({ ...widget, x: widget.x / 4, w: widget.w / 4 })),
+        })),
       },
     });
   });

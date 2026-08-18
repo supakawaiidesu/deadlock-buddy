@@ -1,5 +1,5 @@
-import { useMemo, useRef, useState, type ReactNode } from 'react';
-import { CalendarDays, Check, ChevronDown, RotateCw } from 'lucide-react';
+import { useEffect, useMemo, useRef, useState, type ReactNode } from 'react';
+import { CalendarDays, Check, ChevronDown, Filter, RotateCw } from 'lucide-react';
 import type { HeroWinrateOverTimeSettings } from '@/features/dashboard/dashboard-types';
 import { useHeroWinrateTimeSeries } from '@/features/heroes/api/queries';
 import { HeroWinrateLightweightChart } from '@/features/heroes/components/hero-winrate-lightweight-chart';
@@ -7,11 +7,14 @@ import { buildHeroWinrateTimeline } from '@/features/heroes/lib/winrate-timeseri
 import { heroSummaries, getHeroDisplayName, getHeroIconUrl } from '@/lib/data/heroes';
 import { buildTierLabel, getRankBadgeImageUrl, RANK_TIERS } from '@/lib/data/ranks';
 import { Panel } from '@/ui/panel';
+import { getChartWidgetPresentation } from '@/features/widgets/widget-responsive';
+import type { WidgetRenderSize } from '@/features/widgets/widget-types';
 
 type HeroWinrateOverTimePanelProps = {
   settings: HeroWinrateOverTimeSettings;
   onSettingsChange: (next: HeroWinrateOverTimeSettings) => void;
   headerActions?: ReactNode;
+  size: WidgetRenderSize;
 };
 
 type TrackedHero = {
@@ -84,7 +87,7 @@ function ChartSkeleton() {
     <div
       role="status"
       aria-label="Loading hero win rate history"
-      className="flex h-full min-h-[180px] animate-pulse flex-col justify-end gap-5 px-4 pb-8"
+      className="flex h-full min-h-0 animate-pulse flex-col justify-end gap-5 px-4 pb-8"
     >
       {[58, 72, 46, 64].map((width, index) => (
         <div
@@ -101,11 +104,14 @@ export function HeroWinrateOverTimePanel({
   settings,
   onSettingsChange,
   headerActions,
+  size,
 }: HeroWinrateOverTimePanelProps) {
   const query = useHeroWinrateTimeSeries(settings);
   const options = useMemo(rankOptions, []);
   const rankMenuRef = useRef<HTMLDetailsElement>(null);
   const [focusedHeroId, setFocusedHeroId] = useState<number | null>(null);
+  const [isFilterOpen, setIsFilterOpen] = useState(false);
+  const presentation = getChartWidgetPresentation(size, 640, 236);
   const timeline = useMemo(
     () => buildHeroWinrateTimeline(query.data ?? []),
     [query.data],
@@ -129,6 +135,10 @@ export function HeroWinrateOverTimePanel({
     : getRankBadgeImageUrl({ badge: settings.minAverageBadge });
   const viewportResetKey = `${settings.minUnixTimestamp}:${settings.minAverageBadge}:${settings.maxAverageBadge}:${settings.heroIds.join(',')}`;
 
+  useEffect(() => {
+    if (presentation === 'chart') setIsFilterOpen(false);
+  }, [presentation]);
+
   const updateSettings = (patch: Partial<HeroWinrateOverTimeSettings>) => {
     onSettingsChange({ ...settings, ...patch });
   };
@@ -141,9 +151,14 @@ export function HeroWinrateOverTimePanel({
     if (settings.heroIds.length >= HERO_LIMIT) return;
     updateSettings({ heroIds: [...settings.heroIds, heroId] });
   };
-  return (
-    <Panel className="flex h-full min-w-0 flex-col gap-0 !p-0" aria-label="Hero win rate over time">
-      <div className="panel-header">
+  const renderFilterControls = (mode: 'strip' | 'overlay') => (
+    <div className={mode === 'strip'
+      ? 'contents'
+      : 'absolute inset-2 z-30 flex min-h-0 flex-col overflow-y-auto border border-[var(--surface-border-muted)] bg-[var(--overlay-background)] scroll-quiet'}>
+      <div className={mode === 'strip'
+        ? 'contents'
+        : 'grid min-w-0 grid-cols-1 divide-y divide-[var(--surface-border-muted)]'}>
+        <div className="contents">
         <details
           ref={rankMenuRef}
           className="group relative flex min-w-0 flex-1 border-r border-[var(--surface-border-muted)]"
@@ -304,51 +319,79 @@ export function HeroWinrateOverTimePanel({
             })}
           </div>
         </details>
+        </div>
+      </div>
+    </div>
+  );
+  return (
+    <Panel className="flex h-full min-w-0 flex-col gap-0 !p-0" aria-label="Hero win rate over time">
+      <div className="panel-header">
+        {presentation === 'chart' ? renderFilterControls('strip') : (
+          <h2 className="min-w-0 flex-1 truncate px-4 py-3 text-sm font-semibold uppercase tracking-[0.2em] text-[var(--text-strong)]">
+            Hero win rate over time
+          </h2>
+        )}
+        {presentation === 'chart' ? null : (
+          <button
+            type="button"
+            onClick={() => setIsFilterOpen((open) => !open)}
+            className={isFilterOpen ? 'panel-header-action bg-[var(--accent-muted)] text-[var(--accent)]' : 'panel-header-action'}
+            aria-label={isFilterOpen ? 'Close chart filters' : 'Open chart filters'}
+            title={isFilterOpen ? 'Close chart filters' : 'Open chart filters'}
+          >
+            <Filter className="h-4 w-4" aria-hidden="true" />
+          </button>
+        )}
         <div className="panel-header-actions">{headerActions}</div>
       </div>
 
-      <div className="relative min-h-0 flex-1">
-        <div
-          className="absolute right-12 top-3 z-20 flex flex-row-reverse items-center gap-1 border border-[rgb(var(--text-rgb)/0.12)] bg-[var(--overlay-soft-background)] p-1 shadow-sm shadow-[rgb(var(--shadow-rgb)/0.2)]"
-          aria-label="Tracked heroes"
-        >
-          {trackedHeroes.map((hero) => {
-            const isFocused = focusedHeroId === hero.heroId;
-            const isDimmed = focusedHeroId !== null && !isFocused;
-            return (
-              <button
-                key={hero.heroId}
-                type="button"
-                onMouseEnter={() => setFocusedHeroId(hero.heroId)}
-                onMouseLeave={() => setFocusedHeroId(null)}
-                onFocus={() => setFocusedHeroId(hero.heroId)}
-                onBlur={() => setFocusedHeroId(null)}
-                aria-label={`Focus ${hero.name}`}
-                title={hero.name}
-                className="relative h-6 w-6 shrink-0 overflow-hidden border transition-[filter,opacity,transform] duration-150 hover:scale-110 focus-visible:scale-110 focus-visible:outline-2 focus-visible:outline-[var(--accent)]"
-                style={{
-                  borderColor: hero.color,
-                  filter: isDimmed ? 'grayscale(1)' : 'none',
-                  opacity: isDimmed ? 0.35 : 1,
-                }}
-              >
-                {hero.iconUrl ? (
-                  <img src={hero.iconUrl} alt="" width={24} height={24} className="h-full w-full object-cover" />
-                ) : (
-                  <span className="flex h-full w-full items-center justify-center text-[9px] font-semibold text-[var(--text-strong)]">
-                    {hero.name.slice(0, 1)}
-                  </span>
-                )}
-              </button>
-            );
-          })}
-        </div>
+      <div className="relative min-h-0 flex-1 overflow-hidden">
+        {isFilterOpen && presentation !== 'chart' ? renderFilterControls('overlay') : null}
+        {presentation === 'summary' ? null : (
+          <div
+            className={presentation === 'compact-chart'
+              ? 'absolute right-2 top-2 z-20 flex max-w-[calc(100%-1rem)] flex-row-reverse flex-wrap items-center gap-1 border border-[rgb(var(--text-rgb)/0.12)] bg-[var(--overlay-soft-background)] p-1 shadow-sm shadow-[rgb(var(--shadow-rgb)/0.2)]'
+              : 'absolute right-12 top-3 z-20 flex flex-row-reverse items-center gap-1 border border-[rgb(var(--text-rgb)/0.12)] bg-[var(--overlay-soft-background)] p-1 shadow-sm shadow-[rgb(var(--shadow-rgb)/0.2)]'}
+            aria-label="Tracked heroes"
+          >
+            {trackedHeroes.map((hero) => {
+              const isFocused = focusedHeroId === hero.heroId;
+              const isDimmed = focusedHeroId !== null && !isFocused;
+              return (
+                <button
+                  key={hero.heroId}
+                  type="button"
+                  onMouseEnter={() => setFocusedHeroId(hero.heroId)}
+                  onMouseLeave={() => setFocusedHeroId(null)}
+                  onFocus={() => setFocusedHeroId(hero.heroId)}
+                  onBlur={() => setFocusedHeroId(null)}
+                  aria-label={`Focus ${hero.name}`}
+                  title={hero.name}
+                  className="relative h-6 w-6 shrink-0 overflow-hidden border transition-[filter,opacity,transform] duration-150 hover:scale-110 focus-visible:scale-110 focus-visible:outline-2 focus-visible:outline-[var(--accent)]"
+                  style={{
+                    borderColor: hero.color,
+                    filter: isDimmed ? 'grayscale(1)' : 'none',
+                    opacity: isDimmed ? 0.35 : 1,
+                  }}
+                >
+                  {hero.iconUrl ? (
+                    <img src={hero.iconUrl} alt="" width={24} height={24} className="h-full w-full object-cover" />
+                  ) : (
+                    <span className="flex h-full w-full items-center justify-center text-[9px] font-semibold text-[var(--text-strong)]">
+                      {hero.name.slice(0, 1)}
+                    </span>
+                  )}
+                </button>
+              );
+            })}
+          </div>
+        )}
         {query.isFetching && hasData ? (
           <div className="absolute inset-x-0 top-0 z-10 h-px animate-pulse bg-[var(--accent)]" role="status" aria-label="Refreshing win rate history" />
         ) : null}
-        {query.isPending ? <ChartSkeleton /> : null}
+        {query.isPending && !hasData ? <ChartSkeleton /> : null}
         {query.isError && !hasData ? (
-          <div className="flex h-full min-h-[180px] flex-col items-center justify-center gap-3 px-4 text-center">
+          <div className="flex h-full min-h-0 flex-col items-center justify-center gap-3 overflow-y-auto px-4 text-center scroll-quiet">
             <p className="text-xs text-[rgb(var(--text-rgb)/0.65)]">Couldn’t load win rate history.</p>
             <button
               type="button"
@@ -360,25 +403,33 @@ export function HeroWinrateOverTimePanel({
           </div>
         ) : null}
         {!query.isPending && !query.isError && !hasData ? (
-          <div className="flex h-full min-h-[180px] items-center justify-center px-6 text-center text-xs text-[rgb(var(--text-rgb)/0.6)]">
+          <div className="flex h-full min-h-0 items-center justify-center overflow-y-auto px-6 text-center text-xs text-[rgb(var(--text-rgb)/0.6)] scroll-quiet">
             No matches for these heroes in this period. Choose another date, rank, or hero.
           </div>
         ) : null}
         {hasData ? (
-          <div className="flex h-full min-h-[180px] flex-col">
+          <div className="flex h-full min-h-0 flex-col">
             {query.isError ? (
               <div className="shrink-0 border-b border-[var(--surface-border-muted)] px-3 py-1 text-[10px] uppercase tracking-[0.16em] text-[var(--danger)]">
                 Data may be stale
               </div>
             ) : null}
-            <div className="relative min-h-0 flex-1 pb-2 pl-2 pt-3">
-              <HeroWinrateLightweightChart
-                timeline={timeline}
-                heroes={trackedHeroes}
-                focusedHeroId={focusedHeroId}
-                viewportResetKey={viewportResetKey}
-              />
-            </div>
+            {presentation === 'summary' ? (
+              <div className="flex min-h-0 flex-1 flex-col items-center justify-center overflow-y-auto px-4 py-3 text-center text-xs text-[rgb(var(--text-rgb)/0.6)] scroll-quiet">
+                <span>{trackedHeroes.length} heroes across {timeline.length} days</span>
+                <span>Resize taller to view chart</span>
+              </div>
+            ) : (
+              <div className="relative min-h-0 flex-1 pb-2 pl-2 pt-3">
+                <HeroWinrateLightweightChart
+                  timeline={timeline}
+                  heroes={trackedHeroes}
+                  focusedHeroId={focusedHeroId}
+                  viewportResetKey={viewportResetKey}
+                  compact={presentation === 'compact-chart'}
+                />
+              </div>
+            )}
           </div>
         ) : null}
       </div>

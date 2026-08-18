@@ -11,6 +11,7 @@ import {
 import type { WidgetInstance, WidgetRegistry } from '@/features/widgets/widget-types';
 
 const STORAGE_KEY = 'widget-picker-spec-layout';
+const LEGACY_STORAGE_KEY = 'widget-picker-spec-layout-legacy';
 type TestWidgetType = 'a' | 'b';
 type TestWidgetInstance = WidgetInstance<TestWidgetType>;
 
@@ -22,8 +23,6 @@ const registry: WidgetRegistry<TestWidgetType, null, TestWidgetInstance> = {
     preview: <span>Alpha preview</span>,
     defaultW: 1,
     defaultH: 3,
-    minW: 1,
-    minH: 3,
     createInstance: (id, rect) => ({ id, type: 'a', ...rect }),
     sanitizeInstance: (raw, rect) => ({
       id: readId(raw),
@@ -39,8 +38,6 @@ const registry: WidgetRegistry<TestWidgetType, null, TestWidgetInstance> = {
     preview: <span>Beta preview</span>,
     defaultW: 1,
     defaultH: 3,
-    minW: 1,
-    minH: 3,
     createInstance: (id, rect) => ({ id, type: 'b', ...rect }),
     sanitizeInstance: (raw, rect) => ({
       id: readId(raw),
@@ -67,6 +64,7 @@ function TestGrid() {
       registry={registry}
       defaultLayout={defaultLayout}
       storageKey={STORAGE_KEY}
+      legacyThreeColumnStorageKey={LEGACY_STORAGE_KEY}
       emptyStateTitle="No widgets"
       data={null}
     />

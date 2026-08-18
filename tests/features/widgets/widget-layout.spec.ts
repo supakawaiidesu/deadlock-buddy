@@ -1,15 +1,23 @@
 import { describe, expect, it } from 'vitest';
-import { sanitizeWidgetLayout } from '@/features/widgets/widget-layout';
-import type { WidgetDefinition, WidgetInstance } from '@/features/widgets/widget-types';
+import {
+  migrateThreeColumnWidgetLayout,
+  resolveStoredWidgetLayout,
+  sanitizeWidgetLayout,
+} from '@/features/widgets/widget-layout';
+import type {
+  WidgetDefinition,
+  WidgetGridWidth,
+  WidgetInstance,
+} from '@/features/widgets/widget-types';
 
 const registry: Record<string, WidgetDefinition<string, unknown>> = {
-  a: definition('a', { defaultW: 1, defaultH: 6, minW: 1, minH: 6 }),
-  b: definition('b', { defaultW: 2, defaultH: 4, minW: 1, minH: 3 }),
+  a: definition('a', { defaultW: 4, defaultH: 6 }),
+  b: definition('b', { defaultW: 8, defaultH: 4 }),
 };
 
 function definition(
   type: string,
-  size: { defaultW: 1 | 2 | 3; defaultH: number; minW: 1 | 2 | 3; minH: number },
+  size: { defaultW: WidgetGridWidth; defaultH: number },
 ): WidgetDefinition<string, unknown> {
   return {
     type,
@@ -51,8 +59,8 @@ describe('widget layout sanitization', () => {
       ],
       registry,
     )).toEqual([
-      { id: 'x', type: 'a', x: 0, y: 0, w: 1, h: 6 },
-      { id: 'z', type: 'b', x: 0, y: 6, w: 2, h: 4 },
+      { id: 'x', type: 'a', x: 0, y: 0, w: 4, h: 6 },
+      { id: 'z', type: 'b', x: 0, y: 6, w: 8, h: 4 },
     ]);
   });
 
@@ -60,14 +68,20 @@ describe('widget layout sanitization', () => {
     expect(sanitizeWidgetLayout(
       [{ id: 7, type: 'a' }, null, 'a', { type: 'a' }, { id: 'ok', type: 'a' }],
       registry,
-    )).toEqual([{ id: 'ok', type: 'a', x: 0, y: 0, w: 1, h: 6 }]);
+    )).toEqual([{ id: 'ok', type: 'a', x: 0, y: 0, w: 4, h: 6 }]);
   });
 
-  it('clamps coordinates to the registry floor and grid', () => {
+  it('clamps coordinates to the mechanical floor and grid', () => {
     expect(sanitizeWidgetLayout(
-      [{ id: 'a', type: 'a', x: 9, y: 0, w: 1, h: 1 }],
+      [
+        { id: 'right', type: 'a', x: 11, y: 0, w: 1, h: 3 },
+        { id: 'floor', type: 'b', x: 0, y: 20, w: 0, h: 1 },
+      ],
       registry,
-    )).toEqual([{ id: 'a', type: 'a', x: 2, y: 0, w: 1, h: 6 }]);
+    )).toEqual([
+      { id: 'right', type: 'a', x: 11, y: 0, w: 1, h: 3 },
+      { id: 'floor', type: 'b', x: 0, y: 0, w: 1, h: 3 },
+    ]);
   });
 
   it('preserves extension fields through a registry sanitizer', () => {
@@ -80,10 +94,8 @@ describe('widget layout sanitization', () => {
         type: 'configured',
         title: 'Configured',
         preview: null,
-        defaultW: 1,
+        defaultW: 4,
         defaultH: 3,
-        minW: 1,
-        minH: 3,
         createInstance: (id, rect) => ({ id, type: 'configured', ...rect, setting: 'default' }),
         sanitizeInstance: (raw, rect) => {
           const id = raw && typeof raw === 'object' && 'id' in raw && typeof raw.id === 'string'
@@ -97,10 +109,65 @@ describe('widget layout sanitization', () => {
       },
     };
 
-    expect(sanitizeWidgetLayout<'configured', ConfiguredInstance>([
-      { id: 'configured', type: 'configured', x: 0, y: 0, w: 1, h: 3, setting: 'kept' },
-    ], configured)).toEqual([
-      { id: 'configured', type: 'configured', x: 0, y: 0, w: 1, h: 3, setting: 'kept' },
+    const raw = [{
+      id: 'configured',
+      type: 'configured',
+      x: 1,
+      y: 0,
+      w: 2,
+      h: 4,
+      setting: 'kept',
+      future: true,
+    }];
+    expect(migrateThreeColumnWidgetLayout(raw)).toEqual([{
+      ...raw[0],
+      x: 4,
+      w: 8,
+    }]);
+    expect(sanitizeWidgetLayout<'configured', ConfiguredInstance>(
+      migrateThreeColumnWidgetLayout(raw),
+      configured,
+    )).toEqual([
+      { id: 'configured', type: 'configured', x: 4, y: 0, w: 8, h: 4, setting: 'kept' },
     ]);
+  });
+
+  it('lets missing legacy geometry fall directly to current defaults', () => {
+    expect(sanitizeWidgetLayout(
+      migrateThreeColumnWidgetLayout([{ id: 'legacy', type: 'b', x: 1, h: 4 }]),
+      registry,
+    )).toEqual([{ id: 'legacy', type: 'b', x: 0, y: 0, w: 8, h: 4 }]);
+  });
+
+  it('resolves current, legacy, and default layouts without merging', () => {
+    const defaults = [{ id: 'default', type: 'a', x: 0, y: 0, w: 4, h: 6 }];
+    const legacy = [{ id: 'legacy', type: 'b', x: 1, y: 0, w: 2, h: 4 }];
+    const current = [{ id: 'current', type: 'a', x: 1, y: 0, w: 1, h: 3 }];
+
+    expect(resolveStoredWidgetLayout({ current, legacy, defaultLayout: defaults, registry }))
+      .toEqual({ widgets: current, migrated: false });
+    expect(resolveStoredWidgetLayout({ current: [], legacy, defaultLayout: defaults, registry }))
+      .toEqual({ widgets: [], migrated: false });
+    expect(resolveStoredWidgetLayout({
+      current: undefined,
+      legacy,
+      defaultLayout: defaults,
+      registry,
+    })).toEqual({
+      widgets: [{ id: 'legacy', type: 'b', x: 4, y: 0, w: 8, h: 4 }],
+      migrated: true,
+    });
+    expect(resolveStoredWidgetLayout({
+      current: 'bad',
+      legacy: [],
+      defaultLayout: defaults,
+      registry,
+    })).toEqual({ widgets: [], migrated: true });
+    expect(resolveStoredWidgetLayout({
+      current: 'bad',
+      legacy: 'bad',
+      defaultLayout: defaults,
+      registry,
+    })).toEqual({ widgets: defaults, migrated: false });
   });
 });

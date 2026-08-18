@@ -2,6 +2,7 @@ import { useMemo, useState, type ReactNode } from 'react';
 import type { HeroOverviewRow } from '@/features/heroes/lib/overview';
 import { Panel } from '@/ui/panel';
 import { Skeleton } from '@/ui/skeleton';
+import type { WidgetRenderSize } from '@/features/widgets/widget-types';
 
 type SortKey = 'winrate' | 'pickRate' | 'matches' | 'players';
 
@@ -11,6 +12,7 @@ type HeroOverviewPanelProps = {
   rows: readonly HeroOverviewRow[];
   isLoading?: boolean;
   headerActions?: ReactNode;
+  size: WidgetRenderSize;
 };
 
 function formatPercent(value?: number): string {
@@ -65,7 +67,9 @@ export function HeroOverviewPanel({
   rows,
   isLoading = false,
   headerActions,
+  size,
 }: HeroOverviewPanelProps) {
+  const isCompact = size.width === null || size.width < 420;
   const [sortState, setSortState] = useState<{ key: SortKey; direction: SortDirection }>({
     key: 'winrate',
     direction: 'desc',
@@ -131,7 +135,7 @@ export function HeroOverviewPanel({
           Hero overview
         </h2>
         <div className="panel-header-actions shrink-0">
-          <span className="panel-header-meta">{isLoading ? 'Loading' : `${rows.length} heroes`}</span>
+          {isCompact ? null : <span className="panel-header-meta">{isLoading ? 'Loading' : `${rows.length} heroes`}</span>}
           {headerActions}
         </div>
       </div>
@@ -141,7 +145,7 @@ export function HeroOverviewPanel({
             Loading hero overview…
           </span>
         ) : null}
-        <table className="min-w-full border-b border-[rgb(var(--text-rgb)/0.12)] text-left text-[12px]">
+        <table className={`min-w-full border-b border-[rgb(var(--text-rgb)/0.12)] text-left text-[12px] ${isCompact ? '[&_td]:px-2 [&_th]:px-2' : ''}`}>
         <thead className="text-[rgb(var(--text-rgb)/0.55)]">
           <tr className="uppercase tracking-[0.18em]">
             <th className="px-4 py-3 text-sm font-medium">Rank</th>

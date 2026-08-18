@@ -8,6 +8,7 @@ import {
   defaultDashboardLayout,
 } from '@/features/dashboard/dashboard-panel-registry';
 import { WidgetGrid } from '@/features/widgets/components/widget-grid';
+import type { WidgetRenderSize } from '@/features/widgets/widget-types';
 
 type DashboardLayoutDataProps =
   | {
@@ -35,7 +36,8 @@ type DashboardLayoutOwnerProps =
 
 type DashboardLayoutProps = DashboardLayoutDataProps & DashboardLayoutOwnerProps;
 
-const STORAGE_KEY = 'deadlock-buddy-dashboard-layout.v1';
+const DASHBOARD_STORAGE_KEY = 'deadlock-buddy-dashboard-layout.v2';
+const LEGACY_DASHBOARD_STORAGE_KEY = 'deadlock-buddy-dashboard-layout.v1';
 
 export function DashboardLayout(props: DashboardLayoutProps) {
   const modeProps = props.isLoading
@@ -44,11 +46,13 @@ export function DashboardLayout(props: DashboardLayoutProps) {
         renderLoading: (
           instance: (typeof defaultDashboardLayout)[number],
           headerActions: React.ReactNode,
+          size: WidgetRenderSize,
         ) => (
           <DashboardLoadingPanel
             type={instance.type}
             title={dashboardPanelRegistry[instance.type].title}
             headerActions={headerActions}
+            size={size}
           />
         ),
       }
@@ -56,7 +60,11 @@ export function DashboardLayout(props: DashboardLayoutProps) {
 
   const ownerProps =
     props.initialLayout === undefined
-      ? { defaultLayout: defaultDashboardLayout, storageKey: STORAGE_KEY }
+      ? {
+          defaultLayout: defaultDashboardLayout,
+          storageKey: DASHBOARD_STORAGE_KEY,
+          legacyThreeColumnStorageKey: LEGACY_DASHBOARD_STORAGE_KEY,
+        }
       : {
           initialLayout: props.initialLayout,
           onLayoutCommit: props.onLayoutCommit,

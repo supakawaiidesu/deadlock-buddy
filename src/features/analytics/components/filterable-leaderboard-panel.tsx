@@ -3,6 +3,7 @@ import { useQuery } from '@tanstack/react-query';
 import { clsx } from 'clsx';
 import { Filter } from 'lucide-react';
 import { Panel } from '@/ui/panel';
+import type { WidgetRenderSize } from '@/features/widgets/widget-types';
 
 export type DateRangeFilters = {
   minUnixTimestamp?: number;
@@ -48,7 +49,7 @@ export type FilterableLeaderboardPanelProps<TEntry> = {
   initialEntries: readonly TEntry[];
   fetcher: (params: { limit?: number; filters: DateRangeFilters }) => Promise<readonly TEntry[]>;
   getEntryKey: (entry: TEntry, index: number) => string;
-  renderEntry: (entry: TEntry, index: number) => ReactNode;
+  renderEntry: (entry: TEntry, index: number, isCompact: boolean) => ReactNode;
   emptyMessage: string;
   errorMessage: string;
   limit?: number;
@@ -59,6 +60,7 @@ export type FilterableLeaderboardPanelProps<TEntry> = {
   fetchingLabel?: string;
   refreshingLabel?: string;
   headerActions?: ReactNode;
+  size: WidgetRenderSize;
 };
 
 export function FilterableLeaderboardPanel<TEntry>({
@@ -78,6 +80,7 @@ export function FilterableLeaderboardPanel<TEntry>({
   fetchingLabel = 'Fetching stats…',
   refreshingLabel = 'Refreshing…',
   headerActions,
+  size,
 }: FilterableLeaderboardPanelProps<TEntry>) {
   const [filters, setFilters] = useState<DateRangeFilters>({});
   const [isSettingsOpen, setIsSettingsOpen] = useState(false);
@@ -87,6 +90,7 @@ export function FilterableLeaderboardPanel<TEntry>({
   const startTimeRef = useRef<number | null>(null);
   const completionStartRef = useRef<number | null>(null);
   const rafRef = useRef<number | null>(null);
+  const isCompact = size.width === null || size.width < 420;
 
   const queryKey = useMemo(
     () =>
@@ -253,9 +257,9 @@ export function FilterableLeaderboardPanel<TEntry>({
     <Panel className={clsx('flex h-full flex-col gap-[4px] !p-0', panelClassName)}>
       <div className="panel-header">
         <div className="flex min-w-0 flex-1 flex-col justify-center px-4 py-3">
-          <h2 className="text-sm font-semibold uppercase tracking-[0.2em] text-[var(--text-strong)]">{title}</h2>
+          <h2 className="truncate text-sm font-semibold uppercase tracking-[0.2em] text-[var(--text-strong)]">{title}</h2>
           {headerSubtitle ? (
-            <span className="text-[10px] uppercase tracking-[0.18em] text-[rgb(var(--text-rgb)/0.45)]">
+            <span className="truncate text-[10px] uppercase tracking-[0.18em] text-[rgb(var(--text-rgb)/0.45)]">
               {headerSubtitle}
             </span>
           ) : null}
@@ -275,9 +279,9 @@ export function FilterableLeaderboardPanel<TEntry>({
         </div>
       </div>
 
-      <div className="relative flex min-h-0 flex-1 flex-col">
+      <div className="relative flex min-h-0 flex-1 flex-col overflow-hidden">
         {isSettingsOpen ? (
-          <div className="absolute inset-0 z-10 flex flex-col gap-4 bg-[var(--overlay-soft-background)] p-4">
+          <div className="absolute inset-0 z-10 flex min-h-0 flex-col gap-4 overflow-y-auto bg-[var(--overlay-soft-background)] p-4 scroll-quiet">
             <div className="flex flex-wrap items-center gap-3 text-xs uppercase tracking-[0.2em] text-[rgb(var(--text-rgb)/0.55)]">
               <span className="text-[rgb(var(--text-rgb)/0.6)]">Date:</span>
               <label className="flex items-center gap-2 text-[rgb(var(--text-rgb)/0.55)]">
@@ -339,12 +343,12 @@ export function FilterableLeaderboardPanel<TEntry>({
             data.map((entry, index) => (
               <li
                 key={getEntryKey(entry, index)}
-                className={
-                  rowClassName ??
-                  'flex items-center justify-between border-b border-[rgb(var(--text-rgb)/0.12)] px-4 py-3 text-xs text-[rgb(var(--text-rgb)/0.72)]'
-                }
+                className={rowClassName ?? clsx(
+                  'flex min-w-0 items-center justify-between border-b border-[rgb(var(--text-rgb)/0.12)] text-xs text-[rgb(var(--text-rgb)/0.72)]',
+                  isCompact ? 'gap-2 px-2 py-2' : 'gap-4 px-4 py-3',
+                )}
               >
-                {renderEntry(entry, index)}
+                {renderEntry(entry, index, isCompact)}
               </li>
             ))
           )}

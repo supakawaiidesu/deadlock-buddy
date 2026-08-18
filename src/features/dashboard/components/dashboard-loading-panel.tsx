@@ -3,11 +3,14 @@ import type { ReactNode } from 'react';
 import type { DashboardPanelType } from '@/features/dashboard/dashboard-types';
 import { Panel } from '@/ui/panel';
 import { Skeleton } from '@/ui/skeleton';
+import { getChartWidgetPresentation } from '@/features/widgets/widget-responsive';
+import type { WidgetRenderSize } from '@/features/widgets/widget-types';
 
 type DashboardLoadingPanelProps = {
   type: DashboardPanelType;
   title: string;
   headerActions?: ReactNode;
+  size: WidgetRenderSize;
 };
 
 const TELEMETRY_LABELS = [
@@ -24,7 +27,10 @@ export function DashboardLoadingPanel({
   type,
   title,
   headerActions,
+  size,
 }: DashboardLoadingPanelProps) {
+  const isCompact = size.width === null || size.width < 420;
+  const rankPresentation = getChartWidgetPresentation(size, 560, 236);
   const status = (
     <span className="sr-only" role="status">
       Loading dashboard data…
@@ -36,12 +42,12 @@ export function DashboardLoadingPanel({
       <Panel className="flex h-full flex-col gap-[4px] !p-0" aria-busy="true">
         {status}
         <div className="panel-header">
-          <h2 className="min-w-0 flex-1 px-4 py-3 text-sm font-semibold uppercase tracking-[0.2em] text-[var(--text-strong)]">
+          <h2 className="min-w-0 flex-1 truncate px-4 py-3 text-sm font-semibold uppercase tracking-[0.2em] text-[var(--text-strong)]">
             {title}
           </h2>
           <div className="panel-header-actions">{headerActions}</div>
         </div>
-        <ul className="flex flex-1 flex-col gap-[6px] px-4 py-3 text-xs text-[rgb(var(--text-rgb)/0.65)]">
+        <ul className="flex min-h-0 flex-1 flex-col gap-[6px] overflow-y-auto px-4 py-3 text-xs text-[rgb(var(--text-rgb)/0.65)] scroll-quiet">
           {TELEMETRY_LABELS.map((label, index) => (
             <li
               key={label}
@@ -51,8 +57,8 @@ export function DashboardLoadingPanel({
                   : 'flex items-center justify-between leading-tight'
               }
             >
-              <span>{label}</span>
-              <Skeleton className="h-3 w-14" />
+              <span className="min-w-0 truncate">{label}</span>
+              <Skeleton className="h-3 w-14 shrink-0" />
             </li>
           ))}
         </ul>
@@ -65,16 +71,16 @@ export function DashboardLoadingPanel({
       <Panel className="flex h-full flex-col gap-[4px] !p-0" aria-busy="true">
         {status}
         <div className="panel-header">
-          <h2 className="min-w-0 flex-1 px-4 py-3 text-sm font-semibold uppercase tracking-[0.2em] text-[var(--text-strong)]">
+          <h2 className="min-w-0 flex-1 truncate px-4 py-3 text-sm font-semibold uppercase tracking-[0.2em] text-[var(--text-strong)]">
             {title}
           </h2>
           <div className="panel-header-actions">
-            <span className="panel-header-meta">
-              <Skeleton className="h-3 w-16" />
-            </span>
-            <span className="panel-header-meta">
-              <Skeleton className="h-3 w-20" />
-            </span>
+            {size.width !== null && size.width >= 560 ? (
+              <>
+                <span className="panel-header-meta"><Skeleton className="h-3 w-16" /></span>
+                <span className="panel-header-meta"><Skeleton className="h-3 w-20" /></span>
+              </>
+            ) : null}
             <button
               type="button"
               disabled
@@ -87,8 +93,10 @@ export function DashboardLoadingPanel({
             {headerActions}
           </div>
         </div>
-        <div className="flex min-h-0 flex-1 flex-col px-4 pb-0">
-          <Skeleton className="min-h-[180px] w-full flex-1" />
+        <div className="flex min-h-0 flex-1 flex-col overflow-y-auto px-4 pb-0 scroll-quiet">
+          {rankPresentation === 'summary' ? (
+            <div className="flex min-h-0 flex-1 items-center justify-center text-xs text-[rgb(var(--text-rgb)/0.6)]">Loading rank distribution…</div>
+          ) : <Skeleton className="min-h-0 w-full flex-1" />}
         </div>
       </Panel>
     );
@@ -99,13 +107,13 @@ export function DashboardLoadingPanel({
       <Panel className="flex h-full flex-col gap-[4px] !p-0" aria-busy="true">
         {status}
         <div className="panel-header">
-          <h2 className="min-w-0 flex-1 px-4 py-3 text-sm font-semibold uppercase tracking-[0.2em] text-[var(--text-strong)]">
+          <h2 className="min-w-0 flex-1 truncate px-4 py-3 text-sm font-semibold uppercase tracking-[0.2em] text-[var(--text-strong)]">
             {title}
           </h2>
           <div className="panel-header-actions">
-            <span className="panel-header-meta">
-              Top <Skeleton className="inline-block h-3 w-4" />
-            </span>
+            {isCompact ? null : (
+              <span className="panel-header-meta">Top <Skeleton className="inline-block h-3 w-4" /></span>
+            )}
             {headerActions}
           </div>
         </div>
@@ -113,16 +121,17 @@ export function DashboardLoadingPanel({
           {LOADING_ROW_IDS.map((rowId) => (
             <li
               key={rowId}
-              className="flex items-center justify-between border-b border-[rgb(var(--text-rgb)/0.12)] px-4 py-3 text-xs"
+              className={isCompact
+                ? 'flex min-w-0 items-center justify-between gap-2 border-b border-[rgb(var(--text-rgb)/0.12)] px-2 py-2 text-xs'
+                : 'flex min-w-0 items-center justify-between gap-4 border-b border-[rgb(var(--text-rgb)/0.12)] px-4 py-3 text-xs'}
             >
-              <div className="flex items-center gap-3">
-                <Skeleton className="h-3 w-5" />
-                <Skeleton className="h-3 w-24" />
+              <div className="flex min-w-0 items-center gap-3">
+                <Skeleton className="h-3 w-5 shrink-0" />
+                <Skeleton className="min-w-0 h-3 w-24" />
               </div>
-              <div className="flex items-center gap-2">
+              <div className="flex shrink-0 items-center gap-2">
                 <Skeleton className="h-6 w-6" />
-                <Skeleton className="h-6 w-6" />
-                <Skeleton className="h-6 w-6" />
+                {isCompact ? null : <><Skeleton className="h-6 w-6" /><Skeleton className="h-6 w-6" /></>}
               </div>
             </li>
           ))}
@@ -136,20 +145,22 @@ export function DashboardLoadingPanel({
       {status}
       <div className="panel-header">
         <div className="flex min-w-0 flex-1 flex-col justify-center px-4 py-3">
-          <h2 className="text-sm font-semibold uppercase tracking-[0.2em] text-[var(--text-strong)]">
+          <h2 className="truncate text-sm font-semibold uppercase tracking-[0.2em] text-[var(--text-strong)]">
             {title}
           </h2>
         </div>
         <div className="panel-header-actions">
-          <button
-            type="button"
-            disabled
-            className="panel-header-action"
-            aria-label="Filters unavailable while loading"
-            title="Filters unavailable while loading"
-          >
-            <Filter className="h-4 w-4" aria-hidden="true" />
-          </button>
+          {type === 'popular-layouts' ? null : (
+            <button
+              type="button"
+              disabled
+              className="panel-header-action"
+              aria-label="Filters unavailable while loading"
+              title="Filters unavailable while loading"
+            >
+              <Filter className="h-4 w-4" aria-hidden="true" />
+            </button>
+          )}
           {headerActions}
         </div>
       </div>
@@ -158,7 +169,9 @@ export function DashboardLoadingPanel({
           {LOADING_ROW_IDS.map((rowId) => (
             <li
               key={rowId}
-              className="flex items-center justify-between border-b border-[rgb(var(--text-rgb)/0.12)] px-4 py-3 text-xs"
+              className={isCompact
+                ? 'flex min-w-0 items-center justify-between gap-2 border-b border-[rgb(var(--text-rgb)/0.12)] px-2 py-2 text-xs'
+                : 'flex min-w-0 items-center justify-between gap-4 border-b border-[rgb(var(--text-rgb)/0.12)] px-4 py-3 text-xs'}
             >
               <div className="flex min-w-0 items-center gap-3">
                 <Skeleton className="h-3 w-5 shrink-0" />

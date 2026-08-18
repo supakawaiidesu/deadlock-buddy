@@ -14,11 +14,14 @@ import { Filter } from 'lucide-react';
 import { Panel } from '@/ui/panel';
 import type { BadgeDistributionEntry } from '@/lib/api/schema';
 import { buildTierLabel, TIER_COLORS } from '@/lib/data/ranks';
+import { getChartWidgetPresentation } from '@/features/widgets/widget-responsive';
+import type { WidgetRenderSize } from '@/features/widgets/widget-types';
 
 type RankDistributionPanelProps = {
   entries: readonly BadgeDistributionEntry[];
   minUnixTimestamp?: number;
   headerActions?: ReactNode;
+  size: WidgetRenderSize;
 };
 
 
@@ -111,11 +114,13 @@ function withTierAxisTicks(data: Omit<ChartDatum, 'showTierTick'>[]): ChartDatum
 
 const RankDistributionChart = memo(function RankDistributionChart({
   chartData,
+  showTierTicks,
 }: {
   chartData: readonly ChartDatum[];
+  showTierTicks: boolean;
 }) {
   return (
-    <div className="min-h-[180px] w-full flex-1">
+    <div className="min-h-0 w-full flex-1">
       <ResponsiveContainer
         width="100%"
         height="100%"
@@ -138,7 +143,7 @@ const RankDistributionChart = memo(function RankDistributionChart({
             height={28}
             tick={({ x, y, payload }) => {
               const datum = chartData.find((entry) => entry.rank === payload.value);
-              if (!datum?.showTierTick) return <g />;
+              if (!showTierTicks || !datum?.showTierTick) return <g />;
 
               return (
                 <text
@@ -184,7 +189,9 @@ export function RankDistributionPanel({
   entries,
   minUnixTimestamp,
   headerActions,
+  size,
 }: RankDistributionPanelProps) {
+  const presentation = getChartWidgetPresentation(size, 560, 236);
   const totalPlayers = useMemo(
     () => entries.reduce((sum, entry) => sum + (entry.unique_players ?? 0), 0),
     [entries],
@@ -233,12 +240,12 @@ export function RankDistributionPanel({
   return (
     <Panel className="flex h-full flex-col gap-[4px] !p-0">
       <div className="panel-header">
-        <h2 className="min-w-0 flex-1 px-4 py-3 text-sm font-semibold uppercase tracking-[0.2em] text-[var(--text-strong)]">
+        <h2 className="min-w-0 flex-1 truncate px-4 py-3 text-sm font-semibold uppercase tracking-[0.2em] text-[var(--text-strong)]">
           Rank distribution histogram
         </h2>
         <div className="panel-header-actions">
-          <span className="panel-header-meta">{timeLabel}</span>
-          <span className="panel-header-meta">{playersLabel}</span>
+          {presentation === 'compact-chart' ? null : <span className="panel-header-meta">{timeLabel}</span>}
+          {presentation === 'compact-chart' ? null : <span className="panel-header-meta">{playersLabel}</span>}
           <button
             type="button"
             onClick={() =>
@@ -254,13 +261,22 @@ export function RankDistributionPanel({
         </div>
       </div>
 
-      <div className="flex min-h-0 flex-1 flex-col px-4 pb-0">
-        {chartData.length === 0 ? (
-          <div className="flex min-h-[120px] flex-1 flex-col items-center justify-center rounded-sm border border-[rgb(var(--text-rgb)/0.12)] bg-[rgb(var(--text-rgb)/0.02)] px-4 text-center text-xs text-[rgb(var(--text-rgb)/0.6)]">
+      <div className="flex min-h-0 flex-1 flex-col overflow-y-auto px-4 pb-0 scroll-quiet">
+        {presentation === 'summary' ? (
+          <div className="flex min-h-0 flex-1 flex-col items-center justify-center px-4 py-3 text-center text-xs text-[rgb(var(--text-rgb)/0.6)]">
+            {chartData.length === 0
+              ? 'Distribution data unavailable. Try again later.'
+              : <><span>{totalPlayers} players across {chartData.length} ranks</span><span>Resize taller to view histogram</span></>}
+          </div>
+        ) : chartData.length === 0 ? (
+          <div className="flex min-h-0 flex-1 flex-col items-center justify-center rounded-sm border border-[rgb(var(--text-rgb)/0.12)] bg-[rgb(var(--text-rgb)/0.02)] px-4 text-center text-xs text-[rgb(var(--text-rgb)/0.6)]">
             Distribution data unavailable. Try again later.
           </div>
         ) : (
-          <RankDistributionChart chartData={chartData} />
+          <RankDistributionChart
+            chartData={chartData}
+            showTierTicks={presentation === 'chart'}
+          />
         )}
       </div>
     </Panel>

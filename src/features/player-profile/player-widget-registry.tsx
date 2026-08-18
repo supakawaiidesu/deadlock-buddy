@@ -27,13 +27,11 @@ export const playerWidgetRegistry: PlayerWidgetRegistry = {
       />
     ),
     description: 'Per-hero matches, win rate, and per-minute economy.',
-    defaultW: 2,
+    defaultW: 8,
     defaultH: 13,
-    minW: 1,
-    minH: 8,
     ...createGeometryWidgetLifecycle('hero-performance'),
-    render: ({ data, headerActions }) => data ? (
-      <HeroPerformancePanel accountId={data.accountId} headerActions={headerActions} />
+    render: ({ data, headerActions, size }) => data ? (
+      <HeroPerformancePanel accountId={data.accountId} headerActions={headerActions} size={size} />
     ) : null,
   },
   'match-history': {
@@ -49,13 +47,11 @@ export const playerWidgetRegistry: PlayerWidgetRegistry = {
       />
     ),
     description: 'Recent matches with builds, teams, and per-match stats.',
-    defaultW: 2,
+    defaultW: 8,
     defaultH: 18,
-    minW: 1,
-    minH: 10,
     ...createGeometryWidgetLifecycle('match-history'),
-    render: ({ data, headerActions }) => data ? (
-      <MatchHistoryPanel accountId={data.accountId} headerActions={headerActions} />
+    render: ({ data, headerActions, size }) => data ? (
+      <MatchHistoryPanel accountId={data.accountId} headerActions={headerActions} size={size} />
     ) : null,
   },
   'top-heroes': {
@@ -71,20 +67,18 @@ export const playerWidgetRegistry: PlayerWidgetRegistry = {
       />
     ),
     description: 'Most-played heroes by volume and win rate.',
-    defaultW: 1,
+    defaultW: 4,
     defaultH: 11,
-    minW: 1,
-    minH: 6,
     ...createGeometryWidgetLifecycle('top-heroes'),
-    render: ({ data, headerActions }) => data ? (
-      <TopHeroesPanel accountId={data.accountId} headerActions={headerActions} />
+    render: ({ data, headerActions, size }) => data ? (
+      <TopHeroesPanel accountId={data.accountId} headerActions={headerActions} size={size} />
     ) : null,
   },
 };
 
 export const defaultPlayerWidgetLayout: PlayerWidgetInstance[] = [
-  { id: 'player-widget-top-heroes', type: 'top-heroes', x: 0, y: 0, w: 1, h: 11 },
-  { id: 'player-widget-hero-performance', type: 'hero-performance', x: 1, y: 0, w: 2, h: 13 },
-  { id: 'player-widget-match-history', type: 'match-history', x: 1, y: 13, w: 2, h: 18 },
+  { id: 'player-widget-top-heroes', type: 'top-heroes', x: 0, y: 0, w: 4, h: 11 },
+  { id: 'player-widget-hero-performance', type: 'hero-performance', x: 4, y: 0, w: 8, h: 13 },
+  { id: 'player-widget-match-history', type: 'match-history', x: 4, y: 13, w: 8, h: 18 },
 ];
 

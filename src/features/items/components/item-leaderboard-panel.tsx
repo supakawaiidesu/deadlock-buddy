@@ -10,6 +10,7 @@ import {
   type ItemWinrateEntry,
 } from '@/lib/api/analytics';
 import { getItemDisplayName, getItemIconUrl } from '@/lib/data/items';
+import type { WidgetRenderSize } from '@/features/widgets/widget-types';
 
 type ItemLeaderboardPanelMode = 'winrate' | 'popularity';
 
@@ -20,6 +21,7 @@ type ItemLeaderboardPanelProps = {
   limit?: number;
   initialEntries: ItemWinrateEntry[];
   headerActions?: ReactNode;
+  size: WidgetRenderSize;
 };
 
 async function fetchLeaderboardData(
@@ -45,6 +47,7 @@ export function ItemLeaderboardPanel({
   limit,
   initialEntries,
   headerActions,
+  size,
 }: ItemLeaderboardPanelProps) {
   const fetcher = useCallback(
     (params: { limit?: number; filters: DateRangeFilters }) =>
@@ -61,14 +64,15 @@ export function ItemLeaderboardPanel({
       fetcher={fetcher}
       getEntryKey={(entry) => `${panelKey}-${entry.itemId}`}
       headerActions={headerActions}
-      renderEntry={(entry) => {
+      size={size}
+      renderEntry={(entry, _index, isCompact) => {
         const itemName = getItemDisplayName(entry.itemId);
         const iconUrl = getItemIconUrl(entry.itemId);
         const winRatePercent = `${(entry.winrate * 100).toFixed(1)}%`;
 
         return (
           <>
-            <div className="flex items-center gap-3">
+            <div className="flex min-w-0 items-center gap-3">
               <span className="text-[rgb(var(--text-rgb)/0.45)]">#{entry.rank}</span>
               {iconUrl ? (
                 <img
@@ -83,18 +87,20 @@ export function ItemLeaderboardPanel({
                   {itemName.slice(0, 1)}
                 </span>
               )}
-              <div className="flex flex-col text-left">
-                <span className="font-semibold text-[var(--text-strong)]">{itemName}</span>
+              <div className="flex min-w-0 flex-col text-left">
+                <span className="truncate font-semibold text-[var(--text-strong)]">{itemName}</span>
                 <span className="text-[10px] uppercase tracking-[0.12em] text-[rgb(var(--text-rgb)/0.5)]">
                   Winrate {winRatePercent}
                 </span>
               </div>
             </div>
-            <div className="text-right">
+            <div className="shrink-0 text-right">
               <span className="font-semibold text-[var(--accent)]">
-                Matches {entry.matches.toLocaleString()}
+                {isCompact
+                  ? `${entry.matches.toLocaleString()} matches`
+                  : `Matches ${entry.matches.toLocaleString()}`}
               </span>
-              {typeof entry.players === 'number' ? (
+              {!isCompact && typeof entry.players === 'number' ? (
                 <span className="block text-[10px] uppercase tracking-[0.12em] text-[rgb(var(--text-rgb)/0.5)]">
                   Players {entry.players.toLocaleString()}
                 </span>

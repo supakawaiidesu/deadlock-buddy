@@ -78,6 +78,18 @@ const PRICE_FORMAT = {
 } as const;
 export const CHART_PRICE_SCALE_ID = 'right' as const;
 export const CHART_PRICE_SCALE_MINIMUM_WIDTH = 32;
+export const HERO_ENDPOINT_ICON_SIZE = 14;
+
+export function findHeroEndpoint(
+  timeline: readonly HeroWinrateTimelinePoint[],
+  heroId: number,
+): HeroWinratePoint | null {
+  for (let index = timeline.length - 1; index >= 0; index -= 1) {
+    const point = timeline[index]?.values[heroId];
+    if (point) return point;
+  }
+  return null;
+}
 const CSS_SRGB_COLOR_PATTERN = new RegExp(
   String.raw`^color\s*\(\s*srgb\s+([+-]?(?:\d+(?:\.\d*)?|\.\d+)(?:e[+-]?\d+)?)\s+([+-]?(?:\d+(?:\.\d*)?|\.\d+)(?:e[+-]?\d+)?)\s+([+-]?(?:\d+(?:\.\d*)?|\.\d+)(?:e[+-]?\d+)?)(?:\s*\/\s*([+-]?(?:\d+(?:\.\d*)?|\.\d+)(?:e[+-]?\d+)?))?\s*\)$`,
   'i',
@@ -149,11 +161,13 @@ export function HeroWinrateLightweightChart({
   heroes,
   focusedHeroId,
   viewportResetKey,
+  compact,
 }: {
   timeline: readonly HeroWinrateTimelinePoint[];
   heroes: readonly HeroWinrateChartHero[];
   focusedHeroId: number | null;
   viewportResetKey: string;
+  compact: boolean;
 }) {
   const { themeId } = useTheme();
   const frameRef = useRef<HTMLDivElement>(null);
@@ -507,7 +521,9 @@ export function HeroWinrateLightweightChart({
       {tooltip ? (
         <div
           ref={tooltipRef}
-          className="pointer-events-none absolute z-20 border border-[rgb(var(--text-rgb)/0.16)] bg-[var(--overlay-background)] px-3 py-2 text-xs shadow-lg shadow-[rgb(var(--shadow-rgb)/0.35)] backdrop-blur-sm"
+          className={compact
+            ? 'pointer-events-auto absolute z-20 max-h-[calc(100%-1rem)] max-w-[calc(100%-1rem)] overflow-auto border border-[rgb(var(--text-rgb)/0.16)] bg-[var(--overlay-background)] px-3 py-2 text-xs shadow-lg shadow-[rgb(var(--shadow-rgb)/0.35)] backdrop-blur-sm scroll-quiet'
+            : 'pointer-events-none absolute z-20 border border-[rgb(var(--text-rgb)/0.16)] bg-[var(--overlay-background)] px-3 py-2 text-xs shadow-lg shadow-[rgb(var(--shadow-rgb)/0.35)] backdrop-blur-sm'}
           style={{ visibility: 'hidden' }}
         >
           <div className="mb-2 text-[10px] font-semibold uppercase tracking-[0.18em] text-[var(--text-strong)]">
@@ -515,7 +531,9 @@ export function HeroWinrateLightweightChart({
           </div>
           <div className="flex flex-col gap-2">
             {tooltip.rows.map(({ heroId, name, color, point }) => (
-              <div key={heroId} className="grid grid-cols-[minmax(7rem,1fr)_auto] gap-x-5 gap-y-0.5">
+              <div key={heroId} className={compact
+                ? 'grid grid-cols-[minmax(0,1fr)_auto] gap-x-3 gap-y-0.5'
+                : 'grid grid-cols-[minmax(7rem,1fr)_auto] gap-x-5 gap-y-0.5'}>
                 <span className="font-semibold" style={{ color }}>{name}</span>
                 <span className="text-right font-semibold text-[var(--text-strong)]">
                   {(point.winrate * 100).toFixed(1)}%

@@ -3,10 +3,12 @@ import { Eye } from 'lucide-react';
 import type { ReactNode } from 'react';
 import type { PopularShare } from '@/lib/api/schema';
 import { Panel } from '@/ui/panel';
+import type { WidgetRenderSize } from '@/features/widgets/widget-types';
 
 type PopularLayoutsPanelProps = {
   entries: readonly PopularShare[];
   headerActions?: ReactNode;
+  size: WidgetRenderSize;
 };
 
 const CREATED_AT_FORMATTER = new Intl.DateTimeFormat('en-US', {
@@ -16,15 +18,16 @@ const CREATED_AT_FORMATTER = new Intl.DateTimeFormat('en-US', {
   timeZone: 'UTC',
 });
 
-export function PopularLayoutsPanel({ entries, headerActions }: PopularLayoutsPanelProps) {
+export function PopularLayoutsPanel({ entries, headerActions, size }: PopularLayoutsPanelProps) {
+  const isCompact = size.width === null || size.width < 420;
   return (
     <Panel className="flex h-full flex-col gap-[4px] !p-0">
       <div className="panel-header">
-        <h2 className="min-w-0 flex-1 px-4 py-3 text-sm font-semibold uppercase tracking-[0.2em] text-[var(--text-strong)]">
+        <h2 className="min-w-0 flex-1 truncate px-4 py-3 text-sm font-semibold uppercase tracking-[0.2em] text-[var(--text-strong)]">
           Popular layouts
         </h2>
         <div className="panel-header-actions">
-          <span className="panel-header-meta">Top {entries.length}</span>
+          {isCompact ? null : <span className="panel-header-meta">Top {entries.length}</span>}
           {headerActions}
         </div>
       </div>
