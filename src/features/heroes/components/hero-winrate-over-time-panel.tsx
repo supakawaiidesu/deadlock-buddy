@@ -1,19 +1,9 @@
 import { useMemo, useState, type ReactNode } from 'react';
-import {
-  CartesianGrid,
-  Line,
-  LineChart,
-  ReferenceLine,
-  ResponsiveContainer,
-  Tooltip,
-  XAxis,
-  YAxis,
-  type TooltipContentProps,
-} from 'recharts';
 import { ChevronDown, Plus, RotateCw } from 'lucide-react';
 import type { HeroWinrateOverTimeSettings } from '@/features/dashboard/dashboard-types';
 import { useHeroWinrateTimeSeries } from '@/features/heroes/api/queries';
-import type { HeroWinratePoint, HeroWinrateSeries } from '@/features/heroes/lib/winrate-timeseries';
+import { HeroWinrateLightweightChart } from '@/features/heroes/components/hero-winrate-lightweight-chart';
+import { buildHeroWinrateTimeline } from '@/features/heroes/lib/winrate-timeseries';
 import { heroSummaries, getHeroDisplayName, getHeroIconUrl } from '@/lib/data/heroes';
 import { buildTierLabel, RANK_TIERS } from '@/lib/data/ranks';
 import { Panel } from '@/ui/panel';
@@ -22,12 +12,6 @@ type HeroWinrateOverTimePanelProps = {
   settings: HeroWinrateOverTimeSettings;
   onSettingsChange: (next: HeroWinrateOverTimeSettings) => void;
   headerActions?: ReactNode;
-};
-
-type ChartDatum = {
-  time: number;
-  values: Record<number, HeroWinratePoint>;
-  [key: `hero-${number}`]: number | undefined;
 };
 
 type TrackedHero = {
@@ -39,17 +23,6 @@ type TrackedHero = {
 
 const HERO_LIMIT = 8;
 const CHART_SERIES_COUNT = 8;
-const DATE_FORMAT = new Intl.DateTimeFormat(undefined, {
-  year: 'numeric',
-  month: 'short',
-  day: 'numeric',
-  timeZone: 'UTC',
-});
-const AXIS_DATE_FORMAT = new Intl.DateTimeFormat(undefined, {
-  month: 'short',
-  day: 'numeric',
-  timeZone: 'UTC',
-});
 
 function dateInputValue(timestamp: number): string {
   return new Date(timestamp * 1000).toISOString().slice(0, 10);
@@ -89,56 +62,6 @@ function seriesColor(heroId: number): string {
   return `var(--chart-series-${colorIndex + 1})`;
 }
 
-function mergeSeries(series: readonly HeroWinrateSeries[]): ChartDatum[] {
-  const byTime = new Map<number, ChartDatum>();
-  for (const heroSeries of series) {
-    for (const point of heroSeries.points) {
-      const current = byTime.get(point.time) ?? { time: point.time, values: {} };
-      current.values[heroSeries.heroId] = point;
-      current[`hero-${heroSeries.heroId}`] = point.winrate;
-      byTime.set(point.time, current);
-    }
-  }
-  return [...byTime.values()].sort((left, right) => left.time - right.time);
-}
-
-function HeroWinrateTooltip({ active, label, payload }: TooltipContentProps<number, string>) {
-  if (!active || typeof label !== 'number' || !payload?.length) return null;
-
-  const rows = payload.flatMap((entry) => {
-    const heroId = Number(entry.name);
-    const datum = entry.payload as ChartDatum | undefined;
-    const point = datum?.values[heroId];
-    if (!Number.isSafeInteger(heroId) || !point) return [];
-    return [{ heroId, point, color: entry.color }];
-  });
-  if (rows.length === 0) return null;
-
-  return (
-    <div className="border border-[rgb(var(--text-rgb)/0.16)] bg-[var(--overlay-background)] px-3 py-2 text-xs shadow-lg shadow-[rgb(var(--shadow-rgb)/0.35)] backdrop-blur-sm">
-      <div className="mb-2 text-[10px] font-semibold uppercase tracking-[0.18em] text-[var(--text-strong)]">
-        {DATE_FORMAT.format(new Date(label * 1000))}
-      </div>
-      <div className="flex flex-col gap-2">
-        {rows.map(({ heroId, point, color }) => (
-          <div key={heroId} className="grid grid-cols-[minmax(7rem,1fr)_auto] gap-x-5 gap-y-0.5">
-            <span className="font-semibold" style={{ color }}>{getHeroDisplayName(heroId)}</span>
-            <span className="text-right font-semibold text-[var(--text-strong)]">
-              {(point.winrate * 100).toFixed(1)}%
-            </span>
-            <span className="text-[10px] uppercase tracking-[0.12em] text-[rgb(var(--text-rgb)/0.5)]">
-              {point.wins.toLocaleString()}–{point.losses.toLocaleString()}
-            </span>
-            <span className="text-right text-[10px] uppercase tracking-[0.12em] text-[rgb(var(--text-rgb)/0.5)]">
-              {point.matches.toLocaleString()} matches
-            </span>
-          </div>
-        ))}
-      </div>
-    </div>
-  );
-}
-
 function ChartSkeleton() {
   return (
     <div
@@ -165,8 +88,10 @@ export function HeroWinrateOverTimePanel({
   const query = useHeroWinrateTimeSeries(settings);
   const options = useMemo(rankOptions, []);
   const [focusedHeroId, setFocusedHeroId] = useState<number | null>(null);
-  const series = query.data ?? [];
-  const chartData = useMemo(() => mergeSeries(series), [series]);
+  const timeline = useMemo(
+    () => buildHeroWinrateTimeline(query.data ?? []),
+    [query.data],
+  );
   const trackedHeroes = useMemo<TrackedHero[]>(
     () => settings.heroIds.map((heroId) => ({
       heroId,
@@ -177,7 +102,8 @@ export function HeroWinrateOverTimePanel({
     [settings.heroIds],
   );
   const selectedIds = useMemo(() => new Set(settings.heroIds), [settings.heroIds]);
-  const hasData = chartData.length > 0;
+  const hasData = timeline.length > 0;
+  const viewportResetKey = `${settings.minUnixTimestamp}:${settings.minAverageBadge}:${settings.maxAverageBadge}:${settings.heroIds.join(',')}`;
 
   const updateSettings = (patch: Partial<HeroWinrateOverTimeSettings>) => {
     onSettingsChange({ ...settings, ...patch });
@@ -191,7 +117,6 @@ export function HeroWinrateOverTimePanel({
     if (settings.heroIds.length >= HERO_LIMIT) return;
     updateSettings({ heroIds: [...settings.heroIds, heroId] });
   };
-
   return (
     <Panel className="flex h-full min-w-0 flex-col gap-0 !p-0">
       <div className="panel-header">
@@ -279,7 +204,7 @@ export function HeroWinrateOverTimePanel({
 
       <div className="relative min-h-0 flex-1">
         <div
-          className="absolute right-3 top-3 z-20 flex items-center gap-1 border border-[rgb(var(--text-rgb)/0.12)] bg-[var(--overlay-soft-background)] p-1 shadow-sm shadow-[rgb(var(--shadow-rgb)/0.2)]"
+          className="absolute right-12 top-3 z-20 flex flex-row-reverse items-center gap-1 border border-[rgb(var(--text-rgb)/0.12)] bg-[var(--overlay-soft-background)] p-1 shadow-sm shadow-[rgb(var(--shadow-rgb)/0.2)]"
           aria-label="Tracked heroes"
         >
           {trackedHeroes.map((hero) => {
@@ -341,51 +266,13 @@ export function HeroWinrateOverTimePanel({
                 Data may be stale
               </div>
             ) : null}
-            <div className="min-h-0 flex-1 px-2 pb-2 pt-3">
-              <ResponsiveContainer width="100%" height="100%" debounce={50}>
-                <LineChart data={chartData} margin={{ top: 4, right: 12, bottom: 4, left: 0 }}>
-                  <CartesianGrid stroke="rgb(var(--text-rgb)/0.07)" vertical={false} />
-                  <XAxis
-                    type="number"
-                    dataKey="time"
-                    domain={['dataMin', 'dataMax']}
-                    tickLine={false}
-                    axisLine={{ stroke: 'rgb(var(--text-rgb)/0.12)' }}
-                    tick={{ fontSize: 10, fill: 'rgb(var(--text-rgb)/0.5)' }}
-                    tickFormatter={(value: number) => AXIS_DATE_FORMAT.format(new Date(value * 1000))}
-                    minTickGap={28}
-                  />
-                  <YAxis
-                    domain={[0, 1]}
-                    tickLine={false}
-                    axisLine={{ stroke: 'rgb(var(--text-rgb)/0.12)' }}
-                    tick={{ fontSize: 10, fill: 'rgb(var(--text-rgb)/0.5)' }}
-                    tickFormatter={(value: number) => `${Math.round(value * 100)}%`}
-                    width={38}
-                  />
-                  <ReferenceLine y={0.5} stroke="rgb(var(--text-rgb)/0.2)" strokeDasharray="3 3" />
-                  <Tooltip content={HeroWinrateTooltip} cursor={{ stroke: 'rgb(var(--text-rgb)/0.18)' }} />
-                  {trackedHeroes.map((hero) => {
-                    const isFocused = focusedHeroId === hero.heroId;
-                    const isDimmed = focusedHeroId !== null && !isFocused;
-                    return (
-                      <Line
-                        key={hero.heroId}
-                        type="linear"
-                        dataKey={`hero-${hero.heroId}`}
-                        name={String(hero.heroId)}
-                        stroke={hero.color}
-                        strokeWidth={isFocused ? 3 : 2}
-                        strokeOpacity={isDimmed ? 0.16 : 1}
-                        dot={false}
-                        activeDot={{ r: 3, strokeWidth: 0 }}
-                        connectNulls={false}
-                        isAnimationActive={false}
-                      />
-                    );
-                  })}
-                </LineChart>
-              </ResponsiveContainer>
+            <div className="relative min-h-0 flex-1 pb-2 pl-2 pt-3">
+              <HeroWinrateLightweightChart
+                timeline={timeline}
+                heroes={trackedHeroes}
+                focusedHeroId={focusedHeroId}
+                viewportResetKey={viewportResetKey}
+              />
             </div>
           </div>
         ) : null}

@@ -21,6 +21,11 @@ export type HeroWinrateSeries = {
   points: HeroWinratePoint[];
 };
 
+export type HeroWinrateTimelinePoint = {
+  time: number;
+  values: Readonly<Partial<Record<number, HeroWinratePoint>>>;
+};
+
 export function compactHeroWinrateRows(
   rows: readonly AnalyticsHeroStats[],
 ): HeroWinrateDatum[] {
@@ -50,4 +55,22 @@ export function buildHeroWinrateSeries(
       }))
       .sort((left, right) => left.time - right.time),
   }));
+}
+
+export function buildHeroWinrateTimeline(
+  series: readonly HeroWinrateSeries[],
+): HeroWinrateTimelinePoint[] {
+  const valuesByTime = new Map<number, Partial<Record<number, HeroWinratePoint>>>();
+
+  for (const heroSeries of series) {
+    for (const point of heroSeries.points) {
+      const values = valuesByTime.get(point.time) ?? {};
+      values[heroSeries.heroId] = point;
+      valuesByTime.set(point.time, values);
+    }
+  }
+
+  return [...valuesByTime]
+    .sort(([leftTime], [rightTime]) => leftTime - rightTime)
+    .map(([time, values]) => ({ time, values }));
 }
