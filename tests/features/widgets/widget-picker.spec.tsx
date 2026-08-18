@@ -130,6 +130,7 @@ describe('widget picker', () => {
     const dialog = screen.getByRole('dialog', { name: 'Add a widget' });
     const search = screen.getByRole('searchbox', { name: 'Search widgets' });
     expect(search.getAttribute('placeholder')).toBe('Search widgets…');
+    expect(search.getAttribute('type')).toBe('text');
     expect(document.activeElement).toBe(search);
     expect(screen.getAllByText(/^(Alpha|Beta) widget$/).map((title) => title.textContent)).toEqual([
       'Alpha widget',
@@ -163,6 +164,28 @@ describe('widget picker', () => {
     fireEvent.focus(screen.getByRole('button', { name: 'Beta widget' }));
     expect(screen.getByRole('tooltip').textContent).toContain('Beta preview');
     expect(screen.getByRole('tooltip').textContent).toContain('Summarizes the beta metric over time.');
+  });
+
+  it('marks the active option and preview as one connected surface', () => {
+    render(<TestGrid />);
+    openPicker();
+
+    const alpha = screen.getByRole('button', { name: 'Alpha widget' });
+    vi.spyOn(alpha, 'getBoundingClientRect').mockReturnValue(new DOMRect(300, 200, 320, 44));
+    const beta = screen.getByRole('button', { name: 'Beta widget' });
+    fireEvent.mouseEnter(alpha);
+
+    const tooltip = screen.getByRole('tooltip');
+    expect(alpha.getAttribute('data-preview-visible')).toBe('true');
+    expect(beta.getAttribute('data-preview-visible')).toBe('false');
+    expect(tooltip.className).toContain('widget-picker-preview');
+    expect(tooltip.className).not.toContain('shadow');
+    expect(tooltip.querySelector('[aria-hidden="true"].absolute')).toBeTruthy();
+    expect(tooltip.style.top).toBe('199px');
+    expect(tooltip.style.left).toBe('620px');
+    const connector = tooltip.querySelector<HTMLElement>('[aria-hidden="true"].absolute');
+    expect(connector?.style.top).toBe('0px');
+    expect(connector?.style.height).toBe('43px');
   });
 
   it('filters options by title and reports an empty result', () => {

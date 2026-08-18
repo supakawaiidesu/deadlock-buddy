@@ -7,7 +7,7 @@ export function MetricWidgetPreview({ metrics }: { metrics: readonly PreviewMetr
   return (
     <div
       aria-hidden="true"
-      className="grid h-full w-full overflow-hidden bg-[var(--surface)]"
+      className="grid h-full w-full overflow-hidden bg-transparent"
       style={{ gridTemplateColumns: `repeat(${metrics.length}, minmax(0, 1fr))` }}
     >
       {metrics.map((metric, index) => (
@@ -35,7 +35,7 @@ export type PreviewRow = {
 
 export function RowsWidgetPreview({ rows }: { rows: readonly PreviewRow[] }) {
   return (
-    <div aria-hidden="true" className="flex h-full w-full flex-col overflow-hidden bg-[var(--surface)]">
+    <div aria-hidden="true" className="flex h-full w-full flex-col overflow-hidden bg-transparent">
       {rows.map((row, index) => (
         <div
           key={`${row.label}-${index}`}
@@ -66,7 +66,7 @@ export type PreviewBar = {
 
 export function BarsWidgetPreview({ bars }: { bars: readonly PreviewBar[] }) {
   return (
-    <div aria-hidden="true" className="flex h-full w-full flex-col justify-center gap-1.5 overflow-hidden bg-[var(--surface)] px-2 py-1.5">
+    <div aria-hidden="true" className="flex h-full w-full flex-col justify-center gap-1.5 overflow-hidden bg-transparent px-2 py-1.5">
       {bars.map((bar, index) => {
         const width = Math.min(100, Math.max(0, bar.value));
         return (
@@ -99,7 +99,7 @@ export function TableWidgetPreview({
 }) {
   const columns = { gridTemplateColumns: `repeat(${headers.length}, minmax(0, 1fr))` };
   return (
-    <div aria-hidden="true" className="flex h-full w-full flex-col overflow-hidden bg-[var(--surface)]">
+    <div aria-hidden="true" className="flex h-full w-full flex-col overflow-hidden bg-transparent">
       <div className="grid h-6 shrink-0 border-b border-[var(--surface-border-muted)] bg-[var(--surface-muted)]" style={columns}>
         {headers.map((header, index) => (
           <span
@@ -140,7 +140,7 @@ export type PreviewHistoryRow = {
 
 export function HistoryWidgetPreview({ rows }: { rows: readonly PreviewHistoryRow[] }) {
   return (
-    <div aria-hidden="true" className="flex h-full w-full flex-col overflow-hidden bg-[var(--surface)]">
+    <div aria-hidden="true" className="flex h-full w-full flex-col overflow-hidden bg-transparent">
       {rows.map((row, index) => (
         <div
           key={`${row.label}-${index}`}
@@ -168,7 +168,7 @@ export function LineWidgetPreview({
   return (
     <svg
       aria-hidden="true"
-      className="h-full w-full bg-[var(--surface)]"
+      className="h-full w-full bg-transparent"
       viewBox="0 0 320 96"
       preserveAspectRatio="none"
     >

@@ -62,6 +62,7 @@ export function WidgetPicker<TType extends string>({
     (option) => option.type === activePreview.option.type,
   ) ? activePreview : null;
   let flyoutStyle: CSSProperties | undefined;
+  let connectorStyle: CSSProperties | undefined;
   let flyoutSide: 'left' | 'right' = 'right';
   if (visiblePreview) {
     const viewportMargin = 16;
@@ -72,16 +73,30 @@ export function WidgetPicker<TType extends string>({
     flyoutSide = spaceRight >= 192 || spaceRight >= spaceLeft ? 'right' : 'left';
     const availableWidth = Math.max(
       0,
-      flyoutSide === 'right' ? spaceRight + 1 : spaceLeft + 1,
+      flyoutSide === 'right' ? spaceRight : spaceLeft,
     );
     const width = Math.min(desiredWidth, availableWidth);
     const maxTop = Math.max(viewportMargin, window.innerHeight - flyoutHeight - viewportMargin);
+    const desiredTop = visiblePreview.anchor.top - 1;
+    const top = Math.min(Math.max(desiredTop, viewportMargin), maxTop);
+    const connectorTop = Math.min(
+      flyoutHeight,
+      Math.max(0, visiblePreview.anchor.top - top - 1),
+    );
+    const connectorBottom = Math.max(
+      connectorTop,
+      Math.min(flyoutHeight, visiblePreview.anchor.bottom - top - 2),
+    );
     flyoutStyle = {
-      top: Math.min(Math.max(visiblePreview.anchor.top, viewportMargin), maxTop),
+      top,
       left: flyoutSide === 'right'
-        ? visiblePreview.anchor.right - 1
-        : visiblePreview.anchor.left - width + 1,
+        ? visiblePreview.anchor.right
+        : visiblePreview.anchor.left - width,
       width,
+    };
+    connectorStyle = {
+      top: connectorTop,
+      height: Math.max(0, connectorBottom - connectorTop),
     };
   }
 
@@ -102,12 +117,12 @@ export function WidgetPicker<TType extends string>({
     >
       <section className="panel w-[min(20rem,calc(100vw-2rem))] overflow-hidden bg-[var(--overlay-background)] !p-0">
         <header className="panel-header h-12">
-          <label className="search-field flex min-w-0 flex-1 items-center gap-3 px-3 text-[rgb(var(--text-rgb)/0.45)]">
+          <label className="flex min-w-0 flex-1 items-center gap-3 px-3 text-[rgb(var(--text-rgb)/0.45)]">
             <span className="sr-only">Search widgets</span>
             <Search className="h-4 w-4 flex-none" aria-hidden="true" />
             <input
               ref={searchInputRef}
-              type="search"
+              type="text"
               value={query}
               onChange={(event) => {
                 setQuery(event.currentTarget.value);
@@ -115,6 +130,7 @@ export function WidgetPicker<TType extends string>({
               }}
               placeholder="Search widgets…"
               aria-label="Search widgets"
+              role="searchbox"
               autoComplete="off"
               className="min-w-0 flex-1 border-0 bg-transparent text-sm text-[var(--foreground)] caret-[var(--accent)] outline-none placeholder:text-[rgb(var(--text-rgb)/0.35)]"
             />
@@ -140,7 +156,8 @@ export function WidgetPicker<TType extends string>({
                 key={option.type}
                 type="button"
                 aria-describedby={isPreviewVisible ? 'widget-picker-option-preview' : undefined}
-                className="panel-header-interactive flex h-11 w-full min-w-0 items-center justify-between gap-3 border-b border-[var(--surface-border-muted)] px-3 text-left last:border-b-0"
+                data-preview-visible={isPreviewVisible}
+                className="panel-header-interactive widget-picker-option flex h-11 w-full min-w-0 items-center border-b border-[var(--surface-border-muted)] px-3 text-left last:border-b-0"
                 onMouseEnter={(event) => {
                   setActivePreview({ option, anchor: event.currentTarget.getBoundingClientRect() });
                 }}
@@ -154,7 +171,6 @@ export function WidgetPicker<TType extends string>({
                 <span className="truncate text-[10px] font-medium uppercase tracking-[0.14em] text-[rgb(var(--text-rgb)/0.72)]">
                   {option.title}
                 </span>
-                <span className="shrink-0 text-sm text-[rgb(var(--text-rgb)/0.35)]" aria-hidden="true">+</span>
               </button>
             );
           }) : (
@@ -168,19 +184,22 @@ export function WidgetPicker<TType extends string>({
         <aside
           id="widget-picker-option-preview"
           role="tooltip"
-          className={`pointer-events-none fixed z-[80] hidden overflow-hidden bg-[var(--overlay-background)] shadow-lg shadow-[rgb(var(--shadow-rgb)/0.45)] md:block ${
-            flyoutSide === 'right'
-              ? 'border-y border-r border-[var(--surface-border-muted)]'
-              : 'border-y border-l border-[var(--surface-border-muted)]'
-          }`}
+          className="widget-picker-preview pointer-events-none fixed z-[80] hidden h-[9.5rem] flex-col border border-[var(--surface-border-muted)] md:flex"
           style={flyoutStyle}
         >
-          <div className="h-28 overflow-hidden" aria-hidden="true">
+          <div className="h-28 shrink-0 overflow-hidden" aria-hidden="true">
             {visiblePreview.option.preview}
           </div>
-          <p className="truncate border-t border-[var(--surface-border-muted)] px-3 py-2.5 text-[10px] text-[rgb(var(--text-rgb)/0.62)]">
+          <p className="min-h-0 flex-1 truncate border-t border-[var(--surface-border-muted)] px-3 py-2.5 text-[10px] text-[rgb(var(--text-rgb)/0.62)]">
             {visiblePreview.option.description}
           </p>
+          <span
+            aria-hidden="true"
+            className={`absolute z-10 w-[2px] [background-color:inherit] ${
+              flyoutSide === 'right' ? '-left-px' : '-right-px'
+            }`}
+            style={connectorStyle}
+          />
         </aside>
       ) : null}
     </dialog>,

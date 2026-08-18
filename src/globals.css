@@ -134,6 +134,13 @@
   outline-offset: -2px;
 }
 
+.widget-picker-option[data-preview-visible='true'],
+.widget-picker-option[data-preview-visible='true']:hover,
+.widget-picker-preview {
+  background-color: color-mix(in srgb, var(--overlay-background) 94%, var(--foreground) 6%);
+  color: var(--text-strong);
+}
+
 .panel-header-meta {
   display: flex;
   align-items: center;
