@@ -65,7 +65,7 @@ function rebuildWidget(widget: DashboardPanelInstance): DashboardPanelInstance {
     return { ...widget, settings: { ...widget.settings, heroIds: [...widget.settings.heroIds] } };
   }
   if (widget.type === 'total-matches-over-time') {
-    return { ...widget, settings: { ...widget.settings } };
+    return { ...widget, settings: { ...widget.settings, metrics: [...widget.settings.metrics] } };
   }
   return { ...widget };
 }
@@ -365,7 +365,7 @@ export function buildCustomPageShareDocument(
             return {
               type: widget.type,
               ...geometry,
-              settings: { ...widget.settings },
+              settings: { ...widget.settings, metrics: [...widget.settings.metrics] },
             };
           }
           return { ...geometry, type: widget.type };

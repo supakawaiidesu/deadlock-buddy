@@ -36,6 +36,7 @@ const chartWidget: DashboardPanelInstance = {
   settings: chartSettings,
 };
 const gameStatsSettings = {
+  metrics: ['total_matches', 'avg_kills'] as const,
   minUnixTimestamp: 1_785_430_800,
   minAverageBadge: 0,
   maxAverageBadge: 116,
@@ -198,7 +199,7 @@ describe('custom page store', () => {
     expect(restored.store.tabs[0].widgets).toEqual([chartWidget]);
   });
 
-  it('persists and shares total-matches settings without loss', () => {
+  it('persists and shares selected game stats without loss', () => {
     const created = createCustomPage(createEmptyCustomPageStore(), {
       id: 'matches-page',
       widgets: [totalMatchesWidget],

@@ -6,6 +6,21 @@ export type GameStatsTimeSeriesPoint = {
   time: number;
   value: number;
 };
+export function findGameStatsSeriesBaseline(
+  points: readonly GameStatsTimeSeriesPoint[],
+  minTime: number,
+): number | null {
+  for (const point of points) {
+    if (point.time >= minTime) return point.value;
+  }
+  return null;
+}
+
+export function calculatePercentageChange(value: number, baseline: number): number | null {
+  if (!Number.isFinite(value) || !Number.isFinite(baseline) || baseline === 0) return null;
+  return ((value - baseline) / Math.abs(baseline)) * 100;
+}
+
 
 export function buildGameStatsMetricSeries(
   rows: readonly AnalyticsGameStats[],

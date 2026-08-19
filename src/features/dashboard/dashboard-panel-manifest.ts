@@ -46,8 +46,8 @@ export const dashboardPanelManifest = {
     defaultH: 18,
   },
   'total-matches-over-time': {
-    title: 'Total matches over time',
-    description: 'Track daily match volume across a filtered sample.',
+    title: 'Game stats over time',
+    description: 'Compare multiple daily game stats on one indexed chart.',
     defaultW: 12,
     defaultH: 18,
   },

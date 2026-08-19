@@ -1,4 +1,5 @@
 import type { AnalyticsTimeSeriesFilterValues } from '@/features/analytics/lib/time-series-filters';
+import type { GameStatsMetric } from '@/features/analytics/lib/game-stats-timeseries';
 import type {
   WidgetDefinition,
   WidgetInstance,
@@ -24,7 +25,9 @@ export type HeroWinrateOverTimeSettings = AnalyticsTimeSeriesFilterValues & {
   heroIds: number[];
 };
 
-export type GameStatsTimeSeriesSettings = AnalyticsTimeSeriesFilterValues;
+export type GameStatsTimeSeriesSettings = AnalyticsTimeSeriesFilterValues & {
+  metrics: GameStatsMetric[];
+};
 
 export type GeometryDashboardPanelInstance = WidgetInstance<Exclude<
   DashboardPanelType,
@@ -73,6 +76,7 @@ export function createDefaultGameStatsTimeSeriesSettings(
   ) / 1000;
 
   return {
+    metrics: ['total_matches'],
     minUnixTimestamp: todayUtcSeconds - 30 * 86_400,
     minAverageBadge: 0,
     maxAverageBadge: 116,

@@ -1,10 +1,10 @@
-# Game-Stats Metric Chart Implementation Guide
+# Game-Stats Overlay Chart Implementation Guide
 
-This guide records the process used to add the **Total matches over time** dashboard widget and turns it into a repeatable path for later `/v1/analytics/game-stats` metrics such as `avg_kills`.
+This guide records the architecture of the **Game stats over time** dashboard widget. The widget keeps the durable `total-matches-over-time` type for existing saved layouts, but now lets users select up to eight `/v1/analytics/game-stats` metrics and overlay them on one chart.
 
-The key decision is the cache boundary: `/v1/analytics/game-stats` returns every aggregate in one validated row. TanStack Query stores that complete response under the server filters. A total-matches widget and an average-kills widget with identical filters must project different fields from the same cached array, not issue metric-specific requests.
+The key decision is the cache boundary: `/v1/analytics/game-stats` returns every aggregate in one validated row. TanStack Query stores that complete response under the server filters. Changing the selected metrics projects different fields from the same cached array and never issues a metric-specific request.
 
-For hero-specific history, use `docs/chart-widget.md`. That endpoint, cache shape, multi-series renderer, and hero-selection behavior are intentionally separate.
+For hero-specific history, use `docs/chart-widget.md`. That endpoint, cache shape, and hero-selection behavior are intentionally separate.
 
 ## Start from the approved plan
 
@@ -106,130 +106,49 @@ Both projections can use the same `rows` reference returned by `useGameStats`.
 - details menus close on focus leaving the menu;
 - full-width widgets use strip mode; compact widgets use overlay mode.
 
-A new game-stats metric normally reuses `GameStatsTimeSeriesSettings`, `createDefaultGameStatsTimeSeriesSettings`, and `AnalyticsTimeSeriesFilterSettingsSchema` unchanged.
+Game-stats widgets reuse `createDefaultGameStatsTimeSeriesSettings()`, which selects `total_matches` initially and stores the selected `metrics` alongside the rank/date filters.
 
-### Shared single-series chart
+### Shared multi-series chart
 
-`src/features/analytics/components/game-stats-metric-chart.tsx` owns Lightweight Charts for one endpoint metric. Its varying inputs are:
-
-```ts
-<GameStatsMetricChart
-  points={points}
-  seriesLabel="Average kills"
-  color="var(--chart-series-2)"
-  formatAxisValue={formatNumber}
-  formatTooltipValue={(value) => `${formatNumber(value)} kills`}
-  minMove={0.1}
-  viewportResetKey={viewportResetKey}
-  compact={presentation === 'compact-chart'}
-/>
-```
-
-Choose `minMove` and formatters from the metric’s precision. Counts such as `total_matches` use `minMove={1}`; averaged decimal fields usually use a decimal step such as `0.1`, subject to the upstream field’s meaningful precision.
+`src/features/analytics/components/game-stats-metric-chart.tsx` owns Lightweight Charts for the selected endpoint metrics. Each series supplies its metric ID, projected points, label, color, precision, and exact tooltip formatter.
 
 Keep these chart invariants:
 
-- one auto-sized `LineSeries` on the right price scale;
+- one selected metric uses the right axis with its absolute domain and metric-specific formatter;
+- two selected metrics use separate absolute domains: the first selected metric on the left axis and the second on the right;
+- three or more selected metrics share the right axis in Lightweight Charts `Percentage` mode, measured from each series' first visible value;
+- percentage-mode tooltips show each exact raw value plus its percentage change from the same visible baseline;
+- the left price scale is visible only for exactly two selected metrics;
 - automatic y-axis scaling;
 - UTC time-axis labels and tooltip dates;
 - mouse/touch pan and zoom;
-- `fitContent()` only when `viewportResetKey` changes;
-- preservation of the visible time range during same-filter refreshes;
+- `fitContent()` only when a server filter or selected metric changes;
+- preservation of the visible time range during same-settings refreshes;
 - concrete CSS color resolution through `lightweight-chart-colors.ts` whenever the theme changes;
 - frame-edge-clamped tooltip positioning;
 - exact subscription cleanup and `chart.remove()` on unmount;
 - `.analytics-time-series-chart-host` for the shared Lightweight Charts table fix;
 - visible TradingView attribution.
 
-Do not copy hero-chart percentage bounds, its 50% reference line, hero endpoints, multi-series diffing, or focus behavior into a game-stats metric chart.
+Lightweight Charts exposes one visible scale per side. Exactly two unlike units therefore remain readable on separate absolute axes. Arbitrary scale IDs create auto-scaled overlay scales but do not render additional axes, so three or more series move to the right-side percentage scale instead of presenting unlike values on one absolute domain. The full TradingView product's stacked same-side axes are not available in the Lightweight Charts API.
 
-## Adding an average-kills widget
+## Adding or changing a selectable metric
 
-Use a distinct durable widget type, for example `average-kills-over-time`. The metric widget remains independently addable, removable, configurable, persisted, and shareable even though its data request is shared.
-
-### 1. Confirm the data contract
-
-`avg_kills` is already required by `AnalyticsGameStatsSchema` and present in `tests/fixtures/analytics-game-stats.ts`. Therefore an average-kills widget needs no transport, schema, query-key, or API fixture change.
+`src/features/analytics/lib/game-stats-metrics.ts` is the complete display catalog for numeric `AnalyticsGameStats` fields other than `bucket`. Add a label and domain format there when the API schema gains a field. The catalog determines selector copy, tooltip formatting, axis precision, and validates persisted metric IDs.
 
 For a future field that is not already in `AnalyticsGameStats`:
 
 1. Confirm the real upstream field and numeric semantics.
 2. Add it to the complete Zod row contract rather than creating a loose component type.
 3. Add it to the complete fixture.
-4. Prove valid preservation and malformed/missing rejection in schema and transport tests.
+4. Add its label and format to `GAME_STATS_METRIC_DEFINITIONS`.
+5. Prove schema validation, transport preservation, catalog coverage, and display formatting.
 
-Unknown response fields are intentionally stripped until they become an explicit cache contract.
+Persisted widget settings contain `metrics`; registry hydration and V3 share parsing require one to eight unique known IDs. Legacy saved `total-matches-over-time` settings without `metrics` migrate to `['total_matches']`. Keep the existing widget type stable: persisted type strings are compatibility contracts.
 
-### 2. Add a dedicated panel
+`GameStatsOverTimePanel` owns the third filter, selected-series legend/focus controls, responsive states, and all query states. The selected metrics do not belong in the query key because they do not change the server response. They do belong in the viewport reset key because changing visible series should fit the new comparison.
 
-Follow `src/features/analytics/components/total-matches-over-time-panel.tsx`. A new panel should:
-
-1. Call `useGameStats(settings)`.
-2. Memoize `buildGameStatsMetricSeries(query.data ?? [], 'avg_kills')`.
-3. Use `getChartWidgetPresentation(size, 640, 236)`.
-4. Build the viewport key only from the three server filters.
-5. Use `AnalyticsTimeSeriesFilterControls` in strip/overlay modes.
-6. Render `GameStatsMetricChart` with average-kills label, color, precision, and tooltip copy.
-7. Keep the five observable query states:
-   - initial pending skeleton;
-   - one-pixel refresh indicator while cached points remain;
-   - no-data message;
-   - blocking error with `query.refetch()` Retry;
-   - `Data may be stale` banner when a refresh fails over cached points.
-8. In summary mode, show the number of daily buckets and the latest exact metric value, then ask the user to resize taller.
-
-Use metric-specific accessible text. The panel’s `aria-label`, visible title, loading label, error message, no-data copy, tooltip unit, and summary unit must agree.
-
-The total-matches panel is the reference shell. Do not abstract it preemptively while implementing one new widget. If two or more metric panels have demonstrably identical state/rendering code after the second implementation, a small shared shell may be justified; preserve explicit metric configuration and query-state copy.
-
-### 3. Add durable dashboard types
-
-In `src/features/dashboard/dashboard-types.ts`:
-
-1. Add the new string to `DashboardPanelType`.
-2. Add a settings-bearing instance type using `GameStatsTimeSeriesSettings`.
-3. Add the instance to `DashboardPanelInstance`.
-4. Exclude it from `GeometryDashboardPanelInstance` because geometry-only records cannot retain its filters.
-
-Reuse `createDefaultGameStatsTimeSeriesSettings()`: 30 days from current UTC midnight, all ranks `0..116`. Do not create a metric-specific default unless product behavior differs.
-
-Persisted type strings are compatibility contracts. Once shipped, do not rename one just to change display copy.
-
-### 4. Add manifest, preview, and registry lifecycle
-
-In `src/features/dashboard/dashboard-panel-manifest.ts`, add title, description, and geometry. Time-series charts currently use `defaultW: 12` and `defaultH: 18`.
-
-In `src/features/dashboard/dashboard-panel-registry.tsx`:
-
-1. Add typed create and sanitize functions.
-2. Reuse `isValidAnalyticsTimeSeriesSettings`.
-3. Clone valid settings; reset the complete settings object to `createDefaultGameStatsTimeSeriesSettings()` when invalid.
-4. Register a `LineWidgetPreview` with suitable sample points and axis labels.
-5. Keep `previewSize: { width: 400, contentHeight: 158 }` and `renderWhileLoading: true`.
-6. Pass settings changes through `onInstanceChange({ ...instance, settings })`.
-7. Keep the widget out of `defaultDashboardLayout` unless product requirements explicitly change. Metric-history widgets are currently picker-only.
-
-`LineWidgetPreview` already supports a single series, optional icon, custom three-value axis labels, and `showLegend={false}`. Reuse it rather than creating another SVG preview component.
-
-### 5. Preserve local storage and share documents
-
-A configurable widget needs explicit settings-bearing integration in all durable boundaries.
-
-In `src/lib/api/schema.ts`:
-
-1. Add a strict share-widget branch with the new literal type.
-2. Use `AnalyticsTimeSeriesFilterSettingsSchema` for settings.
-3. Add the branch to the V3 `ShareWidgetSchema` discriminated union.
-4. Do not add it to the geometry-only widget enum used by V2.
-5. Do not bump share or local-storage versions for another compatible V3 discriminant.
-
-In `src/features/custom-pages/custom-page-state.ts`:
-
-1. Extend `rebuildWidget` to clone the new settings object.
-2. Extend `buildCustomPageShareDocument` to serialize settings with geometry.
-3. Keep generic geometry-only widgets on the geometry-only branch.
-
-The dashboard widget engine preserves settings through object spread, while each registry sanitizer validates hydration. Custom pages and share export use explicit branches; missing either branch silently loses configuration or fails type/schema validation.
+`src/features/custom-pages/custom-page-state.ts` must clone and serialize the metrics array. `GameStatsTimeSeriesSettingsSchema` must remain the strict V3 share contract. The widget remains excluded from V2's geometry-only type enum and from the default dashboard layout.
 
 ## Verification strategy
 
@@ -245,22 +164,24 @@ For a new already-modeled metric, add a focused projection assertion only if it 
 
 ### Widget durability contract
 
-Extend these tests for each new settings-bearing widget:
+The existing configurable-widget tests must cover:
 
+- `tests/features/analytics/game-stats-metrics.spec.ts`
+  - every validated metric appears in the catalog exactly once;
+  - count, decimal, duration, and rate formatting;
 - `tests/features/dashboard/dashboard-panel-registry.spec.ts`
   - picker metadata and preview size;
-  - default instance;
-  - valid settings preservation;
-  - invalid settings reset;
-  - current-layout hydration;
-  - omission from the default dashboard.
+  - default selection;
+  - valid selection preservation;
+  - invalid and duplicate selection reset;
+  - legacy settings migration to `total_matches`;
+  - current-layout hydration and omission from the default dashboard;
 - `tests/features/custom-pages/custom-page-store.spec.ts`
-  - save/restore without settings loss;
-  - V3 export geometry and settings;
-  - V3 import back to current geometry and settings.
+  - save/restore without selection loss;
+  - V3 export/import with metrics and geometry;
 - `tests/lib/api/shares.spec.ts`
   - strict V3 round trip;
-  - malformed/unknown settings rejection;
+  - empty, duplicate, malformed, and unknown metric rejection;
   - V2 rejection of the configurable type.
 
 If the metric requires a new API field, also extend:
@@ -274,7 +195,7 @@ If the metric requires a new API field, also extend:
 Run the focused game-stats and durability contracts while editing:
 
 ```bash
-bun run test -- --run tests/lib/api/schema.spec.ts tests/lib/api/analytics.spec.ts tests/features/analytics/game-stats-timeseries.spec.ts tests/features/dashboard/dashboard-panel-registry.spec.ts tests/features/custom-pages/custom-page-store.spec.ts tests/lib/api/shares.spec.ts
+bun run test -- --run tests/lib/api/schema.spec.ts tests/lib/api/analytics.spec.ts tests/features/analytics/game-stats-timeseries.spec.ts tests/features/analytics/game-stats-metrics.spec.ts tests/features/dashboard/dashboard-panel-registry.spec.ts tests/features/custom-pages/custom-page-store.spec.ts tests/lib/api/shares.spec.ts
 ```
 
 Before delivery:
@@ -305,14 +226,13 @@ UI verification in this repository uses source review, behavioral tests, lint, a
 
 ## Completion checklist
 
-- [ ] Metric exists in the complete validated game-stats row.
-- [ ] Existing `useGameStats` and key are reused without projection.
-- [ ] Points come from `buildGameStatsMetricSeries`.
-- [ ] Rank/date controls use `AnalyticsTimeSeriesFilterControls`.
-- [ ] Chart uses `GameStatsMetricChart` with correct unit and precision.
-- [ ] All pending, refreshing, empty, blocking-error, and stale-data states exist.
-- [ ] Summary, compact-chart, and full-chart presentations work from the shared responsive helper.
-- [ ] Widget type, settings-bearing instance, manifest, registry lifecycle, and preview are registered.
-- [ ] Widget remains picker-only unless explicitly requested otherwise.
-- [ ] Dashboard hydration, custom-page persistence, and V3 sharing preserve settings.
+- [ ] Metric catalog covers every validated game-stats value.
+- [ ] Existing `useGameStats` and key are reused without metric projection.
+- [ ] Each selected metric is projected with `buildGameStatsMetricSeries`.
+- [ ] Rank/date/stat controls share the existing responsive filter shell.
+- [ ] One metric uses the right absolute scale; two use left/right absolute scales; three or more use right-side percentage comparison.
+- [ ] Percentage-mode tooltips show exact values and change from the first visible point.
+- [ ] All pending, refreshing, empty, blocking-error, stale-data, summary, compact-chart, and full-chart states exist.
+- [ ] Existing `total-matches-over-time` records migrate without changing the durable type.
+- [ ] Dashboard hydration, custom-page persistence, and V3 sharing preserve selected metrics.
 - [ ] Focused contracts, full tests, lint, and build pass.

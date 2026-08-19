@@ -67,6 +67,7 @@ const validTotalMatchesWidget = {
   w: 3,
   h: 18,
   settings: {
+    metrics: ['total_matches', 'avg_kills'],
     minUnixTimestamp: 1_785_430_800,
     minAverageBadge: 0,
     maxAverageBadge: 116,
@@ -349,7 +350,7 @@ describe('Share wire schemas', () => {
     }
   });
 
-  it('round-trips strict total-matches settings in V3', () => {
+  it('round-trips strict game-stats settings in V3', () => {
     const document = documentWithWidget(validTotalMatchesWidget);
     expect(ShareDocumentV3Schema.parse(document)).toEqual(document);
     expect(ShareDocumentV3Schema.safeParse(documentWithWidget({
@@ -359,6 +360,18 @@ describe('Share wire schemas', () => {
     expect(ShareDocumentV3Schema.safeParse(documentWithWidget({
       ...validTotalMatchesWidget,
       settings: { ...validTotalMatchesWidget.settings, unknown: true },
+    })).success).toBe(false);
+    expect(ShareDocumentV3Schema.safeParse(documentWithWidget({
+      ...validTotalMatchesWidget,
+      settings: { ...validTotalMatchesWidget.settings, metrics: [] },
+    })).success).toBe(false);
+    expect(ShareDocumentV3Schema.safeParse(documentWithWidget({
+      ...validTotalMatchesWidget,
+      settings: { ...validTotalMatchesWidget.settings, metrics: ['total_matches', 'total_matches'] },
+    })).success).toBe(false);
+    expect(ShareDocumentV3Schema.safeParse(documentWithWidget({
+      ...validTotalMatchesWidget,
+      settings: { ...validTotalMatchesWidget.settings, metrics: ['unknown_metric'] },
     })).success).toBe(false);
     expect(ShareDocumentV2Schema.safeParse(document).success).toBe(false);
   });

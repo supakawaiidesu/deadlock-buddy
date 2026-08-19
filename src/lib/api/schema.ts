@@ -486,6 +486,14 @@ export const HeroWinrateOverTimeSettingsSchema = AnalyticsTimeSeriesFilterSettin
     (ids) => new Set(ids).size === ids.length,
   ),
 });
+const GameStatsMetricSchema = AnalyticsGameStatsSchema.keyof().exclude(['bucket']);
+
+export const GameStatsTimeSeriesSettingsSchema = AnalyticsTimeSeriesFilterSettingsSchema.safeExtend({
+  metrics: z.array(GameStatsMetricSchema).min(1).max(8).refine(
+    (metrics) => new Set(metrics).size === metrics.length,
+  ),
+});
+
 
 const HeroWinrateOverTimeShareWidgetSchema = ShareWidgetGeometrySchema.extend({
   type: z.literal('hero-winrate-over-time'),
@@ -494,7 +502,7 @@ const HeroWinrateOverTimeShareWidgetSchema = ShareWidgetGeometrySchema.extend({
 
 const TotalMatchesOverTimeShareWidgetSchema = ShareWidgetGeometrySchema.extend({
   type: z.literal('total-matches-over-time'),
-  settings: AnalyticsTimeSeriesFilterSettingsSchema,
+  settings: GameStatsTimeSeriesSettingsSchema,
 }).strict();
 
 const ShareWidgetSchema = z.discriminatedUnion('type', [

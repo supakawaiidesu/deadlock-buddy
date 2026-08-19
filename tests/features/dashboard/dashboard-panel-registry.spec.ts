@@ -60,7 +60,7 @@ describe('dashboard panel registry', () => {
     }
   });
 
-  it('registers, creates, and sanitizes the picker-only total matches panel', () => {
+  it('registers, creates, and sanitizes the picker-only game stats panel', () => {
     vi.useFakeTimers();
     vi.setSystemTime(new Date('2026-08-17T18:00:00Z'));
     try {
@@ -68,14 +68,15 @@ describe('dashboard panel registry', () => {
       const rect = { x: 0, y: 0, w: 12, h: 18 };
       const created = definition.createInstance('matches', rect);
       const settings = {
+        metrics: ['total_matches', 'avg_kills'] as const,
         minUnixTimestamp: 1_785_430_800,
         minAverageBadge: 0,
         maxAverageBadge: 116,
       };
 
       expect(definition).toMatchObject({
-        title: 'Total matches over time',
-        description: 'Track daily match volume across a filtered sample.',
+        title: 'Game stats over time',
+        description: 'Compare multiple daily game stats on one indexed chart.',
         defaultW: 12,
         defaultH: 18,
         renderWhileLoading: true,
@@ -87,16 +88,39 @@ describe('dashboard panel registry', () => {
         ...rect,
         settings: createDefaultGameStatsTimeSeriesSettings(),
       });
-      expect(definition.sanitizeInstance({ ...created, settings }, { ...rect, w: 8 })).toEqual({
+      expect(definition.sanitizeInstance({
+        ...created,
+        settings: { ...settings, metrics: [...settings.metrics] },
+      }, { ...rect, w: 8 })).toEqual({
         id: 'matches',
         type: 'total-matches-over-time',
         ...rect,
         w: 8,
-        settings,
+        settings: { ...settings, metrics: [...settings.metrics] },
+      });
+      expect(definition.sanitizeInstance({
+        ...created,
+        settings: {
+          minUnixTimestamp: settings.minUnixTimestamp,
+          minAverageBadge: settings.minAverageBadge,
+          maxAverageBadge: settings.maxAverageBadge,
+        },
+      }, rect)).toEqual({
+        ...created,
+        settings: {
+          metrics: ['total_matches'],
+          minUnixTimestamp: settings.minUnixTimestamp,
+          minAverageBadge: settings.minAverageBadge,
+          maxAverageBadge: settings.maxAverageBadge,
+        },
       });
       expect(definition.sanitizeInstance({
         ...created,
         settings: { ...settings, minAverageBadge: 117 },
+      }, rect)).toEqual(created);
+      expect(definition.sanitizeInstance({
+        ...created,
+        settings: { ...settings, metrics: ['total_matches', 'total_matches'] },
       }, rect)).toEqual(created);
       expect(defaultDashboardLayout.some((panel) => panel.type === 'total-matches-over-time'))
         .toBe(false);
@@ -114,6 +138,7 @@ describe('dashboard panel registry', () => {
       w: 12,
       h: 18,
       settings: {
+        metrics: ['total_matches', 'avg_kills'],
         minUnixTimestamp: 1_785_430_800,
         minAverageBadge: 0,
         maxAverageBadge: 116,

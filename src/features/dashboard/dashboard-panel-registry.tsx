@@ -6,9 +6,14 @@ import {
   type HeroWinrateOverTimePanelInstance,
   type TotalMatchesOverTimePanelInstance,
 } from '@/features/dashboard/dashboard-types';
+import {
+  GAME_STATS_METRIC_LIMIT,
+  isGameStatsMetric,
+} from '@/features/analytics/lib/game-stats-metrics';
+import type { AnalyticsTimeSeriesFilterValues } from '@/features/analytics/lib/time-series-filters';
 import { dashboardPanelManifest } from '@/features/dashboard/dashboard-panel-manifest';
 import { RankDistributionPanel } from '@/features/analytics/components/rank-distribution-panel';
-import { TotalMatchesOverTimePanel } from '@/features/analytics/components/total-matches-over-time-panel';
+import { GameStatsOverTimePanel } from '@/features/analytics/components/game-stats-over-time-panel';
 import { HeroLeaderboardPanel } from '@/features/heroes/components/hero-leaderboard-panel';
 import { ItemLeaderboardPanel } from '@/features/items/components/item-leaderboard-panel';
 import { HeroWinrateOverTimePanel } from '@/features/heroes/components/hero-winrate-over-time-panel';
@@ -45,7 +50,7 @@ function withGeometryLifecycle<TType extends DashboardPanelInstance['type']>(typ
   };
 }
 
-function isValidAnalyticsTimeSeriesSettings(raw: unknown): raw is TotalMatchesOverTimePanelInstance['settings'] {
+function isValidAnalyticsTimeSeriesSettings(raw: unknown): raw is AnalyticsTimeSeriesFilterValues {
   if (!raw || typeof raw !== 'object') return false;
   if (!('minUnixTimestamp' in raw) || !('minAverageBadge' in raw) || !('maxAverageBadge' in raw)) {
     return false;
@@ -76,6 +81,19 @@ function isValidHeroChartSettings(raw: unknown): raw is HeroWinrateOverTimePanel
     heroIds.length <= 8 &&
     heroIds.every((id) => Number.isSafeInteger(id) && catalogHeroIds.has(id)) &&
     new Set(heroIds).size === heroIds.length
+  );
+}
+function isValidGameStatsChartSettings(
+  raw: unknown,
+): raw is TotalMatchesOverTimePanelInstance['settings'] {
+  if (!isValidAnalyticsTimeSeriesSettings(raw)) return false;
+  if (!('metrics' in raw) || !Array.isArray(raw.metrics)) return false;
+  const { metrics } = raw;
+  return (
+    metrics.length > 0 &&
+    metrics.length <= GAME_STATS_METRIC_LIMIT &&
+    metrics.every(isGameStatsMetric) &&
+    new Set(metrics).size === metrics.length
   );
 }
 
@@ -126,12 +144,15 @@ export function sanitizeTotalMatchesOverTimeInstance(
     ? raw.id
     : '';
   const settings = raw && typeof raw === 'object' && 'settings' in raw ? raw.settings : null;
+  const normalizedSettings = isValidAnalyticsTimeSeriesSettings(settings) && !('metrics' in settings)
+    ? { ...settings, metrics: ['total_matches'] as const }
+    : settings;
   return {
     id,
     type: 'total-matches-over-time',
     ...rect,
-    settings: isValidAnalyticsTimeSeriesSettings(settings)
-      ? { ...settings }
+    settings: isValidGameStatsChartSettings(normalizedSettings)
+      ? { ...normalizedSettings, metrics: [...normalizedSettings.metrics] }
       : createDefaultGameStatsTimeSeriesSettings(),
   };
 }
@@ -300,13 +321,19 @@ export const dashboardPanelRegistry: DashboardPanelRegistry = {
     previewSize: { width: 400, contentHeight: 158 },
     preview: (
       <LineWidgetPreview
-        series={[{
-          color: 'var(--chart-series-1)',
-          points: '18,72 56,65 94,70 132,54 170,48 208,34 246,40 282,24',
-          label: 'Matches',
-        }]}
-        axisLabels={['75K', '50K', '25K']}
-        showLegend={false}
+        series={[
+          {
+            color: 'var(--chart-series-1)',
+            points: '18,72 56,65 94,70 132,54 170,48 208,34 246,40 282,24',
+            label: 'Matches',
+          },
+          {
+            color: 'var(--chart-series-2)',
+            points: '18,44 56,48 94,39 132,43 170,31 208,38 246,27 282,32',
+            label: 'Kills',
+          },
+        ]}
+        axisLabels={['125', '100', '75']}
       />
     ),
     createInstance: createTotalMatchesOverTimeInstance,
@@ -315,7 +342,7 @@ export const dashboardPanelRegistry: DashboardPanelRegistry = {
     render: ({ instance, onInstanceChange, headerActions, size }) => {
       if (instance.type !== 'total-matches-over-time') return null;
       return (
-        <TotalMatchesOverTimePanel
+        <GameStatsOverTimePanel
           settings={instance.settings}
           onSettingsChange={(settings) => onInstanceChange({ ...instance, settings })}
           headerActions={headerActions}
