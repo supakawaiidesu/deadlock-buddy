@@ -1,4 +1,4 @@
-# Deadlock Buddy (618Lock)
+# 618Lock
 
 Player insights and hero analytics for Valve's Deadlock. Client-side SPA built with Vite, React 19, and TypeScript.
 
